@@ -2,7 +2,7 @@ import { test, expect } from '@playwright/test';
 
 test.describe('reviewqa landing page', () => {
   test.beforeEach(async ({ page }) => {
-    await page.goto('/');
+    await page.goto('.');
   });
 
   test('renders the wordmark with the spriteCloud colour split', async ({ page }) => {

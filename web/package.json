@@ -6,6 +6,7 @@
   "scripts": {
     "serve": "npx --yes http-server . -p 4173 -s",
     "test": "playwright test",
+    "test:prod": "PROD_URL=https://spritecloud.github.io/reviewqa/ playwright test",
     "test:install": "playwright install --with-deps chromium"
   },
   "devDependencies": {
