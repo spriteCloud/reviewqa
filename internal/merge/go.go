@@ -3,6 +3,7 @@ package merge
 import (
 	"bytes"
 	gostd "go/ast"
+	"go/format"
 	"go/parser"
 	"go/printer"
 	"go/token"
@@ -69,7 +70,10 @@ func appendGo(existing, generated []byte) ([]byte, bool) {
 	if err := printer.Fprint(&buf, fset, oldF); err != nil {
 		return nil, false
 	}
-	out := buf.Bytes()
+	out, err := format.Source(buf.Bytes())
+	if err != nil {
+		out = buf.Bytes()
+	}
 	if len(out) == 0 || out[len(out)-1] != '\n' {
 		out = append(out, '\n')
 	}
