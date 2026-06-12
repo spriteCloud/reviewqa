@@ -129,3 +129,12 @@ func Intersects(added []Range, start, end int) bool {
 	}
 	return false
 }
+
+// TotalAdded sums the number of added lines across every range.
+func TotalAdded(added []Range) int {
+	n := 0
+	for _, r := range added {
+		n += r.End - r.Start + 1
+	}
+	return n
+}
