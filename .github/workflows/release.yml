@@ -3,7 +3,7 @@ name: release
 on:
   push:
     tags:
-      - 'v*'
+      - 'v[0-9]+.[0-9]+.[0-9]+'    # only full semver tags; ignore floating v1 etc.
 
 permissions:
   contents: write
