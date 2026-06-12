@@ -83,8 +83,60 @@ func templateLocation(t plan.Template) (string, string) {
 }
 
 var funcs = template.FuncMap{
-	"lower": strings.ToLower,
-	"upper": strings.ToUpper,
+	"lower":     strings.ToLower,
+	"upper":     strings.ToUpper,
+	"hasPrefix": strings.HasPrefix,
+	"firstClickable": func(as []ast.LocatorAnchor) []ast.LocatorAnchor {
+		for _, a := range as {
+			switch a.Tag {
+			case "button", "summary", "a", "input":
+				return []ast.LocatorAnchor{a}
+			}
+		}
+		return nil
+	},
+	"locatorFor": func(a ast.LocatorAnchor) string {
+		switch {
+		case a.TestID != "":
+			return fmt.Sprintf("getByTestId('%s')", a.TestID)
+		case a.Aria != "":
+			return fmt.Sprintf("getByLabel('%s')", a.Aria)
+		case a.Role != "":
+			return fmt.Sprintf("getByRole('%s')", a.Role)
+		}
+		return "locator('body')"
+	},
+	"anchorLabel": func(a ast.LocatorAnchor) string {
+		switch {
+		case a.TestID != "":
+			return a.TestID
+		case a.Aria != "":
+			return a.Aria
+		case a.Role != "":
+			return a.Role
+		}
+		return "element"
+	},
+	"isPrimitiveType": func(t string) bool {
+		switch strings.TrimSpace(t) {
+		case "int", "long", "short", "byte", "double", "float", "boolean", "char":
+			return true
+		}
+		return false
+	},
+	"defaultForType": func(t string) string {
+		switch strings.TrimSpace(t) {
+		case "int", "long", "short", "byte", "double", "float":
+			return "0"
+		case "boolean":
+			return "false"
+		case "char":
+			return "'\\0'"
+		case "string", "String":
+			return "\"\""
+		}
+		return "null"
+	},
 }
 
 type renderData struct {

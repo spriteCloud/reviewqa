@@ -44,6 +44,12 @@ type Symbol struct {
 	HasError      bool
 	HasResult     bool
 	PrimaryReturn string
+	// Component-shaped signals. Populated by the TS extractor for KindComponent
+	// symbols; drive multi-scenario Playwright scaffolds.
+	Anchors     []LocatorAnchor
+	HasState    bool
+	HasOnClick  bool
+	HasOnSubmit bool
 }
 
 type LocatorAnchor struct {
@@ -55,6 +61,9 @@ type LocatorAnchor struct {
 	CSS    string
 	File   string
 	Line   int
+	// Tag is the lowercased HTML element the anchor sits on (e.g. "button",
+	// "summary", "form"). Used by templates to pick clickable shapes.
+	Tag string
 }
 
 type Extractor interface {

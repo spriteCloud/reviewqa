@@ -50,10 +50,10 @@ func TestEndToEnd_AllLanguages(t *testing.T) {
 		gotByLang[r.Symbol.Language] = string(r.Content)
 	}
 	checks := map[string][]string{
-		"ts":     {"describe(", "add(0, 0)"},
-		"python": {"def test_", "client.get"},
-		"go":     {"package server", "httptest.NewRequest"},
-		"java":   {"package com.acme;", "RestAssured"},
+		"ts":     {"describe(", "add(0, 0)", "it.each(", "'returns a value for arguments"},
+		"python": {"def test_", "client.get", "application/json", "body is not None"},
+		"go":     {"package server", "httptest.NewRequest", `t.Run("content-type header set"`, `t.Run("response body non-empty"`},
+		"java":   {"package com.acme;", "RestAssured", "contentType(ContentType.JSON)", "notNullValue()"},
 	}
 	for lang, want := range checks {
 		body, ok := gotByLang[lang]

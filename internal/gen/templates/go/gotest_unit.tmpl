@@ -31,4 +31,20 @@ func Test{{.Symbol.Name}}(t *testing.T) {
 		{{.Symbol.Name}}({{.HappyArgs}})
 {{- end }}
 	})
+{{- if and .Symbol.HasResult (ne .Symbol.PrimaryReturn "") }}
+
+	t.Run("returns expected type", func(t *testing.T) {
+{{- if .Symbol.HasError }}
+		got, err := {{.Symbol.Name}}({{.HappyArgs}})
+		if err != nil {
+			t.Fatalf("unexpected error: %v", err)
+		}
+{{- else }}
+		got := {{.Symbol.Name}}({{.HappyArgs}})
+{{- end }}
+		if got, want := reflect.TypeOf(got), reflect.TypeOf(*new({{.Symbol.PrimaryReturn}})); got != want {
+			t.Fatalf("type = %v, want %v", got, want)
+		}
+	})
+{{- end }}
 }

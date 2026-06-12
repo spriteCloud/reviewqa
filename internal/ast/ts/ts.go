@@ -187,8 +187,119 @@ func (extractor) Extract(file string, content []byte) ([]ast.Symbol, []ast.Locat
 	}
 	if hasJSX {
 		anchors = extractAnchors(file, content)
+		annotateComponents(syms, anchors, content)
 	}
 	return syms, anchors
+}
+
+// annotateComponents post-processes the discovered symbols, computing each
+// KindComponent's EndLine via brace/paren balance and attaching the deduped
+// anchors that fall inside its line window. It also sets the component's
+// HasState/HasOnClick/HasOnSubmit flags based on substring presence within
+// the body.
+func annotateComponents(syms []ast.Symbol, anchors []ast.LocatorAnchor, content []byte) {
+	if len(syms) == 0 {
+		return
+	}
+	lines := splitLines(content)
+	for i := range syms {
+		if syms[i].Kind != ast.KindComponent {
+			continue
+		}
+		end := componentEndLine(lines, syms[i].Line)
+		syms[i].EndLine = end
+		body := strings.Join(lines[syms[i].Line-1:end], "\n")
+		if strings.Contains(body, "useState") || strings.Contains(body, "useReducer") {
+			syms[i].HasState = true
+		}
+		if strings.Contains(body, "onClick=") {
+			syms[i].HasOnClick = true
+		}
+		if strings.Contains(body, "onSubmit=") {
+			syms[i].HasOnSubmit = true
+		}
+		seen := map[string]bool{}
+		for _, a := range anchors {
+			if a.Line < syms[i].Line || a.Line > end {
+				continue
+			}
+			if a.Tag == "" {
+				a.Tag = tagOnLine(lines[a.Line-1])
+			}
+			key := a.TestID + "|" + a.Role + "|" + a.Aria + "|" + a.Tag
+			if seen[key] {
+				continue
+			}
+			seen[key] = true
+			syms[i].Anchors = append(syms[i].Anchors, a)
+		}
+	}
+}
+
+func splitLines(content []byte) []string {
+	return strings.Split(string(content), "\n")
+}
+
+// componentEndLine returns the 1-based line number where the component body
+// ends. It tracks combined brace + paren depth from startLine forward; the
+// component ends when depth returns to 0 after first becoming positive.
+func componentEndLine(lines []string, startLine int) int {
+	if startLine < 1 || startLine > len(lines) {
+		return startLine
+	}
+	depth := 0
+	opened := false
+	for i := startLine - 1; i < len(lines); i++ {
+		depth += braceParenDelta(lines[i])
+		if depth > 0 {
+			opened = true
+		}
+		if opened && depth <= 0 {
+			return i + 1
+		}
+	}
+	return len(lines)
+}
+
+// braceParenDelta returns the net change in combined {…} + (…) depth across
+// the line, ignoring characters inside strings and after `//` comments.
+func braceParenDelta(s string) int {
+	depth := 0
+	inStr := byte(0)
+	for i := 0; i < len(s); i++ {
+		c := s[i]
+		if inStr != 0 {
+			if c == '\\' && i+1 < len(s) {
+				i++
+				continue
+			}
+			if c == inStr {
+				inStr = 0
+			}
+			continue
+		}
+		if c == '/' && i+1 < len(s) && s[i+1] == '/' {
+			break
+		}
+		switch c {
+		case '"', '\'', '`':
+			inStr = c
+		case '{', '(':
+			depth++
+		case '}', ')':
+			depth--
+		}
+	}
+	return depth
+}
+
+var reTagOnLine = regexp.MustCompile(`<\s*([a-zA-Z][\w-]*)`)
+
+func tagOnLine(line string) string {
+	if m := reTagOnLine.FindStringSubmatch(line); m != nil {
+		return strings.ToLower(m[1])
+	}
+	return ""
 }
 
 // nextLogicalLine joins continuation lines (where parens are unbalanced) into
@@ -278,14 +389,15 @@ func extractAnchors(file string, content []byte) []ast.LocatorAnchor {
 	for sc.Scan() {
 		line++
 		text := sc.Text()
+		tag := tagOnLine(text)
 		if m := reTestID.FindStringSubmatch(text); m != nil {
-			anchors = append(anchors, ast.LocatorAnchor{TestID: m[1], File: file, Line: line})
+			anchors = append(anchors, ast.LocatorAnchor{TestID: m[1], File: file, Line: line, Tag: tag})
 		}
 		if m := reAria.FindStringSubmatch(text); m != nil {
-			anchors = append(anchors, ast.LocatorAnchor{Aria: m[1], File: file, Line: line})
+			anchors = append(anchors, ast.LocatorAnchor{Aria: m[1], File: file, Line: line, Tag: tag})
 		}
 		if m := reRole.FindStringSubmatch(text); m != nil {
-			anchors = append(anchors, ast.LocatorAnchor{Role: m[1], File: file, Line: line})
+			anchors = append(anchors, ast.LocatorAnchor{Role: m[1], File: file, Line: line, Tag: tag})
 		}
 	}
 	return anchors

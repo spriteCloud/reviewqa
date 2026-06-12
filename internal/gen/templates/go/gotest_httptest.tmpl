@@ -8,10 +8,31 @@ import (
 )
 
 func Test{{.Symbol.Name}}(t *testing.T) {
-	req := httptest.NewRequest(http.MethodGet, "/", nil)
-	rr := httptest.NewRecorder()
-	{{.Symbol.Name}}(rr, req)
-	if rr.Code < 200 || rr.Code >= 300 {
-		t.Fatalf("status = %d, want 2xx", rr.Code)
+	newCall := func() *httptest.ResponseRecorder {
+		req := httptest.NewRequest(http.MethodGet, "/", nil)
+		rr := httptest.NewRecorder()
+		{{.Symbol.Name}}(rr, req)
+		return rr
 	}
+
+	t.Run("happy path 2xx", func(t *testing.T) {
+		rr := newCall()
+		if rr.Code < 200 || rr.Code >= 300 {
+			t.Fatalf("status = %d, want 2xx", rr.Code)
+		}
+	})
+
+	t.Run("content-type header set", func(t *testing.T) {
+		rr := newCall()
+		if rr.Header().Get("Content-Type") == "" {
+			t.Fatalf("missing Content-Type header")
+		}
+	})
+
+	t.Run("response body non-empty", func(t *testing.T) {
+		rr := newCall()
+		if rr.Body.Len() == 0 {
+			t.Fatalf("empty response body")
+		}
+	})
 }

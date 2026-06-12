@@ -61,6 +61,63 @@ export class FooComponent {
 	}
 }
 
+func TestReactComponentEndLineAndAnchors(t *testing.T) {
+	src := []byte(`import { useState } from 'react'
+
+export function FAQ() {
+  const [open, setOpen] = useState<number | null>(null)
+  return (
+    <div className="faq-list" data-testid="faq-list">
+      <button data-testid="faq-toggle" onClick={() => setOpen(0)}>One</button>
+      <button data-testid="faq-toggle" onClick={() => setOpen(1)}>Two</button>
+      <summary role="heading" aria-label="Item one">One</summary>
+    </div>
+  )
+}
+`)
+	syms, _ := New().Extract("src/components/FAQ.tsx", src)
+	var comp *ast.Symbol
+	for i := range syms {
+		if syms[i].Kind == ast.KindComponent && syms[i].Name == "FAQ" {
+			comp = &syms[i]
+			break
+		}
+	}
+	if comp == nil {
+		t.Fatalf("missing FAQ component; syms = %+v", syms)
+	}
+	if comp.EndLine <= comp.Line {
+		t.Errorf("EndLine (%d) should be after Line (%d)", comp.EndLine, comp.Line)
+	}
+	if !comp.HasState {
+		t.Error("HasState should be true for useState")
+	}
+	if !comp.HasOnClick {
+		t.Error("HasOnClick should be true")
+	}
+	// Dedup: two `data-testid="faq-toggle"` on a <button> → one anchor.
+	tagCount := map[string]int{}
+	for _, a := range comp.Anchors {
+		key := a.TestID + "|" + a.Role + "|" + a.Aria + "|" + a.Tag
+		tagCount[key]++
+	}
+	for k, n := range tagCount {
+		if n != 1 {
+			t.Errorf("anchor %q deduped to %d, want 1", k, n)
+		}
+	}
+	// Must have at least one button-tagged anchor for click scenarios.
+	var hasButton bool
+	for _, a := range comp.Anchors {
+		if a.Tag == "button" {
+			hasButton = true
+		}
+	}
+	if !hasButton {
+		t.Errorf("no button anchor on component; anchors = %+v", comp.Anchors)
+	}
+}
+
 func TestNestController(t *testing.T) {
 	src := []byte(`import { Controller, Get } from '@nestjs/common'
 
