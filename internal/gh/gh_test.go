@@ -26,8 +26,8 @@ func TestIsAlreadyExists(t *testing.T) {
 		t.Error("unrelated err should not be 'already exists'")
 	}
 	resp := &github.ErrorResponse{
-		Response: &http.Response{StatusCode: http.StatusUnprocessableEntity},
-		Message:  "Reference already exists",
+		Response:	&http.Response{StatusCode: http.StatusUnprocessableEntity},
+		Message:	"Reference already exists",
 	}
 	if !isAlreadyExists(resp) {
 		t.Error("422 + Reference already exists should match")
@@ -39,8 +39,8 @@ func newTestClient(t *testing.T, handler http.Handler) (*Client, *httptest.Serve
 	srv := httptest.NewServer(handler)
 	t.Cleanup(srv.Close)
 	cfg := config.Config{
-		GitHubToken: "test-token",
-		Repo:        "acme/widget",
+		GitHubToken:	"test-token",
+		Repo:		"acme/widget",
 	}
 	c, err := New(context.Background(), cfg)
 	if err != nil {
@@ -61,10 +61,10 @@ func TestFetchDiff(t *testing.T) {
 		}
 		w.Header().Set("Content-Type", "application/json")
 		_ = json.NewEncoder(w).Encode(map[string]any{
-			"number": 7,
-			"title":  "feat: thing",
-			"head":   map[string]any{"ref": "feature", "sha": "abcdef1234567890"},
-			"base":   map[string]any{"ref": "main", "sha": "0000000000000000"},
+			"number":	7,
+			"title":	"feat: thing",
+			"head":		map[string]any{"ref": "feature", "sha": "abcdef1234567890"},
+			"base":		map[string]any{"ref": "main", "sha": "0000000000000000"},
 		})
 	})
 	c, _ := newTestClient(t, mux)
@@ -88,8 +88,8 @@ func TestOpenPRHappyPath(t *testing.T) {
 	mux.HandleFunc("/repos/acme/widget/git/ref/heads/main", func(w http.ResponseWriter, r *http.Request) {
 		calls = append(calls, apiCall{r.Method, r.URL.Path})
 		_ = json.NewEncoder(w).Encode(map[string]any{
-			"ref":    "refs/heads/main",
-			"object": map[string]any{"sha": "basesha"},
+			"ref":		"refs/heads/main",
+			"object":	map[string]any{"sha": "basesha"},
 		})
 	})
 	mux.HandleFunc("/repos/acme/widget/git/trees", func(w http.ResponseWriter, r *http.Request) {
@@ -112,8 +112,8 @@ func TestOpenPRHappyPath(t *testing.T) {
 	})
 	c, _ := newTestClient(t, mux)
 	url, err := c.OpenPR(context.Background(), PROpts{
-		BaseBranch: "main", NewBranch: "x", Title: "t", Body: "b",
-		Files: map[string][]byte{"a/b.txt": []byte("hi")},
+		BaseBranch:	"main", NewBranch: "x", Title: "t", Body: "b",
+		Files:	map[string][]byte{"a/b.txt": []byte("hi")},
 	})
 	if err != nil {
 		t.Fatalf("OpenPR: %v", err)
@@ -137,8 +137,8 @@ func TestOpenPRBranchAlreadyExists(t *testing.T) {
 	mux := http.NewServeMux()
 	mux.HandleFunc("/repos/acme/widget/git/ref/heads/main", func(w http.ResponseWriter, r *http.Request) {
 		_ = json.NewEncoder(w).Encode(map[string]any{
-			"ref":    "refs/heads/main",
-			"object": map[string]any{"sha": "basesha"},
+			"ref":		"refs/heads/main",
+			"object":	map[string]any{"sha": "basesha"},
 		})
 	})
 	mux.HandleFunc("/repos/acme/widget/git/trees", func(w http.ResponseWriter, r *http.Request) {
@@ -162,8 +162,8 @@ func TestOpenPRBranchAlreadyExists(t *testing.T) {
 	})
 	c, _ := newTestClient(t, mux)
 	url, err := c.OpenPR(context.Background(), PROpts{
-		BaseBranch: "main", NewBranch: "x", Title: "t", Body: "b",
-		Files: map[string][]byte{"a.txt": []byte("hi")},
+		BaseBranch:	"main", NewBranch: "x", Title: "t", Body: "b",
+		Files:	map[string][]byte{"a.txt": []byte("hi")},
 	})
 	if err != nil {
 		t.Fatalf("OpenPR: %v", err)
@@ -174,4 +174,11 @@ func TestOpenPRBranchAlreadyExists(t *testing.T) {
 	if url == "" {
 		t.Error("empty url")
 	}
+}
+func TestReadFile(t *testing.T) {
+	t.Run("happy path", func(t *testing.T) {
+		if err := ReadFile(nil, "", ""); err != nil {
+			t.Fatalf("unexpected error: %v", err)
+		}
+	})
 }

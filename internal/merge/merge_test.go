@@ -61,3 +61,8 @@ func TestAppendUnknownLanguageReturnsFalse(t *testing.T) {
 		t.Fatal("expected ok=false for java")
 	}
 }
+func TestAppend(t *testing.T) {
+	t.Run("happy path", func(t *testing.T) {
+		Append("", nil, nil)
+	})
+}
