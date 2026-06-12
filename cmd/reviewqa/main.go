@@ -26,6 +26,7 @@ import (
 	"github.com/reviewqa/reviewqa/internal/heal"
 	"github.com/reviewqa/reviewqa/internal/llm"
 	rlog "github.com/reviewqa/reviewqa/internal/log"
+	"github.com/reviewqa/reviewqa/internal/merge"
 	"github.com/reviewqa/reviewqa/internal/plan"
 )
 
@@ -194,7 +195,24 @@ func runGenerate(ctx context.Context, cfg config.Config) error {
 	branch := fmt.Sprintf("%s/tests-pr-%d-%s", cfg.BranchPrefix, cfg.PRNumber, shortSHA(prInfo.HeadSHA))
 	body := genPRBody(prInfo, rendered)
 	files2 := map[string][]byte{}
-	for _, r := range rendered {
+	for i, r := range rendered {
+		existing, found, err := client.ReadFile(ctx, r.Path, prInfo.HeadSHA)
+		if err != nil {
+			rlog.Warn("could not check existing test file; will write fresh", "path", r.Path, "err", err)
+		}
+		if found {
+			if merged, ok := merge.Append(r.Symbol.Language, []byte(existing), r.Content); ok {
+				rlog.Info("appending to existing test file", "path", r.Path, "symbol", r.Symbol.Name)
+				rendered[i].Content = merged
+				files2[r.Path] = merged
+				continue
+			}
+			alt := siblingPath(r.Path)
+			rlog.Info("existing test file present; writing to sibling", "from", r.Path, "to", alt)
+			rendered[i].Path = alt
+			files2[alt] = r.Content
+			continue
+		}
 		files2[r.Path] = r.Content
 	}
 	url, err := client.OpenPR(ctx, gh.PROpts{
@@ -208,6 +226,33 @@ func runGenerate(ctx context.Context, cfg config.Config) error {
 	rlog.Info("opened test PR", "url", url)
 	writeStepSummary(generateSummary(prInfo, rendered, url))
 	return nil
+}
+
+// siblingPath inserts "_reviewqa" before the test suffix so the generated
+// file lands next to the existing one instead of overwriting it.
+//
+//	internal/diff/diff_test.go   -> internal/diff/diff_reviewqa_test.go
+//	src/foo.test.ts              -> src/foo.reviewqa.test.ts
+//	tests/test_users.py          -> tests/test_users_reviewqa.py
+//	src/test/java/x/YTest.java   -> src/test/java/x/YReviewqaTest.java
+func siblingPath(p string) string {
+	dir, base := filepath.Split(p)
+	switch {
+	case strings.HasSuffix(base, "_test.go"):
+		return dir + strings.TrimSuffix(base, "_test.go") + "_reviewqa_test.go"
+	case strings.HasSuffix(base, ".test.ts"):
+		return dir + strings.TrimSuffix(base, ".test.ts") + ".reviewqa.test.ts"
+	case strings.HasSuffix(base, ".test.js"):
+		return dir + strings.TrimSuffix(base, ".test.js") + ".reviewqa.test.js"
+	case strings.HasSuffix(base, ".spec.ts"):
+		return dir + strings.TrimSuffix(base, ".spec.ts") + ".reviewqa.spec.ts"
+	case strings.HasSuffix(base, ".py"):
+		return dir + strings.TrimSuffix(base, ".py") + "_reviewqa.py"
+	case strings.HasSuffix(base, "Test.java"):
+		return dir + strings.TrimSuffix(base, "Test.java") + "ReviewqaTest.java"
+	}
+	ext := filepath.Ext(base)
+	return dir + strings.TrimSuffix(base, ext) + "_reviewqa" + ext
 }
 
 func runHeal(ctx context.Context, cfg config.Config) error {

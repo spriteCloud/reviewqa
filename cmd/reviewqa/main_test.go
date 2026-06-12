@@ -120,6 +120,23 @@ func TestHealPRBody(t *testing.T) {
 	}
 }
 
+func TestSiblingPath(t *testing.T) {
+	cases := map[string]string{
+		"internal/diff/diff_test.go":  "internal/diff/diff_reviewqa_test.go",
+		"src/foo.test.ts":             "src/foo.reviewqa.test.ts",
+		"src/foo.test.js":             "src/foo.reviewqa.test.js",
+		"tests/e2e/foo.spec.ts":       "tests/e2e/foo.reviewqa.spec.ts",
+		"tests/test_users.py":         "tests/test_users_reviewqa.py",
+		"src/test/java/x/YTest.java":  "src/test/java/x/YReviewqaTest.java",
+		"some/other.txt":              "some/other_reviewqa.txt",
+	}
+	for in, want := range cases {
+		if got := siblingPath(in); got != want {
+			t.Errorf("siblingPath(%q) = %q, want %q", in, got, want)
+		}
+	}
+}
+
 func TestWriteStepSummary(t *testing.T) {
 	dir := t.TempDir()
 	p := filepath.Join(dir, "summary.md")
