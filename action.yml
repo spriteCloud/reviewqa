@@ -9,9 +9,9 @@ inputs:
     description: PR number. Defaults to the event payload.
     required: false
   github-token:
-    description: Token used to open the follow-up PR. Defaults to ${{ github.token }}.
+    description: Token used to open the follow-up PR. Defaults to the workflow's GITHUB_TOKEN.
     required: false
-    default: ${{ github.token }}
+    default: ''
   openai-base-url:
     description: OpenAI-compatible base URL (ollama, vLLM, DGX-hosted vLLM, etc.).
     required: false
@@ -84,7 +84,7 @@ runs:
       if: inputs.run-generate == 'true'
       shell: bash
       env:
-        GITHUB_TOKEN: ${{ inputs.github-token }}
+        GITHUB_TOKEN: ${{ inputs.github-token != '' && inputs.github-token || github.token }}
         OPENAI_BASE_URL: ${{ inputs.openai-base-url }}
         OPENAI_API_KEY: ${{ inputs.openai-api-key }}
         REVIEWQA_MODEL: ${{ inputs.model }}
@@ -95,7 +95,7 @@ runs:
       if: inputs.run-heal == 'true' && inputs.heal-mode != 'off'
       shell: bash
       env:
-        GITHUB_TOKEN: ${{ inputs.github-token }}
+        GITHUB_TOKEN: ${{ inputs.github-token != '' && inputs.github-token || github.token }}
         OPENAI_BASE_URL: ${{ inputs.openai-base-url }}
         OPENAI_API_KEY: ${{ inputs.openai-api-key }}
         REVIEWQA_MODEL: ${{ inputs.model }}
