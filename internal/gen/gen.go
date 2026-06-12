@@ -66,6 +66,8 @@ func templateLocation(t plan.Template) (string, string) {
 		return "ts", "jest_api.tmpl"
 	case plan.TmplPlaywrightE2E:
 		return "ts", "pw_e2e.tmpl"
+	case plan.TmplPlaywrightHappyFlow:
+		return "ts", "pw_happyflow.tmpl"
 	case plan.TmplPytestUnit:
 		return "py", "pytest_unit.tmpl"
 	case plan.TmplPytestAPI:
@@ -141,6 +143,8 @@ var funcs = template.FuncMap{
 
 type renderData struct {
 	Symbol          ast.Symbol
+	Symbols         []ast.Symbol // populated for happy-flow; first == Symbol
+	PageURL         string       // populated for happy-flow; "/" default
 	ImportPath      string
 	AppImportPath   string
 	SupertestMethod string
@@ -151,6 +155,14 @@ type renderData struct {
 
 func buildData(it plan.Item, workDir string) renderData {
 	d := renderData{Symbol: it.Symbol}
+	d.Symbols = it.Symbols
+	if len(d.Symbols) == 0 {
+		d.Symbols = []ast.Symbol{it.Symbol}
+	}
+	d.PageURL = it.PageURL
+	if d.PageURL == "" {
+		d.PageURL = "/"
+	}
 	d.HappyArgs = happyArgs(it.Symbol)
 	d.SnakeName = toSnake(it.Symbol.Name)
 	d.SupertestMethod = strings.ToLower(it.Symbol.Method)

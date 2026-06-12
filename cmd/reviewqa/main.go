@@ -397,7 +397,7 @@ func genPRBody(pr *prSummary, rs []gen.Rendered) string {
 	for _, r := range rs {
 		fmt.Fprintf(&b, "- `%s` — covers `%s` (%s)\n", r.Path, r.Symbol.Name, r.Symbol.Language)
 	}
-	b.WriteString("\nThese are scaffolds with one happy-path assertion. Review and extend with edge cases.\n")
+	b.WriteString("\nEach scaffold contains one or more deterministic happy-path scenarios per component or symbol. Review and extend with edge cases.\n")
 	return b.String()
 }
 

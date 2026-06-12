@@ -52,6 +52,163 @@ func TestBuildPicksTemplatesPerLanguage(t *testing.T) {
 	}
 }
 
+func TestBuildGroupsComponentsByPageRoot(t *testing.T) {
+	dir := t.TempDir()
+	must := func(rel, body string) string {
+		full := filepath.Join(dir, rel)
+		os.MkdirAll(filepath.Dir(full), 0o755)
+		if err := os.WriteFile(full, []byte(body), 0o644); err != nil {
+			t.Fatal(err)
+		}
+		return rel
+	}
+	// Two TSX components, both mounted by pages/Home.tsx.
+	must("pages/Home.tsx", `import { Counter } from '../src/Counter'
+import { FAQ } from '../src/FAQ'
+export default function Home() {
+  return (<main><Counter /><FAQ items={[]} /></main>)
+}
+`)
+	counterPath := must("src/Counter.tsx", `import { useState } from 'react'
+export function Counter() {
+  const [v, setV] = useState(0)
+  return (<div data-testid="counter-root"><button data-testid="inc" onClick={()=>setV(v+1)}>+</button></div>)
+}
+`)
+	faqPath := must("src/FAQ.tsx", `export function FAQ({items}: any) {
+  return (<div data-testid="faq-list"><summary data-testid="faq-toggle">q</summary></div>)
+}
+`)
+
+	files := []diff.File{
+		{Path: counterPath, Added: []diff.Range{{Start: 1, End: 20}}, Status: "added"},
+		{Path: faqPath, Added: []diff.Range{{Start: 1, End: 10}}, Status: "added"},
+	}
+	t.Setenv("REVIEWQA_E2E_STYLE", "")
+	items := Build(files, Detect(dir))
+
+	var flow *Item
+	for i := range items {
+		if items[i].Template == TmplPlaywrightHappyFlow {
+			flow = &items[i]
+		}
+		if items[i].Template == TmplPlaywrightE2E {
+			t.Errorf("expected no per-component E2E items, found: %+v", items[i])
+		}
+	}
+	if flow == nil {
+		t.Fatalf("no happy-flow item; items = %+v", items)
+	}
+	if len(flow.Symbols) != 2 {
+		t.Errorf("flow.Symbols len = %d, want 2: %+v", len(flow.Symbols), flow.Symbols)
+	}
+	if flow.PageURL != "/home" {
+		t.Errorf("PageURL = %q, want /home", flow.PageURL)
+	}
+	if flow.OutPath != "tests/e2e/Home.spec.ts" {
+		t.Errorf("OutPath = %q", flow.OutPath)
+	}
+}
+
+func TestBuildEmitsHappyFlowForHTMLPage(t *testing.T) {
+	dir := t.TempDir()
+	indexHTML := `<!doctype html><html><body>
+<header data-testid="hero">hi</header>
+<nav role="navigation">n</nav>
+<button aria-label="install">i</button>
+</body></html>
+`
+	indexPath := "index.html"
+	os.WriteFile(filepath.Join(dir, indexPath), []byte(indexHTML), 0o644)
+
+	files := []diff.File{
+		{Path: indexPath, Added: []diff.Range{{Start: 1, End: 10}}, Status: "modified", NewBlob: indexHTML},
+	}
+	items := Build(files, Detect(dir))
+
+	var flow *Item
+	for i := range items {
+		if items[i].Template == TmplPlaywrightHappyFlow {
+			flow = &items[i]
+		}
+	}
+	if flow == nil {
+		t.Fatalf("no happy-flow item for index.html; items = %+v", items)
+	}
+	if flow.PageURL != "/" {
+		t.Errorf("PageURL = %q, want /", flow.PageURL)
+	}
+	if flow.OutPath != "tests/e2e/index.spec.ts" {
+		t.Errorf("OutPath = %q", flow.OutPath)
+	}
+	if len(flow.Symbols) != 1 || len(flow.Symbols[0].Anchors) < 3 {
+		t.Errorf("expected 1 synthetic symbol with ≥3 anchors, got %+v", flow.Symbols)
+	}
+}
+
+func TestBuildFallsBackToPerComponentWhenNoPage(t *testing.T) {
+	dir := t.TempDir()
+	must := func(rel, body string) string {
+		full := filepath.Join(dir, rel)
+		os.MkdirAll(filepath.Dir(full), 0o755)
+		os.WriteFile(full, []byte(body), 0o644)
+		return rel
+	}
+	counterPath := must("src/Counter.tsx", `export function Counter() {
+  return (<div data-testid="counter-root"></div>)
+}
+`)
+	faqPath := must("src/FAQ.tsx", `export function FAQ() {
+  return (<div data-testid="faq-list"></div>)
+}
+`)
+	files := []diff.File{
+		{Path: counterPath, Added: []diff.Range{{Start: 1, End: 5}}, Status: "added"},
+		{Path: faqPath, Added: []diff.Range{{Start: 1, End: 5}}, Status: "added"},
+	}
+	items := Build(files, Detect(dir))
+	got := 0
+	for _, it := range items {
+		if it.Template == TmplPlaywrightE2E {
+			got++
+		}
+		if it.Template == TmplPlaywrightHappyFlow {
+			t.Errorf("unexpected happy-flow item without a page root: %+v", it)
+		}
+	}
+	if got != 2 {
+		t.Errorf("expected 2 per-component E2E items, got %d", got)
+	}
+}
+
+func TestE2EStyleEnvOverride_ForcesPerComponent(t *testing.T) {
+	dir := t.TempDir()
+	must := func(rel, body string) string {
+		full := filepath.Join(dir, rel)
+		os.MkdirAll(filepath.Dir(full), 0o755)
+		os.WriteFile(full, []byte(body), 0o644)
+		return rel
+	}
+	must("pages/Home.tsx", `import { Counter } from '../src/Counter'
+import { FAQ } from '../src/FAQ'
+export default function Home() { return (<main><Counter /><FAQ /></main>) }
+`)
+	counterPath := must("src/Counter.tsx", `export function Counter() { return (<div data-testid="c"></div>) }`)
+	faqPath := must("src/FAQ.tsx", `export function FAQ() { return (<div data-testid="f"></div>) }`)
+
+	files := []diff.File{
+		{Path: counterPath, Added: []diff.Range{{Start: 1, End: 5}}, Status: "added"},
+		{Path: faqPath, Added: []diff.Range{{Start: 1, End: 5}}, Status: "added"},
+	}
+	t.Setenv("REVIEWQA_E2E_STYLE", "per-component")
+	items := Build(files, Detect(dir))
+	for _, it := range items {
+		if it.Template == TmplPlaywrightHappyFlow {
+			t.Errorf("env override should disable happy-flow grouping, got %+v", it)
+		}
+	}
+}
+
 func TestLayoutDetection(t *testing.T) {
 	dir := t.TempDir()
 	os.MkdirAll(filepath.Join(dir, "__tests__"), 0o755)
