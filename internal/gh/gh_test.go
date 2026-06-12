@@ -175,3 +175,10 @@ func TestOpenPRBranchAlreadyExists(t *testing.T) {
 		t.Error("empty url")
 	}
 }
+func TestReadFile(t *testing.T) {
+	t.Run("happy path", func(t *testing.T) {
+		if err := ReadFile(nil, "", ""); err != nil {
+			t.Fatalf("unexpected error: %v", err)
+		}
+	})
+}
