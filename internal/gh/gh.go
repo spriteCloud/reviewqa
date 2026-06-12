@@ -88,6 +88,24 @@ func (c *Client) readBlob(ctx context.Context, owner, repo, path, ref string) (s
 	return *f.Content, nil
 }
 
+// ReadFile returns the file content at the given ref. found=false means the
+// file does not exist (HTTP 404); any other failure is returned as err.
+func (c *Client) ReadFile(ctx context.Context, path, ref string) (content string, found bool, err error) {
+	owner, repo, ok := c.cfg.SplitRepo()
+	if !ok {
+		return "", false, fmt.Errorf("gh: invalid GITHUB_REPOSITORY %q", c.cfg.Repo)
+	}
+	s, err := c.readBlob(ctx, owner, repo, path, ref)
+	if err != nil {
+		var ge *github.ErrorResponse
+		if errors.As(err, &ge) && ge.Response != nil && ge.Response.StatusCode == http.StatusNotFound {
+			return "", false, nil
+		}
+		return "", false, err
+	}
+	return s, true, nil
+}
+
 type PROpts struct {
 	BaseBranch string
 	NewBranch  string
