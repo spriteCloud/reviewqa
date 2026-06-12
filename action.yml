@@ -1,6 +1,9 @@
 name: reviewqa
 description: Generate tests for a PR and heal Playwright locators on failure.
-author: reviewqa
+author: spriteCloud
+branding:
+  icon: target
+  color: blue
 inputs:
   pr:
     description: PR number. Defaults to the event payload.
