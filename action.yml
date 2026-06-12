@@ -1,0 +1,108 @@
+name: reviewqa
+description: Generate tests for a PR and heal Playwright locators on failure.
+author: reviewqa
+inputs:
+  pr:
+    description: PR number. Defaults to the event payload.
+    required: false
+  github-token:
+    description: Token used to open the follow-up PR. Defaults to ${{ github.token }}.
+    required: false
+    default: ${{ github.token }}
+  openai-base-url:
+    description: OpenAI-compatible base URL (ollama, vLLM, DGX-hosted vLLM, etc.).
+    required: false
+    default: https://api.openai.com/v1
+  openai-api-key:
+    description: API key for the inference endpoint. Leave empty to skip LLM humanization entirely.
+    required: false
+    default: ""
+  model:
+    description: Model name for the chat-completions request.
+    required: false
+    default: gpt-4o-mini
+  heal-mode:
+    description: on-failure | proactive | off
+    required: false
+    default: on-failure
+  playwright-report:
+    description: Path to playwright JSON report; required when heal-mode=on-failure.
+    required: false
+    default: playwright-report.json
+  run-generate:
+    description: Whether to run `reviewqa generate`. Set to "false" to only heal.
+    required: false
+    default: "true"
+  run-heal:
+    description: Whether to run `reviewqa heal`. Set to "false" to only generate.
+    required: false
+    default: "true"
+  log-level:
+    description: debug | info | warn | error
+    required: false
+    default: info
+  version:
+    description: reviewqa release tag to install. Defaults to "latest".
+    required: false
+    default: latest
+runs:
+  using: composite
+  steps:
+    - name: Install reviewqa
+      shell: bash
+      run: |
+        set -euo pipefail
+        ver='${{ inputs.version }}'
+        os=$(uname -s | tr '[:upper:]' '[:lower:]')
+        arch=$(uname -m)
+        case "$arch" in
+          x86_64) arch=amd64 ;;
+          aarch64|arm64) arch=arm64 ;;
+        esac
+        if [ "$ver" = "latest" ]; then
+          ver=$(curl -fsSL https://api.github.com/repos/reviewqa/reviewqa/releases/latest | grep tag_name | cut -d'"' -f4)
+        fi
+        base="https://github.com/reviewqa/reviewqa/releases/download/${ver}"
+        archive="reviewqa_${os}_${arch}.tar.gz"
+        tmp=$(mktemp -d)
+        curl -fsSL "$base/$archive" -o "$tmp/$archive"
+        if curl -fsSL "$base/checksums.txt" -o "$tmp/checksums.txt"; then
+          (cd "$tmp" && sha256sum -c --ignore-missing checksums.txt) || {
+            echo "reviewqa: checksum verification failed" >&2
+            exit 1
+          }
+        else
+          echo "reviewqa: checksums.txt unavailable; proceeding without verification" >&2
+        fi
+        tar -xzf "$tmp/$archive" -C "$tmp"
+        sudo install -m 0755 "$tmp/reviewqa" /usr/local/bin/reviewqa
+        reviewqa --version
+    - name: reviewqa generate
+      if: inputs.run-generate == 'true'
+      shell: bash
+      env:
+        GITHUB_TOKEN: ${{ inputs.github-token }}
+        OPENAI_BASE_URL: ${{ inputs.openai-base-url }}
+        OPENAI_API_KEY: ${{ inputs.openai-api-key }}
+        REVIEWQA_MODEL: ${{ inputs.model }}
+        REVIEWQA_PR: ${{ inputs.pr }}
+        REVIEWQA_LOG_LEVEL: ${{ inputs.log-level }}
+      run: reviewqa generate
+    - name: reviewqa heal
+      if: inputs.run-heal == 'true' && inputs.heal-mode != 'off'
+      shell: bash
+      env:
+        GITHUB_TOKEN: ${{ inputs.github-token }}
+        OPENAI_BASE_URL: ${{ inputs.openai-base-url }}
+        OPENAI_API_KEY: ${{ inputs.openai-api-key }}
+        REVIEWQA_MODEL: ${{ inputs.model }}
+        REVIEWQA_HEAL_MODE: ${{ inputs.heal-mode }}
+        REVIEWQA_PR: ${{ inputs.pr }}
+        REVIEWQA_PLAYWRIGHT_REPORT: ${{ inputs.playwright-report }}
+        REVIEWQA_LOG_LEVEL: ${{ inputs.log-level }}
+      run: |
+        if [ "${{ inputs.heal-mode }}" = "on-failure" ] && [ ! -f "${{ inputs.playwright-report }}" ]; then
+          echo "reviewqa: no Playwright report at ${{ inputs.playwright-report }}; nothing to heal."
+          exit 0
+        fi
+        reviewqa heal
