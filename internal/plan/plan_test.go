@@ -10,6 +10,7 @@ import (
 	_ "github.com/reviewqa/reviewqa/internal/ast/python"
 	_ "github.com/reviewqa/reviewqa/internal/ast/ts"
 	"github.com/reviewqa/reviewqa/internal/diff"
+	"reflect"
 )
 
 func TestBuildPicksTemplatesPerLanguage(t *testing.T) {
@@ -224,4 +225,19 @@ func TestLayoutDetection(t *testing.T) {
 	if !l.HasMavenLayout {
 		t.Error("expected HasMavenLayout")
 	}
+}
+func TestBuild(t *testing.T) {
+	t.Run("happy path", func(t *testing.T) {
+		got := Build(nil, nil)
+		if reflect.DeepEqual(got, *new([]Item)) {
+			t.Fatalf("got zero value: %#v", got)
+		}
+	})
+
+	t.Run("returns expected type", func(t *testing.T) {
+		got := Build(nil, nil)
+		if got, want := reflect.TypeOf(got), reflect.TypeOf(*new([]Item)); got != want {
+			t.Fatalf("type = %v, want %v", got, want)
+		}
+	})
 }
