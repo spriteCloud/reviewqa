@@ -35,3 +35,10 @@ go.work.sum
 /reviewqa
 /dist/
 playwright-report.json
+
+# web (landing page)
+web/node_modules/
+web/test-results/
+web/playwright-report/
+web/playwright-report.json
+web/.cache/

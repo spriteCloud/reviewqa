@@ -1,0 +1,306 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>reviewqa — by spriteCloud</title>
+  <meta name="description" content="A GitHub Action that watches a PR, opens a follow-up PR with generated tests for the new code, and heals broken Playwright locators.">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Sora:wght@400;500;600;700;800&family=Inter:wght@400;500;600;900&family=Fira+Code:wght@400;500;600&display=swap" rel="stylesheet">
+  <style>
+    :root {
+      --deep-water: #1B365D;
+      --clear-blue: #4B8BBE;
+      --copper:     #C0805A;
+      --ink:        #0F1117;
+      --charcoal:   #1A1D26;
+      --graphite:   #2D3748;
+      --warm-white: #FAFAF7;
+      --mist:       #8899AA;
+      --border-warm:#E8E6E1;
+      --white:      #FFFFFF;
+      --wm-blue:    #0090D0;
+      --wm-gray:    #9DA5AE;
+    }
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    html { scroll-behavior: smooth; }
+    body {
+      font-family: 'Inter', sans-serif;
+      font-size: 16px;
+      line-height: 1.7;
+      color: var(--graphite);
+      background: var(--warm-white);
+      -webkit-font-smoothing: antialiased;
+    }
+    a { color: var(--clear-blue); text-decoration: none; }
+    a:hover { text-decoration: underline; }
+    .container { max-width: 1120px; margin: 0 auto; padding: 0 32px; }
+    .wm { font-family: 'Inter', sans-serif; font-weight: 900; letter-spacing: -0.05em; }
+    .wm .s { color: var(--wm-blue); }
+    .wm .c { color: var(--wm-gray); }
+    .label {
+      font-family: 'Fira Code', monospace;
+      font-size: 11px;
+      font-weight: 500;
+      letter-spacing: 0.16em;
+      text-transform: uppercase;
+      color: var(--copper);
+    }
+
+    /* NAV */
+    nav {
+      background: var(--ink);
+      border-bottom: 1px solid rgba(255,255,255,0.06);
+    }
+    .nav-inner {
+      display: flex; align-items: center; justify-content: space-between;
+      padding: 18px 32px; max-width: 1120px; margin: 0 auto;
+    }
+    .nav-inner .wm { font-size: 20px; }
+    .nav-links { display: flex; gap: 28px; align-items: center; }
+    .nav-links a {
+      font-family: 'Inter', sans-serif;
+      font-size: 14px;
+      font-weight: 500;
+      color: rgba(255,255,255,0.78);
+    }
+    .nav-links a:hover { color: var(--white); text-decoration: none; }
+    .nav-cta {
+      font-family: 'Fira Code', monospace;
+      font-size: 12px; font-weight: 500; letter-spacing: 0.10em; text-transform: uppercase;
+      background: var(--copper); color: var(--white) !important;
+      padding: 10px 18px; border-radius: 6px;
+    }
+    .nav-cta:hover { background: #a96d4a; text-decoration: none; }
+
+    /* HERO */
+    .hero { padding: 96px 0 56px; }
+    .hero .label { margin-bottom: 24px; display: inline-block; }
+    .hero h1 {
+      font-family: 'Sora', sans-serif;
+      font-weight: 800;
+      font-size: clamp(44px, 6vw, 76px);
+      line-height: 1.04;
+      letter-spacing: -0.035em;
+      color: var(--deep-water);
+      margin-bottom: 24px;
+      max-width: 880px;
+    }
+    .hero h1 em { font-style: normal; color: var(--clear-blue); }
+    .hero p.lead {
+      font-size: 18px; line-height: 1.65; color: var(--graphite);
+      max-width: 640px; margin-bottom: 36px;
+    }
+    .cta-row { display: flex; gap: 14px; flex-wrap: wrap; }
+    .btn {
+      display: inline-flex; align-items: center; gap: 10px;
+      font-family: 'Inter', sans-serif; font-size: 14px; font-weight: 600;
+      padding: 14px 22px; border-radius: 8px;
+      transition: transform .12s ease, box-shadow .12s ease;
+    }
+    .btn-primary { background: var(--copper); color: var(--white); }
+    .btn-primary:hover { background: #a96d4a; transform: translateY(-1px); box-shadow: 0 8px 20px rgba(192,128,90,0.32); text-decoration: none; }
+    .btn-ghost { background: transparent; border: 1px solid var(--border-warm); color: var(--deep-water); }
+    .btn-ghost:hover { border-color: var(--deep-water); text-decoration: none; }
+
+    /* PIXEL MOTIF — 15 blocks, 20px wide, varying heights, copper peak at #9 */
+    .pixel-bar {
+      display: flex; align-items: flex-end; gap: 4px;
+      height: 56px; padding: 0; margin: 24px 0 0;
+    }
+    .pixel-bar span {
+      display: block; width: 20px; background: var(--deep-water);
+    }
+    .pb-1 { height: 12px; opacity: .25; }
+    .pb-2 { height: 18px; opacity: .35; }
+    .pb-3 { height: 14px; opacity: .30; }
+    .pb-4 { height: 24px; opacity: .45; }
+    .pb-5 { height: 20px; opacity: .40; }
+    .pb-6 { height: 30px; opacity: .55; }
+    .pb-7 { height: 26px; opacity: .50; }
+    .pb-8 { height: 38px; opacity: .70; }
+    .pb-9 { height: 52px; opacity: 1; background: var(--copper) !important; }
+    .pb-10 { height: 34px; opacity: .65; }
+    .pb-11 { height: 28px; opacity: .55; }
+    .pb-12 { height: 22px; opacity: .45; }
+    .pb-13 { height: 18px; opacity: .35; }
+    .pb-14 { height: 14px; opacity: .30; }
+    .pb-15 { height: 10px; opacity: .25; }
+
+    /* FEATURES */
+    section.features { padding: 88px 0; }
+    .section-head { margin-bottom: 48px; max-width: 720px; }
+    .section-head .label { margin-bottom: 16px; display: inline-block; }
+    .section-head h2 {
+      font-family: 'Sora', sans-serif; font-weight: 700;
+      font-size: clamp(28px, 3.6vw, 40px);
+      line-height: 1.15; letter-spacing: -0.025em;
+      color: var(--deep-water);
+    }
+    .grid {
+      display: grid; grid-template-columns: repeat(3, 1fr); gap: 24px;
+    }
+    .card {
+      background: var(--white); border: 1px solid var(--border-warm);
+      border-radius: 12px; padding: 28px 26px;
+    }
+    .card h3 {
+      font-family: 'Sora', sans-serif; font-weight: 700; font-size: 18px;
+      letter-spacing: -0.015em; color: var(--deep-water); margin-bottom: 10px;
+    }
+    .card p { font-size: 14px; line-height: 1.65; color: var(--graphite); }
+    .card .num {
+      font-family: 'Sora', sans-serif; font-weight: 800; font-size: 48px;
+      line-height: 1; color: var(--deep-water); letter-spacing: -0.04em;
+      margin-bottom: 18px;
+    }
+    .card.copper .num { color: var(--copper); }
+
+    /* USAGE */
+    section.usage { padding: 24px 0 96px; }
+    .usage-card {
+      background: var(--ink); color: var(--white);
+      border-radius: 14px; padding: 48px;
+      display: grid; grid-template-columns: 1fr 1fr; gap: 48px; align-items: center;
+    }
+    .usage-card .label { color: var(--copper); margin-bottom: 14px; display: inline-block; }
+    .usage-card h2 {
+      font-family: 'Sora', sans-serif; font-weight: 700;
+      font-size: 32px; line-height: 1.15; letter-spacing: -0.025em;
+      color: var(--white); margin-bottom: 16px;
+    }
+    .usage-card p { color: rgba(255,255,255,0.75); font-size: 15px; max-width: 420px; }
+    pre.snippet {
+      font-family: 'Fira Code', monospace; font-size: 13px; line-height: 1.65;
+      background: var(--charcoal); color: rgba(255,255,255,0.92);
+      border: 1px solid rgba(255,255,255,0.08);
+      border-radius: 10px; padding: 22px 24px; overflow-x: auto;
+    }
+    pre.snippet .k { color: var(--clear-blue); }
+    pre.snippet .v { color: var(--copper); }
+    pre.snippet .c { color: var(--mist); }
+
+    /* FOOTER */
+    footer {
+      background: var(--ink); color: rgba(255,255,255,0.65);
+      padding: 40px 0 36px; border-top: 1px solid rgba(255,255,255,0.06);
+    }
+    .foot-inner {
+      display: flex; align-items: center; justify-content: space-between;
+      flex-wrap: wrap; gap: 16px;
+    }
+    .foot-inner .wm { font-size: 18px; }
+    .foot-links { display: flex; gap: 22px; font-family: 'Fira Code', monospace; font-size: 12px; letter-spacing: 0.08em; text-transform: uppercase; }
+    .foot-links a { color: rgba(255,255,255,0.65); }
+
+    /* RESPONSIVE */
+    @media (max-width: 860px) {
+      .grid { grid-template-columns: 1fr; }
+      .usage-card { grid-template-columns: 1fr; padding: 32px; }
+      .nav-links a:not(.nav-cta) { display: none; }
+    }
+  </style>
+</head>
+<body>
+  <nav>
+    <div class="nav-inner">
+      <span class="wm" data-testid="wordmark"><span class="s">sprite</span><span class="c">Cloud</span></span>
+      <div class="nav-links">
+        <a href="#features">Features</a>
+        <a href="#usage">Usage</a>
+        <a href="https://github.com/spriteCloud/reviewqa">GitHub</a>
+        <a class="nav-cta" href="https://github.com/marketplace/actions/reviewqa" data-testid="nav-cta">Install action</a>
+      </div>
+    </div>
+  </nav>
+
+  <header class="hero">
+    <div class="container">
+      <span class="label">reviewqa · by spriteCloud</span>
+      <h1 data-testid="hero-title">
+        Pull request opens.<br>
+        Tests <em>write themselves.</em>
+      </h1>
+      <p class="lead">
+        A single Go binary plus a GitHub Action that watches a PR,
+        opens a follow-up PR with generated tests for the new code,
+        and heals broken Playwright locators when they drift.
+      </p>
+      <div class="cta-row">
+        <a class="btn btn-primary" href="https://github.com/marketplace/actions/reviewqa" data-testid="cta-install">Add to your repo</a>
+        <a class="btn btn-ghost" href="https://github.com/spriteCloud/reviewqa" data-testid="cta-github">View source</a>
+      </div>
+      <div class="pixel-bar" aria-hidden="true" data-testid="pixel-motif">
+        <span class="pb-1"></span><span class="pb-2"></span><span class="pb-3"></span>
+        <span class="pb-4"></span><span class="pb-5"></span><span class="pb-6"></span>
+        <span class="pb-7"></span><span class="pb-8"></span><span class="pb-9"></span>
+        <span class="pb-10"></span><span class="pb-11"></span><span class="pb-12"></span>
+        <span class="pb-13"></span><span class="pb-14"></span><span class="pb-15"></span>
+      </div>
+    </div>
+  </header>
+
+  <section class="features" id="features">
+    <div class="container">
+      <div class="section-head">
+        <span class="label">What it does</span>
+        <h2>Deterministic where it matters. Humanized where it helps.</h2>
+      </div>
+      <div class="grid" data-testid="feature-grid">
+        <div class="card">
+          <div class="num">01</div>
+          <h3>AST‑first scaffolding</h3>
+          <p>Regex and heuristic extractors derive test scaffolds from the diff deterministically — no LLM hallucination at the structural layer.</p>
+        </div>
+        <div class="card copper">
+          <div class="num">02</div>
+          <h3>LLM only humanizes</h3>
+          <p>The model rewrites titles and step comments only. We diff the rewrite against the original; any structural drift falls back to the deterministic file.</p>
+        </div>
+        <div class="card">
+          <div class="num">03</div>
+          <h3>Self‑healing locators</h3>
+          <p>Playwright locator failures get rewritten against the live DOM. Failed CI runs become passing CI runs without manual edits.</p>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <section class="usage" id="usage">
+    <div class="container">
+      <div class="usage-card">
+        <div>
+          <span class="label">Drop‑in workflow</span>
+          <h2>One step. Pure Go. No CGO.</h2>
+          <p>Bring any OpenAI‑compatible endpoint — ollama, vLLM, a DGX‑hosted model, or the public API. Leave the key empty and you still get deterministic scaffolds.</p>
+        </div>
+<pre class="snippet" data-testid="snippet"><span class="c"># .github/workflows/reviewqa.yml</span>
+<span class="k">name:</span> <span class="v">reviewqa</span>
+<span class="k">on:</span> <span class="v">pull_request</span>
+<span class="k">jobs:</span>
+  <span class="k">reviewqa:</span>
+    <span class="k">runs-on:</span> <span class="v">ubuntu-latest</span>
+    <span class="k">steps:</span>
+      - <span class="k">uses:</span> <span class="v">actions/checkout@v4</span>
+      - <span class="k">uses:</span> <span class="v">spriteCloud/reviewqa@v1</span>
+        <span class="k">with:</span>
+          <span class="k">openai-api-key:</span> <span class="v">${{ secrets.OPENAI_API_KEY }}</span>
+          <span class="k">heal-mode:</span> <span class="v">on-failure</span>
+</pre>
+      </div>
+    </div>
+  </section>
+
+  <footer>
+    <div class="container foot-inner">
+      <span class="wm"><span class="s">sprite</span><span class="c">Cloud</span></span>
+      <div class="foot-links">
+        <a href="https://github.com/spriteCloud/reviewqa">Repo</a>
+        <a href="https://github.com/spriteCloud/reviewqa/issues">Issues</a>
+        <a href="https://github.com/spriteCloud/reviewqa/blob/main/LICENSE">MIT</a>
+      </div>
+    </div>
+  </footer>
+</body>
+</html>
