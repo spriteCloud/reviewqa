@@ -30,3 +30,8 @@ go.work.sum
 # Editor/IDE
 # .idea/
 # .vscode/
+
+# reviewqa build output
+/reviewqa
+/dist/
+playwright-report.json
