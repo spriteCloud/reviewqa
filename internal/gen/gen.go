@@ -220,6 +220,14 @@ var funcs = template.FuncMap{
 	"contentLocator":    contentLocator,
 	"regexEscape":       regexEscape,
 	"rankedNavTargets":  rankedNavTargets,
+	"firstH1": func(cs []ast.ContentAnchor) ast.ContentAnchor {
+		for _, c := range cs {
+			if c.Tag == "h1" {
+				return c
+			}
+		}
+		return ast.ContentAnchor{}
+	},
 	"rankedNavTargetsExcluding": func(links []ast.LocatorAnchor, n int, exclude string) []ast.LocatorAnchor {
 		filtered := make([]ast.LocatorAnchor, 0, len(links))
 		for _, l := range links {
@@ -229,6 +237,31 @@ var funcs = template.FuncMap{
 			filtered = append(filtered, l)
 		}
 		return rankedNavTargets(filtered, n)
+	},
+	// rankedNavTargetsRotated picks one outbound target from the ranked
+	// list, offsetting by a salt hash. Different specs in the same suite
+	// get different outbound clicks instead of all ending at the
+	// highest-scoring link.
+	"rankedNavTargetsRotated": func(links []ast.LocatorAnchor, exclude, salt string) []ast.LocatorAnchor {
+		filtered := make([]ast.LocatorAnchor, 0, len(links))
+		for _, l := range links {
+			if l.Aria == exclude {
+				continue
+			}
+			filtered = append(filtered, l)
+		}
+		all := rankedNavTargets(filtered, 8)
+		if len(all) == 0 {
+			return nil
+		}
+		h := 0
+		for _, r := range salt {
+			h = h*31 + int(r)
+		}
+		if h < 0 {
+			h = -h
+		}
+		return []ast.LocatorAnchor{all[h%len(all)]}
 	},
 	"add":               func(a, b int) int { return a + b },
 	"sub":               func(a, b int) int { return a - b },
