@@ -29,10 +29,15 @@ Locator healing is Playwright-only and runs on test failure by default
 ```
 export GITHUB_TOKEN=...
 export GITHUB_REPOSITORY=owner/repo
-reviewqa scan --pr 42            # dry-run
-reviewqa generate --pr 42        # opens follow-up PR
+reviewqa scan --pr 42                              # dry-run
+reviewqa generate --pr 42                          # opens follow-up PR from diff
 reviewqa heal --pr 42 --report playwright-report.json
+reviewqa probe --url=https://www.spritecloud.com   # generate from a live URL (no diff needed)
 ```
+
+The `probe` subcommand is useful when there's nothing in the diff to extract from — e.g. a fresh repo with only a README, or when the source of truth is a deployed site rather than the code. It fetches the URL, scans the HTML for `data-testid` / `<input>` / `<a href>` anchors, and emits a Playwright happy-flow.
+
+`reviewqa generate` ALSO honours `REVIEWQA_TARGET_URLS` (comma-separated). When set, probe items are emitted alongside any diff-derived items.
 
 Set an OpenAI-compatible endpoint to humanize the scaffolds:
 
@@ -79,13 +84,15 @@ jobs:
 | `REVIEWQA_WORKDIR` | `.` | repo working dir |
 | `REVIEWQA_LOG_LEVEL` | `info` | `debug` \| `info` \| `warn` \| `error` |
 
-### Playwright test shape (v0.3 / v0.4)
+### Playwright test shape (v0.3 / v0.4 / v0.5)
 
 | Var | Default | Purpose |
 |---|---|---|
 | `BASE_URL` (in the generated spec) | `http://localhost:3000` | URL the generated tests `goto()` against. Set this in your test workflow before running `npx playwright test`. |
 | `REVIEWQA_E2E_STYLE` | `auto` | `auto` (page-flow when ≥2 components share a page root, else per-component), `per-component` (always one spec per component), or `page-flow` (always group, even solo components). |
 | `REVIEWQA_PAGE_URLS` | — | JSON map of `{"source/path.tsx": "/route"}` for bespoke routing the conventional walker doesn't detect. Wins over framework heuristics. Invalid JSON → warning, ignored. |
+| `REVIEWQA_TARGET_URLS` | — | Comma-separated list of live URLs to probe. When set, `reviewqa generate` also emits a Playwright happy-flow per URL (uses raw HTTP HTML — JavaScript-rendered SPAs need pre-rendered output). |
+| `REVIEWQA_PROBE_ALLOW_LOOPBACK` | — | `1` to bypass the loopback/private-IP guard. Only set in tests or trusted dev environments. |
 
 ### Healing (Playwright locators)
 

@@ -139,12 +139,14 @@ var funcs = template.FuncMap{
 		}
 		return "null"
 	},
-	"fillValueFor":     fillValueFor,
-	"inputLocator":     inputLocator,
-	"firstSubmit":      firstSubmit,
+	"fillValueFor":        fillValueFor,
+	"inputLocator":        inputLocator,
+	"firstSubmit":         firstSubmit,
 	"firstSameOriginLink": firstSameOriginLink,
-	"linkHref":         linkHref,
-	"shouldCheck":      func(i ast.FormInput) bool { return i.Type == "checkbox" || i.Type == "radio" },
+	"linkHref":            linkHref,
+	"shouldCheck":         func(i ast.FormInput) bool { return i.Type == "checkbox" || i.Type == "radio" },
+	"hasRequiredInput":    hasRequiredInput,
+	"firstRequiredInput":  firstRequiredInput,
 }
 
 // fillByType is the deterministic test-value table for form inputs.
@@ -221,6 +223,29 @@ func firstSameOriginLink(links []ast.LocatorAnchor) []ast.LocatorAnchor {
 // linkHref returns the link's href (stored in Aria during extraction).
 func linkHref(l ast.LocatorAnchor) string {
 	return l.Aria
+}
+
+// hasRequiredInput is true when any FormInput in the slice is marked
+// required. Used to gate the onSubmit validation scenario.
+func hasRequiredInput(inputs []ast.FormInput) bool {
+	for _, i := range inputs {
+		if i.Required {
+			return true
+		}
+	}
+	return false
+}
+
+// firstRequiredInput returns a single-element slice with the first input
+// flagged required. Designed for {{with firstRequiredInput .Inputs}} in
+// templates. Returns nil when none exist.
+func firstRequiredInput(inputs []ast.FormInput) []ast.FormInput {
+	for _, i := range inputs {
+		if i.Required {
+			return []ast.FormInput{i}
+		}
+	}
+	return nil
 }
 
 type renderData struct {

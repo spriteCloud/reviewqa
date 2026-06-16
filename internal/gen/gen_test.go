@@ -319,6 +319,43 @@ func TestRenderPlaywrightHappyFlow_FillsAndSubmits(t *testing.T) {
 	}
 }
 
+func TestRenderPlaywrightE2E_OnSubmitValidation(t *testing.T) {
+	sym := ast.Symbol{
+		Kind: ast.KindComponent, Name: "LoginForm",
+		File: "src/components/LoginForm.tsx", Language: "ts",
+		Line: 1, EndLine: 20,
+		HasForm: true, HasOnSubmit: true,
+		Inputs: []ast.FormInput{
+			{Name: "email", Type: "email", Tag: "input", Required: true, TestID: "login-email"},
+			{Name: "password", Type: "password", Tag: "input", Required: true, TestID: "login-password"},
+		},
+		Anchors: []ast.LocatorAnchor{
+			{TestID: "login-form", Tag: "form"},
+			{TestID: "login-submit", Tag: "submit"},
+		},
+	}
+	items := []plan.Item{{
+		Symbol:   sym,
+		Template: plan.TmplPlaywrightE2E,
+		OutPath:  "tests/e2e/LoginForm.spec.ts",
+	}}
+	out, err := Render(items, ".")
+	if err != nil {
+		t.Fatal(err)
+	}
+	body := string(out[0].Content)
+	for _, want := range []string{
+		"form blocks submit when required fields are empty",
+		"getByTestId('login-submit').first().click()",
+		"getByTestId('login-email').first()).toBeVisible()",
+		"text=/success|welcome|signed in/i",
+	} {
+		if !strings.Contains(body, want) {
+			t.Errorf("missing %q in:\n%s", want, body)
+		}
+	}
+}
+
 func TestRenderPlaywrightHappyFlow_Navigates(t *testing.T) {
 	sym := ast.Symbol{
 		Kind: ast.KindComponent, Name: "Home",
