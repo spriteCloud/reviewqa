@@ -52,4 +52,18 @@ test.describe('{{.Symbol.Name}} page happy flow', () => {
 {{- end }}
 {{- end }}
   })
+{{- range $s := .Symbols }}
+{{- if and $s.HasOnSubmit (hasRequiredInput $s.Inputs) }}
+{{- with firstSubmit $s.Anchors }}{{ $sub := index . 0 }}
+{{- with firstRequiredInput $s.Inputs }}{{ $req := index . 0 }}
+
+  test('{{$.Symbol.Name}}: {{$s.Name}} blocks submit when required fields are empty', async ({ page }) => {
+    await page.{{locatorFor $sub}}.first().click()
+    await expect(page.{{inputLocator $req}}.first()).toBeVisible()
+    await expect(page.locator('text=/success|welcome|signed in/i')).toHaveCount(0)
+  })
+{{- end }}
+{{- end }}
+{{- end }}
+{{- end }}
 })

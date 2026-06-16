@@ -40,6 +40,15 @@ inputs:
     description: Whether to run `reviewqa heal`. Set to "false" to only generate.
     required: false
     default: "true"
+  target-urls:
+    description: |
+      Comma-separated list of live URLs reviewqa should probe and generate a
+      Playwright happy-flow against. Useful for projects with little or no
+      source in the PR diff (the URL is the source of truth instead).
+      Pages are fetched over plain HTTP(S) — JavaScript-rendered SPAs that
+      depend on client-side hydration will surface as empty.
+    required: false
+    default: ""
   log-level:
     description: debug | info | warn | error
     required: false
@@ -90,6 +99,7 @@ runs:
         REVIEWQA_MODEL: ${{ inputs.model }}
         REVIEWQA_PR: ${{ inputs.pr }}
         REVIEWQA_LOG_LEVEL: ${{ inputs.log-level }}
+        REVIEWQA_TARGET_URLS: ${{ inputs.target-urls }}
       run: reviewqa generate
     - name: reviewqa heal
       if: inputs.run-heal == 'true' && inputs.heal-mode != 'off'

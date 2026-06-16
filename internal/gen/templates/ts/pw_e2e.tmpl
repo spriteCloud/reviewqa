@@ -58,6 +58,20 @@ test.describe('{{.Symbol.Name}}', () => {
     await expect(page).toHaveURL(new RegExp('{{linkHref $l}}$'))
   })
 {{- end }}
+{{- if and .Symbol.HasOnSubmit (hasRequiredInput .Symbol.Inputs) }}
+{{- with firstSubmit .Symbol.Anchors }}{{ $sub := index . 0 }}
+{{- with firstRequiredInput $.Symbol.Inputs }}{{ $req := index . 0 }}
+
+  test('{{$.Symbol.Name}}: form blocks submit when required fields are empty', async ({ page }) => {
+    await page.{{locatorFor $sub}}.first().click()
+    // Required fields should still be visible — the form did not navigate.
+    await expect(page.{{inputLocator $req}}.first()).toBeVisible()
+    // And no success-shaped message should appear.
+    await expect(page.locator('text=/success|welcome|signed in/i')).toHaveCount(0)
+  })
+{{- end }}
+{{- end }}
+{{- end }}
 {{- else }}
 
   test('renders the {{.Symbol.Name}} component', async ({ page }) => {

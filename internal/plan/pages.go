@@ -96,9 +96,9 @@ func findPageRoots(workDir string) []pageRoot {
 		// Always extract markup signals; the regex set ignores templating
 		// engine syntax. For TSX/JSX, additionally collect mounted-component
 		// names for grouping.
-		root.Anchors = extractHTMLAnchors(root.Path, content)
-		root.Inputs = extractHTMLInputs(root.Path, content)
-		root.Links = extractHTMLLinks(root.Path, content)
+		root.Anchors = ExtractHTMLAnchors(root.Path, content)
+		root.Inputs = ExtractHTMLInputs(root.Path, content)
+		root.Links = ExtractHTMLLinks(root.Path, content)
 		root.HasForm = bytes.Contains(bytes.ToLower(content), []byte("<form"))
 		if !root.IsHTML {
 			root.Mounted = extractJSXComponentNames(content)
@@ -338,7 +338,7 @@ func capitalizeFirst(s string) string {
 	return strings.ToUpper(s[:1]) + s[1:]
 }
 
-func extractHTMLAnchors(file string, content []byte) []ast.LocatorAnchor {
+func ExtractHTMLAnchors(file string, content []byte) []ast.LocatorAnchor {
 	var anchors []ast.LocatorAnchor
 	lines := strings.Split(string(content), "\n")
 	for i, line := range lines {
@@ -367,9 +367,9 @@ var reFormElementOpen = regexp.MustCompile(`<\s*(input|select|textarea)\b([^>]*)
 // reLinkOpen matches `<a href="X">` (or hrefless). Allows multiple links per line.
 var reLinkOpen = regexp.MustCompile(`<\s*a\s+([^>]*)>`)
 
-// extractHTMLInputs collects form fields from a page's markup. Type/name/
+// ExtractHTMLInputs collects form fields from a page's markup. Type/name/
 // required must appear inside the opening tag of the input.
-func extractHTMLInputs(file string, content []byte) []ast.FormInput {
+func ExtractHTMLInputs(file string, content []byte) []ast.FormInput {
 	var out []ast.FormInput
 	lines := strings.Split(string(content), "\n")
 	for i, line := range lines {
@@ -401,9 +401,9 @@ func extractHTMLInputs(file string, content []byte) []ast.FormInput {
 	return out
 }
 
-// extractHTMLLinks collects same-origin hrefs found inside <a> tags. Allows
+// ExtractHTMLLinks collects same-origin hrefs found inside <a> tags. Allows
 // multiple links per line.
-func extractHTMLLinks(file string, content []byte) []ast.LocatorAnchor {
+func ExtractHTMLLinks(file string, content []byte) []ast.LocatorAnchor {
 	var out []ast.LocatorAnchor
 	lines := strings.Split(string(content), "\n")
 	for i, line := range lines {
