@@ -11,11 +11,28 @@ import (
 type JourneyKind string
 
 const (
-	JourneyConvert JourneyKind = "convert" // home → form → submit
-	JourneyBrowse  JourneyKind = "browse"  // home → list → detail
-	JourneyExplore JourneyKind = "explore" // home → top-nav link → content
-	JourneyRead    JourneyKind = "read"    // home → article-shaped page
+	JourneyConvert  JourneyKind = "convert"  // home → form → submit (newsletter / lead-gen)
+	JourneyContact  JourneyKind = "contact"  // home → contact page → fill+submit
+	JourneyEvaluate JourneyKind = "evaluate" // home → pricing page (assert prices visible)
+	JourneyResearch JourneyKind = "research" // home → case-studies list → one case-study
+	JourneyBrowse   JourneyKind = "browse"   // home → list → detail
+	JourneyDiscover JourneyKind = "discover" // home → service page → CTA on that page
+	JourneyExplore  JourneyKind = "explore"  // home → top-nav link → sub-page
+	JourneyRead     JourneyKind = "read"     // home → article-shaped page
 )
+
+// journeyPriority orders kinds for dedup tie-breaking — higher priority
+// wins when two journeys terminate at the same page.
+var journeyPriority = map[JourneyKind]int{
+	JourneyConvert:  100,
+	JourneyContact:  90,
+	JourneyEvaluate: 80,
+	JourneyResearch: 70,
+	JourneyBrowse:   60,
+	JourneyDiscover: 50,
+	JourneyExplore:  40,
+	JourneyRead:     30,
+}
 
 // Step is one leg of a journey. EnteredVia is empty for the first step
 // (visited via direct goto); the path of the clicked link for chained
@@ -33,36 +50,87 @@ type Journey struct {
 }
 
 // IdentifyJourneys walks the Map and returns up to maxPerKind journeys per
-// kind. Deterministic ordering: convert first, browse second, explore
-// third, read fourth — matches typical test-suite priorities.
+// kind. Order matches journeyPriority (convert first, read last). Result
+// is deduped by (terminal-page-URL) — when two kinds want the same end
+// page the higher-priority kind keeps it.
 func IdentifyJourneys(m *Map, maxPerKind int) []Journey {
 	if maxPerKind <= 0 {
 		maxPerKind = 1
 	}
 	var out []Journey
 	out = append(out, findConvertJourneys(m, maxPerKind)...)
+	out = append(out, findContactJourneys(m, maxPerKind)...)
+	out = append(out, findEvaluateJourneys(m, maxPerKind)...)
+	out = append(out, findResearchJourneys(m, maxPerKind)...)
 	out = append(out, findBrowseJourneys(m, maxPerKind)...)
+	out = append(out, findDiscoverJourneys(m, maxPerKind)...)
 	out = append(out, findExploreJourneys(m, maxPerKind)...)
 	out = append(out, findReadJourneys(m, maxPerKind)...)
+	return dedupJourneys(out)
+}
+
+// dedupJourneys drops journeys whose terminal page is already covered by
+// a higher-priority kind, and drops within-kind duplicates that end on the
+// same page.
+func dedupJourneys(in []Journey) []Journey {
+	type slot struct {
+		j   Journey
+		pri int
+	}
+	bestByTerminal := map[string]slot{}
+	order := []string{}
+	for _, j := range in {
+		if len(j.Steps) == 0 {
+			continue
+		}
+		terminal := j.Steps[len(j.Steps)-1].Page.URL
+		pri := journeyPriority[j.Kind]
+		if cur, ok := bestByTerminal[terminal]; ok {
+			if pri <= cur.pri {
+				continue
+			}
+		} else {
+			order = append(order, terminal)
+		}
+		bestByTerminal[terminal] = slot{j: j, pri: pri}
+	}
+	out := make([]Journey, 0, len(order))
+	for _, t := range order {
+		out = append(out, bestByTerminal[t].j)
+	}
+	// Re-sort by kind priority for deterministic file naming.
+	sort.SliceStable(out, func(i, j int) bool {
+		return journeyPriority[out[i].Kind] > journeyPriority[out[j].Kind]
+	})
 	return out
 }
 
 // findConvertJourneys returns journeys that start at the landing page and
-// end at a form submit. Each form page surfaces as one journey.
+// end at a form submit. The landing-as-form case is emitted as a single
+// step; further form pages chain from landing. Skips re-emitting the
+// landing page when it has already been emitted as a single-step convert.
 func findConvertJourneys(m *Map, max int) []Journey {
 	landing := landingPage(m)
 	if landing == nil {
 		return nil
 	}
 	var out []Journey
+	landingEmitted := false
 	for _, url := range m.Order {
 		page := m.Pages[url]
 		if !hasTag(page, TagForm) {
 			continue
 		}
+		// Skip contact-form pages — they have their own dedicated journey.
+		if hasTag(page, TagContact) {
+			continue
+		}
 		journey := Journey{Kind: JourneyConvert}
 		if page.URL == landing.URL {
-			// Form lives ON the landing page — single-step journey.
+			if landingEmitted {
+				continue
+			}
+			landingEmitted = true
 			journey.Steps = []Step{{Page: page}}
 		} else {
 			via := relativePath(page.URL)
@@ -79,9 +147,121 @@ func findConvertJourneys(m *Map, max int) []Journey {
 	return out
 }
 
+// findContactJourneys: landing → contact page (with form) → fill+submit.
+func findContactJourneys(m *Map, max int) []Journey {
+	landing := landingPage(m)
+	if landing == nil {
+		return nil
+	}
+	var out []Journey
+	for _, url := range m.Order {
+		page := m.Pages[url]
+		if !hasTag(page, TagContact) {
+			continue
+		}
+		journey := Journey{Kind: JourneyContact}
+		if page.URL == landing.URL {
+			journey.Steps = []Step{{Page: page}}
+		} else {
+			journey.Steps = []Step{
+				{Page: landing},
+				{Page: page, EnteredVia: relativePath(page.URL)},
+			}
+		}
+		out = append(out, journey)
+		if len(out) >= max {
+			break
+		}
+	}
+	return out
+}
+
+// findEvaluateJourneys: landing → pricing page.
+func findEvaluateJourneys(m *Map, max int) []Journey {
+	landing := landingPage(m)
+	if landing == nil {
+		return nil
+	}
+	var out []Journey
+	for _, url := range m.Order {
+		page := m.Pages[url]
+		if !hasTag(page, TagPricing) {
+			continue
+		}
+		journey := Journey{Kind: JourneyEvaluate}
+		if page.URL == landing.URL {
+			journey.Steps = []Step{{Page: page}}
+		} else {
+			journey.Steps = []Step{
+				{Page: landing},
+				{Page: page, EnteredVia: relativePath(page.URL)},
+			}
+		}
+		out = append(out, journey)
+		if len(out) >= max {
+			break
+		}
+	}
+	return out
+}
+
+// findResearchJourneys: landing → list-of-case-studies → case-study detail.
+// Falls back to landing → case-study (direct) if no list is in the map.
+func findResearchJourneys(m *Map, max int) []Journey {
+	landing := landingPage(m)
+	if landing == nil {
+		return nil
+	}
+	var out []Journey
+	emitted := map[string]bool{}
+	// Path A: a case-study list page exists (e.g. /case-studies).
+	for _, listURL := range m.Order {
+		listPage := m.Pages[listURL]
+		if !hasTag(listPage, TagList) {
+			continue
+		}
+		path := pathLower(listPage.URL)
+		if !strings.Contains(path, "case-stud") && !strings.Contains(path, "stories") {
+			continue
+		}
+		detail := findFirst(m, listPage, func(p *Page) bool { return hasTag(p, TagCaseStudy) })
+		journey := Journey{Kind: JourneyResearch, Steps: []Step{{Page: landing}}}
+		if listPage.URL != landing.URL {
+			journey.Steps = append(journey.Steps, Step{Page: listPage, EnteredVia: relativePath(listPage.URL)})
+		}
+		if detail != nil {
+			journey.Steps = append(journey.Steps, Step{Page: detail, EnteredVia: relativePath(detail.URL)})
+			emitted[detail.URL] = true
+		}
+		if len(journey.Steps) > 1 {
+			out = append(out, journey)
+			if len(out) >= max {
+				return out
+			}
+		}
+	}
+	// Path B: case-study pages with no list hub — surface them directly.
+	for _, url := range m.Order {
+		page := m.Pages[url]
+		if !hasTag(page, TagCaseStudy) || emitted[page.URL] {
+			continue
+		}
+		if page.URL == landing.URL {
+			continue
+		}
+		journey := Journey{Kind: JourneyResearch, Steps: []Step{
+			{Page: landing},
+			{Page: page, EnteredVia: relativePath(page.URL)},
+		}}
+		out = append(out, journey)
+		if len(out) >= max {
+			break
+		}
+	}
+	return out
+}
+
 // findBrowseJourneys returns journeys that walk landing → list → detail.
-// At most one journey per list page; picks the first detail page reached
-// via a list's outbound link.
 func findBrowseJourneys(m *Map, max int) []Journey {
 	landing := landingPage(m)
 	if landing == nil {
@@ -93,17 +273,17 @@ func findBrowseJourneys(m *Map, max int) []Journey {
 		if !hasTag(listPage, TagList) || listPage.URL == landing.URL {
 			continue
 		}
-		detail := findDetailFrom(m, listPage)
-		via := relativePath(listPage.URL)
-		journey := Journey{Kind: JourneyBrowse}
-		if listPage.URL == landing.URL {
-			journey.Steps = []Step{{Page: listPage}}
-		} else {
-			journey.Steps = []Step{
-				{Page: landing},
-				{Page: listPage, EnteredVia: via},
-			}
+		// Case-study lists belong to the research journey.
+		path := pathLower(listPage.URL)
+		if strings.Contains(path, "case-stud") || strings.Contains(path, "stories") {
+			continue
 		}
+		detail := findFirst(m, listPage, func(p *Page) bool { return hasTag(p, TagDetail) && p.URL != listPage.URL })
+		via := relativePath(listPage.URL)
+		journey := Journey{Kind: JourneyBrowse, Steps: []Step{
+			{Page: landing},
+			{Page: listPage, EnteredVia: via},
+		}}
 		if detail != nil {
 			journey.Steps = append(journey.Steps, Step{Page: detail, EnteredVia: relativePath(detail.URL)})
 		}
@@ -115,8 +295,33 @@ func findBrowseJourneys(m *Map, max int) []Journey {
 	return out
 }
 
-// findExploreJourneys returns journeys that walk the landing page through
-// its top-ranked nav links to one or two non-list, non-form sub-pages.
+// findDiscoverJourneys: landing → service page. Each service page becomes
+// one spec — gives marketing sites depth across distinct offerings.
+func findDiscoverJourneys(m *Map, max int) []Journey {
+	landing := landingPage(m)
+	if landing == nil {
+		return nil
+	}
+	var out []Journey
+	for _, url := range m.Order {
+		page := m.Pages[url]
+		if !hasTag(page, TagService) || page.URL == landing.URL {
+			continue
+		}
+		journey := Journey{Kind: JourneyDiscover, Steps: []Step{
+			{Page: landing},
+			{Page: page, EnteredVia: relativePath(page.URL)},
+		}}
+		out = append(out, journey)
+		if len(out) >= max {
+			break
+		}
+	}
+	return out
+}
+
+// findExploreJourneys returns journeys through top-ranked nav links to
+// pages NOT already covered by a more specific journey kind.
 func findExploreJourneys(m *Map, max int) []Journey {
 	landing := landingPage(m)
 	if landing == nil || len(landing.Links) == 0 {
@@ -133,9 +338,11 @@ func findExploreJourneys(m *Map, max int) []Journey {
 		if !ok {
 			continue
 		}
-		// Don't double-count list or form pages — those are covered by
-		// browse / convert journeys.
-		if hasTag(page, TagList) || hasTag(page, TagForm) {
+		// Skip pages already covered by more-specific kinds.
+		if hasTag(page, TagList) || hasTag(page, TagForm) ||
+			hasTag(page, TagPricing) || hasTag(page, TagContact) ||
+			hasTag(page, TagAuth) || hasTag(page, TagService) ||
+			hasTag(page, TagCaseStudy) {
 			continue
 		}
 		journey := Journey{Kind: JourneyExplore, Steps: []Step{
@@ -151,7 +358,7 @@ func findExploreJourneys(m *Map, max int) []Journey {
 }
 
 // findReadJourneys returns journeys against detail-tagged pages (long
-// content). Useful for blog posts, articles, case-studies entries.
+// content). Useful for blog posts, articles.
 func findReadJourneys(m *Map, max int) []Journey {
 	landing := landingPage(m)
 	if landing == nil {
@@ -163,8 +370,11 @@ func findReadJourneys(m *Map, max int) []Journey {
 		if !hasTag(page, TagDetail) || page.URL == landing.URL {
 			continue
 		}
-		// Skip pages already used as browse-detail or convert end.
-		if hasTag(page, TagForm) || hasTag(page, TagList) {
+		// Skip pages owned by other journey kinds.
+		if hasTag(page, TagForm) || hasTag(page, TagList) ||
+			hasTag(page, TagPricing) || hasTag(page, TagContact) ||
+			hasTag(page, TagAuth) || hasTag(page, TagService) ||
+			hasTag(page, TagCaseStudy) {
 			continue
 		}
 		journey := Journey{Kind: JourneyRead, Steps: []Step{
@@ -201,9 +411,11 @@ func hasTag(p *Page, t string) bool {
 	return false
 }
 
-func findDetailFrom(m *Map, list *Page) *Page {
-	for _, l := range list.Links {
-		abs := absoluteSameOrigin(m.Origin, list.URL, l.Aria)
+// findFirst walks the outbound links of `from` and returns the first
+// linked page whose tags satisfy `pred`. Returns nil if none match.
+func findFirst(m *Map, from *Page, pred func(*Page) bool) *Page {
+	for _, l := range from.Links {
+		abs := absoluteSameOrigin(m.Origin, from.URL, l.Aria)
 		if abs == "" {
 			continue
 		}
@@ -211,7 +423,10 @@ func findDetailFrom(m *Map, list *Page) *Page {
 		if !ok {
 			continue
 		}
-		if hasTag(candidate, TagDetail) && candidate.URL != list.URL {
+		if candidate.URL == from.URL {
+			continue
+		}
+		if pred(candidate) {
 			return candidate
 		}
 	}
@@ -219,8 +434,6 @@ func findDetailFrom(m *Map, list *Page) *Page {
 }
 
 func relativePath(absURL string) string {
-	// Take the path component — used as the link's href in the generated
-	// `<a href="…">` selector.
 	if idx := strings.Index(absURL, "://"); idx != -1 {
 		rest := absURL[idx+3:]
 		if slash := strings.Index(rest, "/"); slash != -1 {

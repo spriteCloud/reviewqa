@@ -49,10 +49,10 @@ type Options struct {
 
 func (o Options) withDefaults() Options {
 	if o.MaxPages <= 0 {
-		o.MaxPages = 10
+		o.MaxPages = 20
 	}
 	if o.MaxDepth <= 0 {
-		o.MaxDepth = 2
+		o.MaxDepth = 3
 	}
 	return o
 }
@@ -73,7 +73,7 @@ func Crawl(ctx context.Context, origin string, fetch Fetcher, opts Options) (*Ma
 		url   string
 		depth int
 	}
-	queue := []queued{{url: origin, depth: 0}}
+	queue := []queued{{url: canonicalURL(origin), depth: 0}}
 	var errs []error
 	for len(queue) > 0 && len(out.Pages) < opts.MaxPages {
 		head := queue[0]
@@ -84,6 +84,10 @@ func Crawl(ctx context.Context, origin string, fetch Fetcher, opts Options) (*Ma
 		body, finalURL, err := fetch(ctx, head.url)
 		if err != nil {
 			errs = append(errs, fmt.Errorf("mindmap: fetch %s: %w", head.url, err))
+			continue
+		}
+		finalURL = canonicalURL(finalURL)
+		if _, seen := out.Pages[finalURL]; seen {
 			continue
 		}
 		page := buildPage(finalURL, body)
@@ -114,8 +118,27 @@ func buildPage(u string, html []byte) *Page {
 	p.Contents = plan.ExtractContentAnchors(html)
 	p.Title = plan.PageTitle(html)
 	p.HasForm = strings.Contains(strings.ToLower(string(html)), "<form")
-	p.Tags = tagPage(p)
+	p.Tags = tagPage(p, html)
 	return p
+}
+
+// canonicalURL normalises a URL so that "https://x/" and "https://x"
+// (or "/blog" and "/blog/") collapse to the same key. Strips trailing
+// slash except when the path itself is empty.
+func canonicalURL(raw string) string {
+	u, err := url.Parse(raw)
+	if err != nil {
+		return raw
+	}
+	u.RawQuery = ""
+	u.Fragment = ""
+	if len(u.Path) > 1 && strings.HasSuffix(u.Path, "/") {
+		u.Path = strings.TrimRight(u.Path, "/")
+	}
+	if u.Path == "/" {
+		u.Path = ""
+	}
+	return u.String()
 }
 
 // absoluteSameOrigin resolves a relative href against a base URL and
@@ -150,7 +173,7 @@ func absoluteSameOrigin(originRoot, baseURL, href string) string {
 	if isAvoidedPath(strings.ToLower(target.Path)) {
 		return ""
 	}
-	return target.String()
+	return canonicalURL(target.String())
 }
 
 func isAvoidedPath(p string) bool {

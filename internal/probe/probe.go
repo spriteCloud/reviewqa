@@ -227,7 +227,7 @@ func RunAll(ctx context.Context, urls []string) ([]plan.Item, []error) {
 		if m == nil || len(m.Pages) == 0 {
 			continue
 		}
-		journeys := mindmap.IdentifyJourneys(m, 2)
+		journeys := mindmap.IdentifyJourneys(m, 3)
 		for _, j := range journeys {
 			items = append(items, itemFromJourney(j, u))
 		}
@@ -299,7 +299,27 @@ func outPathStemForJourney(j mindmap.Journey, first *mindmap.Page) string {
 		host = u.Hostname()
 	}
 	hostStem := strings.TrimPrefix(strings.ReplaceAll(host, ".", "-"), "www-")
-	return hostStem + "-" + string(j.Kind)
+	stem := hostStem + "-" + string(j.Kind)
+	// Disambiguate multiple journeys of the same kind by the terminal page
+	// slug. Single-step journeys (terminal == first) get no suffix.
+	if len(j.Steps) > 1 {
+		if slug := pathSlug(j.Steps[len(j.Steps)-1].Page.URL); slug != "" {
+			stem += "-" + slug
+		}
+	}
+	return stem
+}
+
+func pathSlug(rawURL string) string {
+	u, err := url.Parse(rawURL)
+	if err != nil {
+		return ""
+	}
+	p := strings.Trim(u.Path, "/")
+	if p == "" {
+		return ""
+	}
+	return strings.ReplaceAll(p, "/", "-")
 }
 
 // buildJourney fetches the source URL, then chains up to maxChain pages by
