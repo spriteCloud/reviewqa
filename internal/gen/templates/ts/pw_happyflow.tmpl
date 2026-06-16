@@ -93,7 +93,7 @@ test.describe('{{.Symbol.Name}}{{if .JourneyKind}} — {{.JourneyKind}} journey{
        click on its outbound links. Skipped for non-final chained symbols
        because the next symbol's EnteredVia covers the transition. */ -}}
 {{- if and (eq $intent "nav") (eq $idx (sub (len $.Symbols) 1)) }}
-{{- range $l := rankedNavTargets $s.Links 1 }}
+{{- range $l := rankedNavTargetsExcluding $s.Links 1 $s.EnteredVia }}
 
     // Step {{add $idx 2}} — outbound click "{{linkHref $l}}" ({{or $l.Text "no text"}})
     {

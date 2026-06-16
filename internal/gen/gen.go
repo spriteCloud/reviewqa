@@ -220,6 +220,16 @@ var funcs = template.FuncMap{
 	"contentLocator":    contentLocator,
 	"regexEscape":       regexEscape,
 	"rankedNavTargets":  rankedNavTargets,
+	"rankedNavTargetsExcluding": func(links []ast.LocatorAnchor, n int, exclude string) []ast.LocatorAnchor {
+		filtered := make([]ast.LocatorAnchor, 0, len(links))
+		for _, l := range links {
+			if l.Aria == exclude {
+				continue
+			}
+			filtered = append(filtered, l)
+		}
+		return rankedNavTargets(filtered, n)
+	},
 	"add":               func(a, b int) int { return a + b },
 	"sub":               func(a, b int) int { return a - b },
 }
