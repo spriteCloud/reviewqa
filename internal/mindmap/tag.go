@@ -111,16 +111,31 @@ func isListPage(p *Page) bool {
 	return false
 }
 
-// isDetailPage flags a page that looks like a single piece of content:
-// has an h1 OR ≥2 h2 headings, and few outbound nav-style links.
+// isDetailPage flags a page that looks like a single piece of content.
+// Two acceptance branches:
+//   - Short content path: ≥1 heading AND <20 outbound links — short
+//     posts, marketing detail pages, simple landing-style content.
+//   - Article path: ≥1 h1 AND ≥3 h2 — long-form structured articles
+//     (wiki entries, in-depth guides) that often carry hundreds of
+//     cross-links and would fail the <20 cap.
 func isDetailPage(p *Page) bool {
-	headingCount := 0
+	h1Count, h2Count := 0, 0
 	for _, c := range p.Contents {
-		if c.Tag == "h1" || c.Tag == "h2" {
-			headingCount++
+		switch c.Tag {
+		case "h1":
+			h1Count++
+		case "h2":
+			h2Count++
 		}
 	}
-	return headingCount >= 1 && len(p.Links) < 20
+	headingCount := h1Count + h2Count
+	if headingCount >= 1 && len(p.Links) < 20 {
+		return true
+	}
+	if h1Count >= 1 && h2Count >= 3 {
+		return true
+	}
+	return false
 }
 
 func pathLower(rawURL string) string {

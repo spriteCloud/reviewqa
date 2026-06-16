@@ -62,6 +62,14 @@ type Symbol struct {
 	// EnteredVia is the href the journey clicked to reach this page. Empty
 	// for the first symbol in a chain (the page is visited via direct goto).
 	EnteredVia string
+	// DirectGoto is true when EnteredVia could not be located as a clickable
+	// link on the previous step's page (e.g. sitemap-discovered URLs not
+	// linked from the landing). The template uses `page.goto(<abs URL>)`
+	// in that case instead of `locator(...).click()`.
+	DirectGoto bool
+	// AbsoluteURL is the full URL of this step's page. Used by the template
+	// when DirectGoto is true.
+	AbsoluteURL string
 }
 
 // ContentAnchor describes a page-level text anchor — the <title>, an <h1>,

@@ -94,6 +94,29 @@ func TestTagPage_DetailDetected(t *testing.T) {
 	}
 }
 
+func TestTagPage_ArticleWithManyLinksStillDetail(t *testing.T) {
+	// Wikipedia-shaped page: deep heading structure but hundreds of
+	// cross-links. The legacy <20-links rule rejected these; the
+	// article-shape branch accepts.
+	var links []ast.LocatorAnchor
+	for i := 0; i < 50; i++ {
+		links = append(links, ast.LocatorAnchor{Tag: "link-a", Aria: "/wiki/Other"})
+	}
+	p := &Page{
+		URL:   "https://es.wikipedia.org/wiki/Madrid",
+		Links: links,
+		Contents: []ast.ContentAnchor{
+			{Tag: "h1", Text: "Madrid"},
+			{Tag: "h2", Text: "Historia"},
+			{Tag: "h2", Text: "Demografía"},
+			{Tag: "h2", Text: "Cultura"},
+		},
+	}
+	if !contains(tagPage(p, nil), TagDetail) {
+		t.Error("expected TagDetail for article-shaped page with many links")
+	}
+}
+
 func TestTagPage_PricingByURL(t *testing.T) {
 	p := &Page{URL: "https://x.test/pricing"}
 	if !contains(tagPage(p, nil), TagPricing) {

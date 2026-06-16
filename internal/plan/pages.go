@@ -4,6 +4,7 @@ import (
 	"bytes"
 	"encoding/json"
 	"io/fs"
+	"net/url"
 	"os"
 	"path/filepath"
 	"regexp"
@@ -464,6 +465,12 @@ func collectHTMLLabelFor(content []byte) map[string]string {
 // ExtractHTMLLinks collects same-origin hrefs found inside <a> tags. Allows
 // multiple links per line. Captures the visible anchor text when present
 // on the same line — used by the nav-target ranker.
+//
+// Relative hrefs (`catalogue/x.html`, `../about`) are resolved against
+// `file` (the page URL) so downstream consumers always see an absolute
+// path beginning with "/". Same-origin absolute URLs are reduced to
+// their path component. Cross-origin and non-http(s) schemes (mailto:,
+// tel:, javascript:) are dropped at this layer.
 func ExtractHTMLLinks(file string, content []byte) []ast.LocatorAnchor {
 	var out []ast.LocatorAnchor
 	lines := strings.Split(string(content), "\n")
@@ -474,7 +481,11 @@ func ExtractHTMLLinks(file string, content []byte) []ast.LocatorAnchor {
 			if h == nil {
 				continue
 			}
-			anchor := ast.LocatorAnchor{Aria: h[1], File: file, Line: i + 1, Tag: "link-a"}
+			resolved := resolveLinkHref(file, h[1])
+			if resolved == "" {
+				continue
+			}
+			anchor := ast.LocatorAnchor{Aria: resolved, File: file, Line: i + 1, Tag: "link-a"}
 			if txt := reAnchorText.FindStringSubmatch(line); txt != nil {
 				anchor.Text = strings.TrimSpace(txt[1])
 			}
@@ -482,6 +493,58 @@ func ExtractHTMLLinks(file string, content []byte) []ast.LocatorAnchor {
 		}
 	}
 	return out
+}
+
+// resolveLinkHref normalises an <a href> value to an absolute same-origin
+// path starting with "/". Returns "" when the href cannot be a navigation
+// target (empty, fragment-only, non-http scheme, cross-origin when
+// baseURL is an absolute URL).
+//
+// Examples (baseURL = "https://books.toscrape.com"):
+//
+//	"catalogue/x.html"                  -> "/catalogue/x.html"
+//	"/about"                            -> "/about"
+//	"https://books.toscrape.com/about"  -> "/about"
+//	"https://other.test/x"              -> ""   (cross-origin)
+//	"mailto:foo@bar"                    -> ""
+//	"#section"                          -> ""
+//	""                                  -> ""
+func resolveLinkHref(baseURL, href string) string {
+	href = strings.TrimSpace(href)
+	if href == "" || strings.HasPrefix(href, "#") {
+		return ""
+	}
+	lower := strings.ToLower(href)
+	for _, prefix := range []string{"mailto:", "tel:", "javascript:", "sms:"} {
+		if strings.HasPrefix(lower, prefix) {
+			return ""
+		}
+	}
+	// Already a leading-slash absolute path — keep as-is.
+	if strings.HasPrefix(href, "/") && !strings.HasPrefix(href, "//") {
+		return href
+	}
+	// Need a base URL to resolve anything else.
+	base, err := url.Parse(baseURL)
+	if err != nil || base.Scheme == "" {
+		// Without a usable base we can only accept leading-slash hrefs.
+		return ""
+	}
+	target, err := base.Parse(href)
+	if err != nil {
+		return ""
+	}
+	if target.Scheme != "http" && target.Scheme != "https" {
+		return ""
+	}
+	if target.Host != base.Host {
+		return ""
+	}
+	path := target.Path
+	if path == "" {
+		path = "/"
+	}
+	return path
 }
 
 // groupByPage post-processes a build's items. It folds component E2E items
