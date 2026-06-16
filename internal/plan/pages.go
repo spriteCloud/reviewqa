@@ -7,6 +7,7 @@ import (
 	"os"
 	"path/filepath"
 	"regexp"
+	"slices"
 	"sort"
 	"strings"
 
@@ -192,10 +193,7 @@ func isHTMLExt(name string) bool {
 // HTML-shaped tags. Used to skip non-template source quickly.
 func looksLikeMarkup(content []byte) bool {
 	// Heuristic: an opening '<' followed by a letter, anywhere in the first 4KB.
-	limit := len(content)
-	if limit > 4096 {
-		limit = 4096
-	}
+	limit := min(len(content), 4096)
 	for i := 0; i < limit-1; i++ {
 		if content[i] != '<' {
 			continue
@@ -505,12 +503,7 @@ func findMountingRoot(symbolName string, roots []pageRoot) *pageRoot {
 }
 
 func mountsComponent(mounted []string, name string) bool {
-	for _, n := range mounted {
-		if n == name {
-			return true
-		}
-	}
-	return false
+	return slices.Contains(mounted, name)
 }
 
 func materializeGroups(grouped map[string]*pageGroup, ungrouped *[]Item, style string) []Item {
