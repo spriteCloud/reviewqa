@@ -1,0 +1,96 @@
+name: verify-references
+
+# Runs reviewqa probe against a fixed matrix of reference sites and emits a
+# Markdown fitness report (spec count, journey-kind distribution, form-fill
+# leakage, h1 coverage, banner-only steps, empty steps). Diagnostic only —
+# not gating. See docs/reference-sites.md for the legal rationale behind
+# each site choice.
+
+on:
+  workflow_dispatch:
+    inputs:
+      ref:
+        description: Branch / tag to build reviewqa from
+        required: false
+        default: main
+
+permissions:
+  contents: read
+
+jobs:
+  probe:
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        site:
+          - { name: playwright-dev,            url: "https://playwright.dev" }
+          - { name: gohugo-io,                 url: "https://gohugo.io" }
+          - { name: books-toscrape-com,        url: "https://books.toscrape.com" }
+          - { name: es-wikipedia-org-madrid,   url: "https://es.wikipedia.org/wiki/Madrid" }
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ github.event.inputs.ref || 'main' }}
+
+      - uses: actions/setup-go@v5
+        with:
+          go-version-file: go.mod
+
+      - name: robots.txt soft-check
+        run: |
+          set -e
+          host=$(echo "${{ matrix.site.url }}" | awk -F/ '{print $1"//"$3}')
+          if curl -sf --max-time 10 "$host/robots.txt" -o /tmp/robots.txt; then
+            if grep -qE '^User-agent: \*' /tmp/robots.txt && \
+               awk '/^User-agent: \*/{p=1; next} /^User-agent:/{p=0} p && /^Disallow: \/$/{found=1} END{exit !found}' /tmp/robots.txt; then
+              echo "::warning::$host/robots.txt has a global Disallow on /. Continuing anyway (single ≤20 GET probe) — review the report carefully."
+            else
+              echo "robots.txt: OK for ${host}."
+            fi
+          else
+            echo "robots.txt: not available at $host (treating as permissive)."
+          fi
+
+      - name: Build reviewqa + quality-check
+        run: |
+          go build -o ./bin/reviewqa ./cmd/reviewqa
+          go build -o ./bin/reviewqa-quality-check ./cmd/reviewqa-quality-check
+
+      - name: Probe (dry-run)
+        id: probe
+        run: |
+          set +e
+          ./bin/reviewqa probe --url "${{ matrix.site.url }}" --dry-run > probe-output.log 2>&1
+          rc=$?
+          echo "rc=$rc" >> "$GITHUB_OUTPUT"
+          # Don't fail the job on probe error — we want the empty-input message
+          # to show up in the fitness report.
+          echo "Probe exited with $rc; first 30 lines:"
+          head -30 probe-output.log || true
+
+      - name: Emit fitness report
+        run: |
+          ./bin/reviewqa-quality-check --site="${{ matrix.site.name }}" probe-output.log >> "$GITHUB_STEP_SUMMARY"
+
+      - name: Upload probe output
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: probe-${{ matrix.site.name }}
+          path: probe-output.log
+          retention-days: 14
+
+  aggregate:
+    runs-on: ubuntu-latest
+    needs: probe
+    if: always()
+    steps:
+      - run: |
+          {
+            echo "# verify-references aggregate"
+            echo
+            echo "See each \`probe\` matrix job's summary tab for the per-site fitness report."
+            echo
+            echo "**Ref:** \`${{ github.event.inputs.ref || 'main' }}\`"
+          } >> "$GITHUB_STEP_SUMMARY"
