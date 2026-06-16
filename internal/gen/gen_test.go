@@ -279,6 +279,74 @@ func TestRenderPlaywrightHappyFlow(t *testing.T) {
 	}
 }
 
+func TestRenderPlaywrightHappyFlow_FillsAndSubmits(t *testing.T) {
+	sym := ast.Symbol{
+		Kind: ast.KindComponent, Name: "LoginForm",
+		File: "src/components/LoginForm.tsx", Language: "ts",
+		Line: 1, EndLine: 20,
+		HasForm: true,
+		Inputs: []ast.FormInput{
+			{Name: "email", Type: "email", Tag: "input", Required: true},
+			{Name: "password", Type: "password", Tag: "input", Required: true},
+		},
+		Anchors: []ast.LocatorAnchor{
+			{TestID: "login-form", Tag: "form"},
+			{TestID: "submit-btn", Tag: "submit"},
+		},
+	}
+	items := []plan.Item{{
+		Symbol:   sym,
+		Symbols:  []ast.Symbol{sym},
+		PageURL:  "/login",
+		Template: plan.TmplPlaywrightHappyFlow,
+		OutPath:  "tests/e2e/Login.spec.ts",
+	}}
+	out, err := Render(items, ".")
+	if err != nil {
+		t.Fatal(err)
+	}
+	body := string(out[0].Content)
+	for _, want := range []string{
+		"page.goto(BASE + '/login')",
+		".fill('test@example.com')",
+		".fill('Passw0rd!')",
+		"getByTestId('submit-btn').first().click()",
+		"toHaveCount(0)",
+	} {
+		if !strings.Contains(body, want) {
+			t.Errorf("missing %q in:\n%s", want, body)
+		}
+	}
+}
+
+func TestRenderPlaywrightHappyFlow_Navigates(t *testing.T) {
+	sym := ast.Symbol{
+		Kind: ast.KindComponent, Name: "Home",
+		File: "pages/Home.tsx", Language: "ts",
+		Anchors: []ast.LocatorAnchor{{TestID: "home-banner", Tag: "div"}},
+		Links: []ast.LocatorAnchor{
+			{Aria: "/about", Tag: "link-a"},
+		},
+	}
+	items := []plan.Item{{
+		Symbol:   sym,
+		Symbols:  []ast.Symbol{sym},
+		PageURL:  "/home",
+		Template: plan.TmplPlaywrightHappyFlow,
+		OutPath:  "tests/e2e/Home.spec.ts",
+	}}
+	out, _ := Render(items, ".")
+	body := string(out[0].Content)
+	for _, want := range []string{
+		`a[href="/about"]`,
+		"toHaveURL(new RegExp('/about$'))",
+	} {
+		if !strings.Contains(body, want) {
+			t.Errorf("missing %q in:\n%s", want, body)
+		}
+	}
+}
+
 func TestRenderJUnit5RestAssured(t *testing.T) {
 	items := []plan.Item{{
 		Symbol: ast.Symbol{

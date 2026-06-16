@@ -20,6 +20,59 @@ import (
 	"github.com/reviewqa/reviewqa/internal/plan"
 )
 
+func TestEndToEnd_LoginFlow(t *testing.T) {
+	dir := t.TempDir()
+	loginPage := `import { LoginForm } from '../components/LoginForm'
+export default function Login() { return (<main><LoginForm /></main>) }
+`
+	loginForm := `import { useState } from 'react'
+export function LoginForm() {
+  const [e, setE] = useState('')
+  return (
+    <form data-testid="login-form" onSubmit={()=>{}}>
+      <input type="email" name="email" required onChange={(ev)=>setE(ev.target.value)} />
+      <input type="password" name="password" required />
+      <button type="submit" data-testid="submit">Sign in</button>
+    </form>
+  )
+}
+`
+	must := func(rel, body string) {
+		full := filepath.Join(dir, rel)
+		mkdir(t, filepath.Dir(full))
+		if err := os.WriteFile(full, []byte(body), 0o644); err != nil {
+			t.Fatal(err)
+		}
+	}
+	must("pages/login.tsx", loginPage)
+	must("src/components/LoginForm.tsx", loginForm)
+
+	files := []diff.File{
+		{Path: "src/components/LoginForm.tsx", Added: []diff.Range{{Start: 1, End: 20}}, Status: "added", NewBlob: loginForm},
+	}
+	items := plan.Build(files, plan.Detect(dir))
+	if len(items) == 0 {
+		t.Fatalf("no items; expected the LoginForm component to be picked up")
+	}
+	rs, err := gen.Render(items, dir)
+	if err != nil {
+		t.Fatal(err)
+	}
+	combined := ""
+	for _, r := range rs {
+		combined += string(r.Content)
+	}
+	for _, want := range []string{
+		".fill('test@example.com')",
+		".fill('Passw0rd!')",
+		"click()",
+	} {
+		if !strings.Contains(combined, want) {
+			t.Errorf("login flow missing %q in:\n%s", want, combined)
+		}
+	}
+}
+
 func TestEndToEnd_PageFlowGrouping(t *testing.T) {
 	dir := t.TempDir()
 	must := func(rel, body string) {

@@ -145,33 +145,9 @@ func runGenerate(ctx context.Context, cfg config.Config) error {
 	if err != nil && !cfg.DryRun {
 		return err
 	}
-	var files []diff.File
-	var prInfo *prSummary
-	if client != nil {
-		raw, prObj, err := client.FetchDiff(ctx, cfg.PRNumber)
-		if err != nil {
-			return fmt.Errorf("fetch diff: %w", err)
-		}
-		files = diff.Parse(raw)
-		paths := make([]string, 0, len(files))
-		for _, f := range files {
-			paths = append(paths, f.Path)
-		}
-		newBlobs, oldBlobs, _ := client.FileBlobs(ctx, prObj, paths)
-		for i := range files {
-			if v, ok := newBlobs[files[i].Path]; ok {
-				files[i].NewBlob = v
-			}
-			if v, ok := oldBlobs[files[i].Path]; ok {
-				files[i].OldBlob = v
-			}
-		}
-		prInfo = &prSummary{
-			Number: prObj.GetNumber(), Title: prObj.GetTitle(),
-			HeadBranch: prObj.GetHead().GetRef(),
-			HeadSHA:    prObj.GetHead().GetSHA(),
-			URL:        prObj.GetHTMLURL(),
-		}
+	files, prInfo, err := fetchPRFilesAndInfo(ctx, client, cfg.PRNumber)
+	if err != nil {
+		return err
 	}
 	layout := plan.Detect(cfg.WorkDir)
 	items := plan.Build(files, layout)
@@ -194,27 +170,7 @@ func runGenerate(ctx context.Context, cfg config.Config) error {
 	}
 	branch := fmt.Sprintf("%s/tests-pr-%d-%s", cfg.BranchPrefix, cfg.PRNumber, shortSHA(prInfo.HeadSHA))
 	body := genPRBody(prInfo, rendered)
-	files2 := map[string][]byte{}
-	for i, r := range rendered {
-		existing, found, err := client.ReadFile(ctx, r.Path, prInfo.HeadSHA)
-		if err != nil {
-			rlog.Warn("could not check existing test file; will write fresh", "path", r.Path, "err", err)
-		}
-		if found {
-			if merged, ok := merge.Append(r.Symbol.Language, []byte(existing), r.Content); ok {
-				rlog.Info("appending to existing test file", "path", r.Path, "symbol", r.Symbol.Name)
-				rendered[i].Content = merged
-				files2[r.Path] = merged
-				continue
-			}
-			alt := siblingPath(r.Path)
-			rlog.Info("existing test file present; writing to sibling", "from", r.Path, "to", alt)
-			rendered[i].Path = alt
-			files2[alt] = r.Content
-			continue
-		}
-		files2[r.Path] = r.Content
-	}
+	files2 := applyExistingFileMerge(ctx, client, rendered, prInfo.HeadSHA)
 	url, err := client.OpenPR(ctx, gh.PROpts{
 		BaseBranch: prInfo.HeadBranch, NewBranch: branch,
 		Title: fmt.Sprintf("reviewqa: tests for PR #%d", cfg.PRNumber),
@@ -255,69 +211,134 @@ func siblingPath(p string) string {
 	return dir + strings.TrimSuffix(base, ext) + "_reviewqa" + ext
 }
 
+// applyExistingFileMerge folds rendered scaffolds into the existing tree:
+// append-where-possible, sibling-when-merge-unsupported, fresh otherwise.
+// Mutates rendered[i].Content/Path when the file already exists.
+func applyExistingFileMerge(ctx context.Context, client *gh.Client, rendered []gen.Rendered, headSHA string) map[string][]byte {
+	out := map[string][]byte{}
+	for i, r := range rendered {
+		existing, found, err := client.ReadFile(ctx, r.Path, headSHA)
+		if err != nil {
+			rlog.Warn("could not check existing test file; will write fresh", "path", r.Path, "err", err)
+		}
+		if !found {
+			out[r.Path] = r.Content
+			continue
+		}
+		mergeOneOrSibling(&rendered[i], r, []byte(existing), out)
+	}
+	return out
+}
+
+func mergeOneOrSibling(slot *gen.Rendered, r gen.Rendered, existing []byte, out map[string][]byte) {
+	if merged, ok := merge.Append(r.Symbol.Language, existing, r.Content); ok {
+		rlog.Info("appending to existing test file", "path", r.Path, "symbol", r.Symbol.Name)
+		slot.Content = merged
+		out[r.Path] = merged
+		return
+	}
+	alt := siblingPath(r.Path)
+	rlog.Info("existing test file present; writing to sibling", "from", r.Path, "to", alt)
+	slot.Path = alt
+	out[alt] = r.Content
+}
+
 func runHeal(ctx context.Context, cfg config.Config) error {
 	if cfg.HealMode == config.HealOff {
 		rlog.Info("heal mode = off; skipping")
 		return nil
 	}
 	llmClient := llm.New(cfg)
-	var files []diff.File
-	var prInfo *prSummary
 	client, err := gh.New(ctx, cfg)
 	if err != nil && !cfg.DryRun {
 		return err
 	}
-	if client != nil && cfg.PRNumber != 0 {
-		raw, prObj, err := client.FetchDiff(ctx, cfg.PRNumber)
-		if err != nil {
-			return fmt.Errorf("fetch diff: %w", err)
-		}
-		files = diff.Parse(raw)
-		paths := make([]string, 0, len(files))
-		for _, f := range files {
-			paths = append(paths, f.Path)
-		}
-		newBlobs, oldBlobs, _ := client.FileBlobs(ctx, prObj, paths)
-		for i := range files {
-			if v, ok := newBlobs[files[i].Path]; ok {
-				files[i].NewBlob = v
-			}
-			if v, ok := oldBlobs[files[i].Path]; ok {
-				files[i].OldBlob = v
-			}
-		}
-		prInfo = &prSummary{
-			Number: prObj.GetNumber(), Title: prObj.GetTitle(),
-			HeadBranch: prObj.GetHead().GetRef(),
-			HeadSHA:    prObj.GetHead().GetSHA(),
-			URL:        prObj.GetHTMLURL(),
-		}
+	files, prInfo, err := fetchPRFilesAndInfo(ctx, client, cfg.PRNumber)
+	if err != nil {
+		return err
 	}
-	var report *heal.PlaywrightReport
-	if cfg.HealMode == config.HealOnFailure {
-		path := cfg.PlaywrightReport
-		if path == "" {
-			path = filepath.Join(cfg.WorkDir, "playwright-report.json")
-		}
-		report, err = heal.LoadReport(path)
-		if err != nil {
-			return fmt.Errorf("load report (%s): %w; pass --report or set REVIEWQA_HEAL_MODE=proactive", path, err)
-		}
+	report, err := loadReportIfNeeded(cfg)
+	if err != nil {
+		return err
 	}
 	edits, err := heal.Run(ctx, cfg, files, report, llmClient)
 	if err != nil {
 		return err
 	}
+	if handled := emitOrSkipHealOutput(edits, cfg, client, prInfo); handled {
+		return nil
+	}
+	return openHealPR(ctx, client, cfg, files, prInfo, edits)
+}
+
+// emitOrSkipHealOutput handles the three terminal cases for runHeal: no
+// edits to apply (logs + writes summary), or the dry-run / missing-PR path
+// (prints edits to stdout). Returns true when the caller should return nil
+// without opening a PR.
+func emitOrSkipHealOutput(edits []heal.Edit, cfg config.Config, client *gh.Client, prInfo *prSummary) bool {
 	if len(edits) == 0 {
 		rlog.Info("no locator edits to apply")
 		writeStepSummary("reviewqa: no locator edits to apply.\n")
-		return nil
+		return true
 	}
 	if cfg.DryRun || client == nil || prInfo == nil {
 		printEdits(edits)
-		return nil
+		return true
 	}
-	// Apply edits in-memory against the current file blobs we already fetched.
+	return false
+}
+
+// fetchPRFilesAndInfo pulls the PR's diff + blobs through the GitHub client.
+// Returns (nil, nil, nil) when no client/PR is available — caller is
+// expected to handle that as "skip heal" or "dry-run".
+func fetchPRFilesAndInfo(ctx context.Context, client *gh.Client, prNum int) ([]diff.File, *prSummary, error) {
+	if client == nil || prNum == 0 {
+		return nil, nil, nil
+	}
+	raw, prObj, err := client.FetchDiff(ctx, prNum)
+	if err != nil {
+		return nil, nil, fmt.Errorf("fetch diff: %w", err)
+	}
+	files := diff.Parse(raw)
+	paths := make([]string, 0, len(files))
+	for _, f := range files {
+		paths = append(paths, f.Path)
+	}
+	newBlobs, oldBlobs, _ := client.FileBlobs(ctx, prObj, paths)
+	for i := range files {
+		if v, ok := newBlobs[files[i].Path]; ok {
+			files[i].NewBlob = v
+		}
+		if v, ok := oldBlobs[files[i].Path]; ok {
+			files[i].OldBlob = v
+		}
+	}
+	return files, &prSummary{
+		Number: prObj.GetNumber(), Title: prObj.GetTitle(),
+		HeadBranch: prObj.GetHead().GetRef(),
+		HeadSHA:    prObj.GetHead().GetSHA(),
+		URL:        prObj.GetHTMLURL(),
+	}, nil
+}
+
+// loadReportIfNeeded loads the Playwright JSON report when heal mode is
+// `on-failure`. Returns (nil, nil) otherwise.
+func loadReportIfNeeded(cfg config.Config) (*heal.PlaywrightReport, error) {
+	if cfg.HealMode != config.HealOnFailure {
+		return nil, nil
+	}
+	path := cfg.PlaywrightReport
+	if path == "" {
+		path = filepath.Join(cfg.WorkDir, "playwright-report.json")
+	}
+	report, err := heal.LoadReport(path)
+	if err != nil {
+		return nil, fmt.Errorf("load report (%s): %w; pass --report or set REVIEWQA_HEAL_MODE=proactive", path, err)
+	}
+	return report, nil
+}
+
+func openHealPR(ctx context.Context, client *gh.Client, cfg config.Config, files []diff.File, prInfo *prSummary, edits []heal.Edit) error {
 	indexed := map[string]string{}
 	for _, f := range files {
 		if f.NewBlob != "" {

@@ -50,6 +50,25 @@ type Symbol struct {
 	HasState    bool
 	HasOnClick  bool
 	HasOnSubmit bool
+	// User-flow signals. Populated by the TS extractor (per-component) and the
+	// HTML page extractor (per-page); drive fill+submit and navigation
+	// scenarios in the Playwright templates.
+	Inputs      []FormInput
+	Links       []LocatorAnchor // Aria field reused to carry href / to= target
+	HasForm     bool
+	HasNavigate bool
+}
+
+// FormInput describes a single form field detected in a component or page.
+// Drives deterministic fill values in the Playwright happy-flow template.
+type FormInput struct {
+	Name     string // <input name="...">
+	Type     string // text | email | password | number | checkbox | radio | tel | url | date | select | textarea
+	Required bool
+	TestID   string // when present, preferred locator
+	Tag      string // "input" | "select" | "textarea"
+	File     string
+	Line     int
 }
 
 type LocatorAnchor struct {

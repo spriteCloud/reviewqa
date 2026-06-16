@@ -139,6 +139,88 @@ var funcs = template.FuncMap{
 		}
 		return "null"
 	},
+	"fillValueFor":     fillValueFor,
+	"inputLocator":     inputLocator,
+	"firstSubmit":      firstSubmit,
+	"firstSameOriginLink": firstSameOriginLink,
+	"linkHref":         linkHref,
+	"shouldCheck":      func(i ast.FormInput) bool { return i.Type == "checkbox" || i.Type == "radio" },
+}
+
+// fillByType is the deterministic test-value table for form inputs.
+// Empty value signals .check() (for checkbox/radio) or .selectOption (for
+// select) — i.e. a fill() call is NOT what the caller should emit.
+var fillByType = map[string]string{
+	"email":    "test@example.com",
+	"password": "Passw0rd!",
+	"tel":      "+15551234567",
+	"phone":    "+15551234567",
+	"url":      "https://example.com",
+	"number":   "42",
+	"date":     "2026-01-01",
+	"time":     "12:00",
+	"search":   "query",
+	"textarea": "sample text",
+	"checkbox": "",
+	"radio":    "",
+	"select":   "",
+}
+
+// fillValueFor returns a deterministic test value for a form input. The
+// value never reflects PR diff content — purely type/name-derived.
+func fillValueFor(i ast.FormInput) string {
+	if v, ok := fillByType[i.Type]; ok {
+		return v
+	}
+	if i.Name != "" {
+		return i.Name + "-value"
+	}
+	return "test"
+}
+
+// inputLocator chooses the Playwright locator for a form input. testid wins,
+// then a labelled fallback, then a [name=…] CSS attribute selector.
+func inputLocator(i ast.FormInput) string {
+	if i.TestID != "" {
+		return fmt.Sprintf("getByTestId('%s')", i.TestID)
+	}
+	if i.Name != "" {
+		return fmt.Sprintf("locator('[name=\"%s\"]')", i.Name)
+	}
+	return fmt.Sprintf("locator('%s')", i.Tag)
+}
+
+// firstSubmit returns the first submit-tagged anchor, otherwise the first
+// clickable. Single-element slice for use with {{with}} in templates.
+func firstSubmit(anchors []ast.LocatorAnchor) []ast.LocatorAnchor {
+	for _, a := range anchors {
+		if a.Tag == "submit" {
+			return []ast.LocatorAnchor{a}
+		}
+	}
+	for _, a := range anchors {
+		switch a.Tag {
+		case "button", "input":
+			return []ast.LocatorAnchor{a}
+		}
+	}
+	return nil
+}
+
+// firstSameOriginLink returns the first link whose target starts with "/"
+// (relative same-origin). Single-element slice for {{with}}.
+func firstSameOriginLink(links []ast.LocatorAnchor) []ast.LocatorAnchor {
+	for _, l := range links {
+		if strings.HasPrefix(l.Aria, "/") && !strings.HasPrefix(l.Aria, "//") {
+			return []ast.LocatorAnchor{l}
+		}
+	}
+	return nil
+}
+
+// linkHref returns the link's href (stored in Aria during extraction).
+func linkHref(l ast.LocatorAnchor) string {
+	return l.Aria
 }
 
 type renderData struct {
@@ -193,63 +275,74 @@ func defaultForType(lang, typ string) string {
 	t := strings.ToLower(strings.TrimSpace(typ))
 	switch lang {
 	case "ts":
-		switch {
-		case t == "" || strings.Contains(t, "any") || strings.Contains(t, "unknown"):
-			return "undefined"
-		case strings.Contains(t, "number") || strings.Contains(t, "int") || strings.Contains(t, "float"):
-			return "0"
-		case strings.Contains(t, "string"):
-			return `''`
-		case strings.Contains(t, "bool"):
-			return "false"
-		case strings.HasPrefix(t, "array<") || strings.HasSuffix(t, "[]"):
-			return "[]"
-		default:
-			return "undefined"
-		}
+		return defaultForTS(t)
 	case "python":
-		switch {
-		case strings.Contains(t, "int"):
-			return "0"
-		case strings.Contains(t, "float"):
-			return "0.0"
-		case strings.Contains(t, "str"):
-			return `""`
-		case strings.Contains(t, "bool"):
-			return "False"
-		case strings.Contains(t, "list"):
-			return "[]"
-		case strings.Contains(t, "dict"):
-			return "{}"
-		default:
-			return "None"
-		}
+		return defaultForPython(t)
 	case "go":
-		switch t {
-		case "string":
-			return `""`
-		case "int", "int32", "int64", "uint", "uint32", "uint64", "byte", "rune":
-			return "0"
-		case "float32", "float64":
-			return "0"
-		case "bool":
-			return "false"
-		default:
-			return "nil"
-		}
+		return defaultForGo(t)
 	case "java":
-		switch {
-		case t == "int" || t == "long" || t == "short" || t == "byte":
-			return "0"
-		case t == "double" || t == "float":
-			return "0.0"
-		case t == "boolean":
-			return "false"
-		case t == "string":
-			return `""`
-		default:
-			return "null"
-		}
+		return defaultForJava(t)
+	}
+	return "null"
+}
+
+func defaultForTS(t string) string {
+	switch {
+	case t == "" || strings.Contains(t, "any") || strings.Contains(t, "unknown"):
+		return "undefined"
+	case strings.Contains(t, "number") || strings.Contains(t, "int") || strings.Contains(t, "float"):
+		return "0"
+	case strings.Contains(t, "string"):
+		return `''`
+	case strings.Contains(t, "bool"):
+		return "false"
+	case strings.HasPrefix(t, "array<") || strings.HasSuffix(t, "[]"):
+		return "[]"
+	}
+	return "undefined"
+}
+
+func defaultForPython(t string) string {
+	switch {
+	case strings.Contains(t, "int"):
+		return "0"
+	case strings.Contains(t, "float"):
+		return "0.0"
+	case strings.Contains(t, "str"):
+		return `""`
+	case strings.Contains(t, "bool"):
+		return "False"
+	case strings.Contains(t, "list"):
+		return "[]"
+	case strings.Contains(t, "dict"):
+		return "{}"
+	}
+	return "None"
+}
+
+func defaultForGo(t string) string {
+	switch t {
+	case "string":
+		return `""`
+	case "int", "int32", "int64", "uint", "uint32", "uint64", "byte", "rune",
+		"float32", "float64":
+		return "0"
+	case "bool":
+		return "false"
+	}
+	return "nil"
+}
+
+func defaultForJava(t string) string {
+	switch t {
+	case "int", "long", "short", "byte":
+		return "0"
+	case "double", "float":
+		return "0.0"
+	case "boolean":
+		return "false"
+	case "string":
+		return `""`
 	}
 	return "null"
 }

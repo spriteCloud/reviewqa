@@ -167,29 +167,34 @@ func testPathFor(s ast.Symbol, t Template, l Layout) string {
 	stem := strings.TrimSuffix(base, filepath.Ext(base))
 	switch s.Language {
 	case "ts":
-		if t == TmplPlaywrightE2E {
-			return filepath.Join("tests", "e2e", stem+".spec.ts")
-		}
-		if l.HasJestDir {
-			return filepath.Join(dir, "__tests__", stem+".test.ts")
-		}
-		if l.HasUnderTest {
-			return filepath.Join(dir, stem+".test.ts")
-		}
-		return filepath.Join("tests", stem+".test.ts")
+		return testPathForTS(dir, stem, t, l)
 	case "python":
-		// tests/test_<stem>.py
 		return filepath.Join("tests", "test_"+stem+".py")
 	case "go":
-		// idiomatic: sibling _test.go
 		return filepath.Join(dir, stem+"_test.go")
 	case "java":
-		// mirror src/main/java/x/Y.java -> src/test/java/x/YTest.java
-		if l.HasMavenLayout {
-			rel := strings.TrimPrefix(s.File, "src/main/java/")
-			return filepath.Join("src", "test", "java", strings.TrimSuffix(rel, ".java")+"Test.java")
-		}
-		return filepath.Join(dir, stem+"Test.java")
+		return testPathForJava(dir, stem, s.File, l)
 	}
 	return filepath.Join("tests", stem+".test")
+}
+
+func testPathForTS(dir, stem string, t Template, l Layout) string {
+	if t == TmplPlaywrightE2E || t == TmplPlaywrightHappyFlow {
+		return filepath.Join("tests", "e2e", stem+".spec.ts")
+	}
+	if l.HasJestDir {
+		return filepath.Join(dir, "__tests__", stem+".test.ts")
+	}
+	if l.HasUnderTest {
+		return filepath.Join(dir, stem+".test.ts")
+	}
+	return filepath.Join("tests", stem+".test.ts")
+}
+
+func testPathForJava(dir, stem, file string, l Layout) string {
+	if l.HasMavenLayout {
+		rel := strings.TrimPrefix(file, "src/main/java/")
+		return filepath.Join("src", "test", "java", strings.TrimSuffix(rel, ".java")+"Test.java")
+	}
+	return filepath.Join(dir, stem+"Test.java")
 }
