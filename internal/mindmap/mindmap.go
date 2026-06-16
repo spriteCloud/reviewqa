@@ -74,6 +74,12 @@ func Crawl(ctx context.Context, origin string, fetch Fetcher, opts Options) (*Ma
 		depth int
 	}
 	queue := []queued{{url: canonicalURL(origin), depth: 0}}
+	// Seed the BFS with sitemap-discovered URLs at depth=1. Sitemap entries
+	// are the site's own declaration of "pages that matter" — much higher
+	// signal than third-level link discoveries the homepage didn't link to.
+	for _, u := range discoverSitemapURLs(ctx, out.Origin, fetch) {
+		queue = append(queue, queued{url: u, depth: 1})
+	}
 	var errs []error
 	for len(queue) > 0 && len(out.Pages) < opts.MaxPages {
 		head := queue[0]

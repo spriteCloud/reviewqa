@@ -58,18 +58,25 @@ func DedupInputs(in []FormInput) []FormInput {
 }
 
 // DedupLinks collapses anchors carrying the same href (stored in Aria
-// during extraction).
+// during extraction). When multiple anchors share an href, the one with
+// non-empty Text wins — otherwise an image-link with empty text would
+// suppress the textual nav link and downstream consumers would attribute
+// the wrong label to the URL.
 func DedupLinks(in []LocatorAnchor) []LocatorAnchor {
 	if len(in) == 0 {
 		return nil
 	}
-	seen := make(map[string]bool, len(in))
+	indexByHref := map[string]int{}
 	out := make([]LocatorAnchor, 0, len(in))
 	for _, l := range in {
-		if seen[l.Aria] {
+		if idx, ok := indexByHref[l.Aria]; ok {
+			// Prefer the entry with non-empty Text.
+			if out[idx].Text == "" && l.Text != "" {
+				out[idx] = l
+			}
 			continue
 		}
-		seen[l.Aria] = true
+		indexByHref[l.Aria] = len(out)
 		out = append(out, l)
 	}
 	return out

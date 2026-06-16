@@ -21,6 +21,18 @@ const (
 	JourneyRead     JourneyKind = "read"     // home → article-shaped page
 )
 
+// JourneyExercisesForm reports whether a journey kind's purpose is to
+// fill+submit a form. Only these three keep form anchors on the landing
+// step; others have form anchors stripped so they don't accidentally
+// submit the homepage email signup before navigating.
+func JourneyExercisesForm(k JourneyKind) bool {
+	switch k {
+	case JourneyConvert, JourneyContact:
+		return true
+	}
+	return false
+}
+
 // journeyPriority orders kinds for dedup tie-breaking — higher priority
 // wins when two journeys terminate at the same page.
 var journeyPriority = map[JourneyKind]int{

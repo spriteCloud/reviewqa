@@ -27,20 +27,31 @@ test.describe('{{.Symbol.Name}}{{if .JourneyKind}} — {{.JourneyKind}} journey{
 
     // Step {{add $idx 1}} — {{$s.Name}} (same page, intent: {{$intent}})
 {{- end }}
+{{- $landingTitle := (index $.Symbols 0).PageTitle }}
 {{- if $s.PageTitle }}
-{{- if eq $idx 0 }}
+{{- if or (eq $idx 0) (ne $s.PageTitle $landingTitle) }}
     await expect(page).toHaveTitle(/{{regexEscape $s.PageTitle}}/i)
 {{- end }}
+{{- end }}
+{{- $h1 := firstH1 $s.Contents }}
+{{- if $h1.Text }}
+    await expect(page.{{contentLocator $h1}}.first()).toBeVisible()
 {{- end }}
 {{- range $a := $s.Anchors }}
 {{- $loc := locatorFor $a }}
 {{- if $loc }}
+{{- /* Drop generic banner-role assertions on chained steps — every page
+       on a site shares the same header, so it adds no signal beyond
+       Step 1. Submits still emit because they drive the form flow. */ -}}
+{{- if and (ne $idx 0) (eq $a.Role "banner") }}
+{{- else }}
     await expect(page.{{$loc}}.first()).toBeVisible()
+{{- end }}
 {{- end }}
 {{- end }}
 {{- if not $s.Anchors }}
 {{- range $c := $s.Contents }}
-{{- if or (eq $c.Tag "h1") (eq $c.Tag "h2") (eq $c.Tag "cta") }}
+{{- if or (eq $c.Tag "h2") (eq $c.Tag "cta") }}
     await expect(page.{{contentLocator $c}}.first()).toBeVisible()
 {{- end }}
 {{- end }}
@@ -93,7 +104,7 @@ test.describe('{{.Symbol.Name}}{{if .JourneyKind}} — {{.JourneyKind}} journey{
        click on its outbound links. Skipped for non-final chained symbols
        because the next symbol's EnteredVia covers the transition. */ -}}
 {{- if and (eq $intent "nav") (eq $idx (sub (len $.Symbols) 1)) }}
-{{- range $l := rankedNavTargetsExcluding $s.Links 1 $s.EnteredVia }}
+{{- range $l := rankedNavTargetsRotated $s.Links $s.EnteredVia $s.EnteredVia }}
 
     // Step {{add $idx 2}} — outbound click "{{linkHref $l}}" ({{or $l.Text "no text"}})
     {

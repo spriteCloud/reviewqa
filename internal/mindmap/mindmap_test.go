@@ -194,6 +194,47 @@ func TestIdentifyJourneys_NewKinds(t *testing.T) {
 	}
 }
 
+func TestJourneyExercisesForm_OnlyConvertAndContact(t *testing.T) {
+	form := []JourneyKind{JourneyConvert, JourneyContact}
+	noForm := []JourneyKind{JourneyEvaluate, JourneyResearch, JourneyBrowse, JourneyDiscover, JourneyExplore, JourneyRead}
+	for _, k := range form {
+		if !JourneyExercisesForm(k) {
+			t.Errorf("expected %s to exercise form", k)
+		}
+	}
+	for _, k := range noForm {
+		if JourneyExercisesForm(k) {
+			t.Errorf("did not expect %s to exercise form", k)
+		}
+	}
+}
+
+func TestDiscoverSitemapURLs(t *testing.T) {
+	pages := fakeFetcher{
+		"https://x.test/sitemap.xml": `<?xml version="1.0"?>
+<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">
+  <url><loc>https://x.test/</loc></url>
+  <url><loc>https://x.test/services/devops</loc></url>
+  <url><loc>https://x.test/cookie-policy</loc></url>
+  <url><loc>https://other.test/escape</loc></url>
+</urlset>`,
+	}
+	urls := discoverSitemapURLs(context.Background(), "https://x.test", pages.fetch)
+	// cookie-policy is filtered by isAvoidedPath; other.test by absoluteSameOrigin.
+	want := map[string]bool{
+		"https://x.test":              true,
+		"https://x.test/services/devops": true,
+	}
+	if len(urls) != 2 {
+		t.Fatalf("expected 2 URLs after filtering; got %d: %+v", len(urls), urls)
+	}
+	for _, u := range urls {
+		if !want[u] {
+			t.Errorf("unexpected URL %q in sitemap result", u)
+		}
+	}
+}
+
 func TestDedupJourneys_HigherPriorityWins(t *testing.T) {
 	page := &Page{URL: "https://x.test/x"}
 	in := []Journey{

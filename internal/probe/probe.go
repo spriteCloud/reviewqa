@@ -256,9 +256,18 @@ func itemFromJourney(j mindmap.Journey, sourceURL string) plan.Item {
 	}
 	first := j.Steps[0].Page
 	syms := make([]ast.Symbol, 0, len(j.Steps))
-	for _, step := range j.Steps {
+	for idx, step := range j.Steps {
 		s := symbolFromPage(step.Page)
 		s.EnteredVia = step.EnteredVia
+		// The landing step in non-form-goal journeys should NOT inherit
+		// the homepage's form. Otherwise every browse/research/explore
+		// spec submits the email signup before navigating — both noisy
+		// (real ESP submissions) and incorrect (the post-submit redirect
+		// breaks the next step). Form-goal kinds (convert, contact, auth)
+		// keep the form intact because exercising it IS their purpose.
+		if idx == 0 && !mindmap.JourneyExercisesForm(j.Kind) {
+			s = withoutForm(s)
+		}
 		syms = append(syms, s)
 	}
 	stem := outPathStemForJourney(j, first)
@@ -270,6 +279,23 @@ func itemFromJourney(j mindmap.Journey, sourceURL string) plan.Item {
 		OutPath:     "tests/e2e/" + stem + ".spec.ts",
 		JourneyKind: string(j.Kind),
 	}
+}
+
+// withoutForm zeroes out form-related fields on a symbol. Used to keep
+// the landing-page visit assertions (title, h1) but suppress the
+// fill-and-submit emission for journeys whose goal isn't conversion.
+func withoutForm(s ast.Symbol) ast.Symbol {
+	s.HasForm = false
+	s.Inputs = nil
+	kept := s.Anchors[:0]
+	for _, a := range s.Anchors {
+		if a.Tag == "submit" {
+			continue
+		}
+		kept = append(kept, a)
+	}
+	s.Anchors = kept
+	return s
 }
 
 func symbolFromPage(p *mindmap.Page) ast.Symbol {
