@@ -257,7 +257,7 @@ func TestRenderPlaywrightHappyFlow(t *testing.T) {
 	body := string(out[0].Content)
 	for _, want := range []string{
 		"test.describe('Counter page happy flow'",
-		"page.goto(BASE + '/home')",
+		"BASE + '/home'",
 		"walks 2 component(s) on /home",
 		"// --- Counter ---",
 		"getByTestId('counter-root')",
@@ -307,7 +307,7 @@ func TestRenderPlaywrightHappyFlow_FillsAndSubmits(t *testing.T) {
 	}
 	body := string(out[0].Content)
 	for _, want := range []string{
-		"page.goto(BASE + '/login')",
+		"BASE + '/login'",
 		".fill('test@example.com')",
 		".fill('Passw0rd!')",
 		"getByTestId('submit-btn').first().click()",
@@ -316,6 +316,35 @@ func TestRenderPlaywrightHappyFlow_FillsAndSubmits(t *testing.T) {
 		if !strings.Contains(body, want) {
 			t.Errorf("missing %q in:\n%s", want, body)
 		}
+	}
+}
+
+func TestRenderPlaywrightHappyFlow_AbsoluteURL(t *testing.T) {
+	// When PageURL is an absolute URL (probe mode), the template must NOT
+	// prefix BASE — emitting "BASE + 'https://…'" produces an unrunnable
+	// concatenation like 'http://localhost:3000https://www.spritecloud.com'.
+	sym := ast.Symbol{
+		Kind: ast.KindComponent, Name: "WwwSpritecloudCom",
+		File: "https://www.spritecloud.com/", Language: "ts",
+		Anchors: []ast.LocatorAnchor{{Role: "banner", Tag: "header"}},
+	}
+	items := []plan.Item{{
+		Symbol:   sym,
+		Symbols:  []ast.Symbol{sym},
+		PageURL:  "https://www.spritecloud.com/",
+		Template: plan.TmplPlaywrightHappyFlow,
+		OutPath:  "tests/e2e/spritecloud-com.spec.ts",
+	}}
+	out, err := Render(items, ".")
+	if err != nil {
+		t.Fatal(err)
+	}
+	body := string(out[0].Content)
+	if !strings.Contains(body, "const TARGET = 'https://www.spritecloud.com/'") {
+		t.Errorf("absolute URL not emitted directly:\n%s", body)
+	}
+	if strings.Contains(body, "BASE + 'https://") {
+		t.Errorf("template incorrectly concatenated BASE with absolute URL:\n%s", body)
 	}
 }
 
