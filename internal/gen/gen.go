@@ -147,6 +147,9 @@ var funcs = template.FuncMap{
 	"shouldCheck":         func(i ast.FormInput) bool { return i.Type == "checkbox" || i.Type == "radio" },
 	"hasRequiredInput":    hasRequiredInput,
 	"firstRequiredInput":  firstRequiredInput,
+	"isAbsoluteURL": func(s string) bool {
+		return strings.HasPrefix(s, "http://") || strings.HasPrefix(s, "https://")
+	},
 }
 
 // fillByType is the deterministic test-value table for form inputs.
