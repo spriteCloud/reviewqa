@@ -1,11 +1,19 @@
 package plan
 
 import (
+	"html"
 	"regexp"
 	"strings"
 
 	"github.com/reviewqa/reviewqa/internal/ast"
 )
+
+// decodeText unescapes HTML entities and trims a captured text. Used by
+// every content-text extractor so `Let&#x27;s Chat` ends up as `Let's Chat`
+// instead of leaking into the generated regex assertions.
+func decodeText(s string) string {
+	return strings.TrimSpace(html.UnescapeString(s))
+}
 
 // reTitle matches the <title> element content. Single-line only.
 var reTitle = regexp.MustCompile(`(?i)<title[^>]*>([^<]+)</title>`)
@@ -44,7 +52,7 @@ func appendTitle(out []ast.ContentAnchor, content []byte) []ast.ContentAnchor {
 	if m == nil {
 		return out
 	}
-	t := strings.TrimSpace(m[1])
+	t := decodeText(m[1])
 	if t == "" {
 		return out
 	}
@@ -64,7 +72,7 @@ func appendMatches(out []ast.ContentAnchor, content []byte, re *regexp.Regexp, t
 		if len(out) >= cap {
 			return out
 		}
-		text := strings.TrimSpace(m[1])
+		text := decodeText(m[1])
 		if text == "" {
 			continue
 		}
@@ -79,7 +87,7 @@ func appendCTAs(out []ast.ContentAnchor, content []byte, cap int) []ast.ContentA
 			if len(out) >= cap {
 				return out
 			}
-			text := strings.TrimSpace(string(m[1]))
+			text := decodeText(string(m[1]))
 			if isCTAText(strings.ToLower(text)) {
 				out = append(out, ast.ContentAnchor{Tag: "cta", Text: text})
 			}
@@ -100,7 +108,7 @@ func isCTAText(lowerText string) bool {
 // PageTitle returns the <title> tag's content, or empty when absent.
 func PageTitle(content []byte) string {
 	if m := reTitle.FindSubmatch(content); m != nil {
-		return strings.TrimSpace(string(m[1]))
+		return decodeText(string(m[1]))
 	}
 	return ""
 }

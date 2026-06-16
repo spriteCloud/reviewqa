@@ -172,6 +172,57 @@ func TestPageRootDetectionAcrossFrameworks(t *testing.T) {
 	}
 }
 
+func TestResolveLinkHref(t *testing.T) {
+	tests := []struct {
+		name, base, href, want string
+	}{
+		{"leading slash kept", "https://x.test/", "/about", "/about"},
+		{"relative resolved against base", "https://books.toscrape.com", "catalogue/x.html", "/catalogue/x.html"},
+		{"relative with dotdot resolved", "https://x.test/blog/post", "../about", "/about"},
+		{"absolute same-origin reduced to path", "https://x.test/", "https://x.test/about", "/about"},
+		{"absolute cross-origin dropped", "https://x.test/", "https://other.test/x", ""},
+		{"protocol-relative same host kept", "https://x.test/", "//x.test/y", "/y"},
+		{"mailto dropped", "https://x.test/", "mailto:foo@bar.com", ""},
+		{"tel dropped", "https://x.test/", "tel:+1234", ""},
+		{"javascript dropped", "https://x.test/", "javascript:void(0)", ""},
+		{"fragment dropped", "https://x.test/", "#section", ""},
+		{"empty dropped", "https://x.test/", "", ""},
+		{"protocol-relative cross-host dropped", "https://x.test/", "//other.test/y", ""},
+	}
+	for _, tc := range tests {
+		t.Run(tc.name, func(t *testing.T) {
+			got := resolveLinkHref(tc.base, tc.href)
+			if got != tc.want {
+				t.Errorf("resolveLinkHref(%q, %q) = %q; want %q", tc.base, tc.href, got, tc.want)
+			}
+		})
+	}
+}
+
+func TestExtractHTMLLinks_ResolvesRelative(t *testing.T) {
+	html := []byte(`<html><body>
+<a href="catalogue/books_1/index.html">Books</a>
+<a href="/about">About</a>
+<a href="https://books.toscrape.com/contact">Contact</a>
+<a href="https://elsewhere.test/escape">Escape</a>
+<a href="mailto:foo@bar.com">Email</a>
+</body></html>`)
+	links := ExtractHTMLLinks("https://books.toscrape.com", html)
+	want := map[string]bool{
+		"/catalogue/books_1/index.html": true,
+		"/about":                        true,
+		"/contact":                      true,
+	}
+	if len(links) != len(want) {
+		t.Fatalf("expected %d links, got %d: %+v", len(want), len(links), links)
+	}
+	for _, l := range links {
+		if !want[l.Aria] {
+			t.Errorf("unexpected resolved href %q", l.Aria)
+		}
+	}
+}
+
 func TestPageURLsEnvOverride(t *testing.T) {
 	dir := t.TempDir()
 	// Put a TSX file at a path the conventional walker won't classify as a

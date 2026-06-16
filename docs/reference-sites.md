@@ -56,23 +56,54 @@ exercises our English-only nav vocabulary fallback.
 
 ## Known gaps surfaced by this workflow
 
-The first local run of the workflow against the matrix has already
-surfaced these issues — recorded here as the queue for follow-up work
-(each is generic, not site-specific):
+### Fixed in v0.11.x
 
-- **Relative URLs without leading slash are dropped.** `books.toscrape.com`
-  emits hrefs like `catalogue/category/books_1/index.html` — no leading
-  `/`. Our `rankLinks` and `findExploreJourneys` both gate on
-  `strings.HasPrefix(l.Aria, "/")`, so those candidates are silently
-  excluded. Result: 0 specs for sites that use relative-without-slash
-  link styles. Affects an unknown but probably-large fraction of static
-  / older marketing sites.
-- **Docs-shaped sites yield only `read` journeys.** `playwright.dev`
-  produced 3 specs, all `read`. The ranked-nav vocabulary doesn't score
-  doc-page text (`Get started`, `API`, `Guides`) high enough relative to
-  the SaaS vocabulary it's tuned for, so `explore` journeys get crowded
-  out. Worth widening `navVocabulary` to include docs terms once
-  validated.
+- **Relative URLs without leading slash.** `books.toscrape.com` went
+  from 0 specs to 3. `ExtractHTMLLinks` now resolves hrefs against the
+  page's base URL before storing them.
+- **Article-shaped pages with hundreds of links.** Wikipedia articles
+  were rejected by the old `< 20 outbound links` cap in `isDetailPage`.
+  New article-shape branch accepts `>= 1 h1 && >= 3 h2`. Madrid now
+  produces a `read` journey.
+- **Special-character filenames.** Wiki paths like `Especial:PáginasEspeciales`
+  produced spec filenames with `:` and accented characters that broke
+  Playwright on disk. `pathSlug` now strips to a safe charset.
+- **Sitemap-discovered URLs hard-failed.** The case-study links that
+  came from `sitemap.xml` weren't actually present on the homepage, so
+  every `research-*` spec timed out clicking a phantom link. Itinerary
+  builder now detects this and falls back to `page.goto(<absolute URL>)`.
+- **HTML entities leaked into regex assertions.** `Let&#x27;s Chat` was
+  embedded verbatim into the spec's `getByRole('heading', { name: /.../i })`
+  call, never matching. Content extractors now `html.UnescapeString` at
+  capture time.
+- **Speculative outbound click on chained journeys.** Every multi-step
+  spec ended with a fragile "click one more nav target" step that often
+  hit dead links. Removed for chained journeys; single-step nav items
+  keep it.
+- **Hover-only dropdown links.** Webflow / similar sites hide nav items
+  inside dropdowns. The DOM has the link but it isn't immediately
+  clickable. Template now wraps clicks in `try/catch` and falls back to
+  `page.goto(<absolute URL>)` when the click times out.
+
+### Still open (LLM / DGX territory)
+
+- **Docs-shaped sites yield only `read` journeys.** `playwright.dev` and
+  `gohugo.io` produce 3 read specs each. The ranked-nav vocabulary
+  doesn't score doc-page text (`Get started`, `API`, `Guides`) high
+  enough relative to the SaaS vocabulary. LLM page classification will
+  cover this generically.
+- **Multilingual nav vocabulary.** `es.wikipedia.org` produces only 1
+  spec because our English vocab scores Spanish nav text at 0. Same fix
+  shape as above.
+
+### Still open (deterministic, future v0.11.x)
+
+- **JS form validation keeps Submit disabled.** Webflow forms disable
+  the submit button until JS validates input. Our `.fill()` doesn't
+  fire the same blur/change events a real user would. `convert` spec
+  on spritecloud.com fails for this reason. Likely fix: use
+  `pressSequentially()` for text inputs OR explicitly trigger `blur()`
+  after fill OR wait for the button to be enabled before clicking.
 
 ## What this workflow is NOT
 

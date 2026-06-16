@@ -259,6 +259,15 @@ func itemFromJourney(j mindmap.Journey, sourceURL string) plan.Item {
 	for idx, step := range j.Steps {
 		s := symbolFromPage(step.Page)
 		s.EnteredVia = step.EnteredVia
+		s.AbsoluteURL = step.Page.URL
+		// If the EnteredVia path isn't a clickable link on the previous
+		// step's page (commonly true for sitemap-discovered URLs), mark the
+		// step as DirectGoto so the template uses page.goto(absURL) instead
+		// of locator(href).click(). Caught by the v0.11 smoke run: case-study
+		// URLs surfaced via sitemap but not linked from the landing.
+		if idx > 0 && step.EnteredVia != "" && !linkExistsOnPage(j.Steps[idx-1].Page, step.EnteredVia) {
+			s.DirectGoto = true
+		}
 		// The landing step in non-form-goal journeys should NOT inherit
 		// the homepage's form. Otherwise every browse/research/explore
 		// spec submits the email signup before navigating — both noisy
@@ -279,6 +288,21 @@ func itemFromJourney(j mindmap.Journey, sourceURL string) plan.Item {
 		OutPath:     "tests/e2e/" + stem + ".spec.ts",
 		JourneyKind: string(j.Kind),
 	}
+}
+
+// linkExistsOnPage reports whether href is present as an outbound link on
+// the given page. Used by itemFromJourney to decide between click and
+// page.goto in chained-step emission.
+func linkExistsOnPage(p *mindmap.Page, href string) bool {
+	if p == nil || href == "" {
+		return false
+	}
+	for _, l := range p.Links {
+		if l.Aria == href {
+			return true
+		}
+	}
+	return false
 }
 
 // withoutForm zeroes out form-related fields on a symbol. Used to keep
@@ -345,7 +369,28 @@ func pathSlug(rawURL string) string {
 	if p == "" {
 		return ""
 	}
-	return strings.ReplaceAll(p, "/", "-")
+	p = strings.ReplaceAll(p, "/", "-")
+	// Strip everything that isn't a filesystem-and-Playwright-safe token.
+	// Wiki article slugs frequently carry "Especial:X", percent-encoded
+	// accents like "P%C3%A1ginas", and other shell-hostile chars.
+	var b strings.Builder
+	for _, r := range p {
+		switch {
+		case r >= 'a' && r <= 'z',
+			r >= 'A' && r <= 'Z',
+			r >= '0' && r <= '9',
+			r == '-', r == '_', r == '.':
+			b.WriteRune(r)
+		default:
+			b.WriteRune('-')
+		}
+	}
+	// Collapse repeat dashes; trim trailing.
+	collapsed := b.String()
+	for strings.Contains(collapsed, "--") {
+		collapsed = strings.ReplaceAll(collapsed, "--", "-")
+	}
+	return strings.Trim(collapsed, "-_.")
 }
 
 // buildJourney fetches the source URL, then chains up to maxChain pages by

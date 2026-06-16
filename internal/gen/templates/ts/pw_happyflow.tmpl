@@ -16,13 +16,27 @@ test.describe('{{.Symbol.Name}}{{if .JourneyKind}} — {{.JourneyKind}} journey{
     // Step 1 — visit {{$.PageURL}} (intent: {{$intent}})
     await page.goto(TARGET)
 {{- else if $s.EnteredVia }}
+{{- if $s.DirectGoto }}
+
+    // Step {{add $idx 1}} — direct goto "{{$s.EnteredVia}}" (not linked from the previous page; intent: {{$intent}})
+    await page.goto('{{$s.AbsoluteURL}}')
+    await expect(page).toHaveURL(new RegExp('{{$s.EnteredVia}}$'))
+{{- else }}
 
     // Step {{add $idx 1}} — click "{{$s.EnteredVia}}" and land on the next page (intent: {{$intent}})
     {
       const link = page.locator('a[href="{{$s.EnteredVia}}"], [href="{{$s.EnteredVia}}"]').first()
-      await link.click()
+      try {
+        await link.click({ timeout: 3000 })
+      } catch {
+        // Link is in the DOM but not directly clickable (often a hover-only
+        // dropdown menu item). Navigate by URL so the destination still gets
+        // exercised instead of the whole spec hard-failing on the menu.
+        await page.goto('{{$s.AbsoluteURL}}')
+      }
       await expect(page).toHaveURL(new RegExp('{{$s.EnteredVia}}$'))
     }
+{{- end }}
 {{- else }}
 
     // Step {{add $idx 1}} — {{$s.Name}} (same page, intent: {{$intent}})
@@ -100,10 +114,12 @@ test.describe('{{.Symbol.Name}}{{if .JourneyKind}} — {{.JourneyKind}} journey{
 {{- end }}
 {{- end }}
 {{- end }}
-{{- /* On the FINAL symbol (or single-symbol Items), emit one ranked nav
-       click on its outbound links. Skipped for non-final chained symbols
-       because the next symbol's EnteredVia covers the transition. */ -}}
-{{- if and (eq $intent "nav") (eq $idx (sub (len $.Symbols) 1)) }}
+{{- /* On SINGLE-step (no EnteredVia chain) intent=nav items, emit one
+       ranked nav click so the test does more than just goto + assert.
+       Chained journeys already have meaningful navigation via EnteredVia
+       and don't need the extra "outbound click" — it was speculative
+       and frequently hits dead links (v0.11 smoke run finding). */ -}}
+{{- if and (eq $intent "nav") (eq (len $.Symbols) 1) }}
 {{- range $l := rankedNavTargetsRotated $s.Links $s.EnteredVia $s.EnteredVia }}
 
     // Step {{add $idx 2}} — outbound click "{{linkHref $l}}" ({{or $l.Text "no text"}})
