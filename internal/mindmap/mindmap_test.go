@@ -222,7 +222,7 @@ func TestDiscoverSitemapURLs(t *testing.T) {
 	urls := discoverSitemapURLs(context.Background(), "https://x.test", pages.fetch)
 	// cookie-policy is filtered by isAvoidedPath; other.test by absoluteSameOrigin.
 	want := map[string]bool{
-		"https://x.test":              true,
+		"https://x.test":                 true,
 		"https://x.test/services/devops": true,
 	}
 	if len(urls) != 2 {
@@ -283,4 +283,9 @@ func contains(ts []string, t string) bool {
 		}
 	}
 	return false
+}
+func TestCrawl(t *testing.T) {
+	t.Run("happy path", func(t *testing.T) {
+		Crawl(nil, "", nil, nil)
+	})
 }

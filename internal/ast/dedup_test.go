@@ -1,6 +1,10 @@
 package ast
 
-import "testing"
+import (
+	"testing"
+
+	"reflect"
+)
 
 func TestDedupAnchors_CollapsesIdenticalRoleHits(t *testing.T) {
 	anchors := []LocatorAnchor{
