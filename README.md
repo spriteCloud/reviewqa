@@ -4,6 +4,8 @@
 [![Release](https://img.shields.io/github/v/release/spriteCloud/reviewqa?color=4B8BBE&labelColor=0F1117)](https://github.com/spriteCloud/reviewqa/releases)
 [![License: AGPL-3.0](https://img.shields.io/badge/license-AGPL--3.0-C0805A?labelColor=0F1117)](./LICENSE)
 
+> v0.5.0 ships `reviewqa probe` — generate Playwright tests against any live URL, no source diff required.
+
 A small Go binary + GitHub Action that watches a PR, opens a follow-up PR with
 generated tests for the new code, and heals broken Playwright locators.
 

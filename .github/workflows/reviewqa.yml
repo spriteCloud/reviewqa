@@ -30,3 +30,6 @@ jobs:
           heal-mode: on-failure
           playwright-report: playwright-report.json
           log-level: info
+          # Optional probe target — when set, reviewqa generate ALSO fetches
+          # the URL and emits a Playwright happy-flow against it.
+          target-urls: ${{ vars.REVIEWQA_TARGET_URLS }}
