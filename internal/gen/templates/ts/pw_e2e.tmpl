@@ -32,6 +32,32 @@ test.describe('{{.Symbol.Name}}', () => {
   })
 {{- end }}
 {{- end }}
+{{- if .Symbol.Inputs }}
+
+  test('{{.Symbol.Name}}: fills the form and submits', async ({ page }) => {
+{{- range $i := .Symbol.Inputs }}
+{{- if shouldCheck $i }}
+    await page.{{inputLocator $i}}.first().check()
+{{- else if eq $i.Type "select" }}
+    await page.{{inputLocator $i}}.first().selectOption({ index: 0 })
+{{- else }}
+    await page.{{inputLocator $i}}.first().fill('{{fillValueFor $i}}')
+{{- end }}
+{{- end }}
+{{- with firstSubmit .Symbol.Anchors }}{{ $sub := index . 0 }}
+    await page.{{locatorFor $sub}}.first().click()
+{{- end }}
+    await expect(page.locator('text=/error|failed/i')).toHaveCount(0)
+  })
+{{- end }}
+{{- with firstSameOriginLink .Symbol.Links }}{{ $l := index . 0 }}
+
+  test('{{$.Symbol.Name}}: navigates to {{linkHref $l}}', async ({ page }) => {
+    const link = page.locator('a[href="{{linkHref $l}}"], [href="{{linkHref $l}}"]').first()
+    await link.click()
+    await expect(page).toHaveURL(new RegExp('{{linkHref $l}}$'))
+  })
+{{- end }}
 {{- else }}
 
   test('renders the {{.Symbol.Name}} component', async ({ page }) => {

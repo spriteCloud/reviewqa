@@ -43,6 +43,14 @@ var (
 	reTestID = regexp.MustCompile(`data-testid\s*=\s*['"]([^'"]+)['"]`)
 	reAria   = regexp.MustCompile(`aria-label\s*=\s*['"]([^'"]+)['"]`)
 	reRole   = regexp.MustCompile(`role\s*=\s*['"]([^'"]+)['"]`)
+
+	// User-flow signals.
+	reInputType    = regexp.MustCompile(`type\s*=\s*['"]([^'"]+)['"]`)
+	reInputName    = regexp.MustCompile(`name\s*=\s*['"]([^'"]+)['"]`)
+	reInputRequired = regexp.MustCompile(`\brequired\b`)
+	reHref         = regexp.MustCompile(`href\s*=\s*['"]([^'"]+)['"]`)
+	reLinkTo       = regexp.MustCompile(`(?:^|\s)to\s*=\s*['"]([^'"]+)['"]`)
+	reSubmitType   = regexp.MustCompile(`type\s*=\s*['"]submit['"]`)
 )
 
 func (extractor) Extract(file string, content []byte) ([]ast.Symbol, []ast.LocatorAnchor) {
@@ -187,7 +195,8 @@ func (extractor) Extract(file string, content []byte) ([]ast.Symbol, []ast.Locat
 	}
 	if hasJSX {
 		anchors = extractAnchors(file, content)
-		annotateComponents(syms, anchors, content)
+		inputs := extractFormInputs(file, content)
+		annotateComponents(syms, anchors, inputs, content)
 	}
 	return syms, anchors
 }
@@ -197,7 +206,7 @@ func (extractor) Extract(file string, content []byte) ([]ast.Symbol, []ast.Locat
 // anchors that fall inside its line window. It also sets the component's
 // HasState/HasOnClick/HasOnSubmit flags based on substring presence within
 // the body.
-func annotateComponents(syms []ast.Symbol, anchors []ast.LocatorAnchor, content []byte) {
+func annotateComponents(syms []ast.Symbol, anchors []ast.LocatorAnchor, inputs []ast.FormInput, content []byte) {
 	if len(syms) == 0 {
 		return
 	}
@@ -209,30 +218,83 @@ func annotateComponents(syms []ast.Symbol, anchors []ast.LocatorAnchor, content 
 		end := componentEndLine(lines, syms[i].Line)
 		syms[i].EndLine = end
 		body := strings.Join(lines[syms[i].Line-1:end], "\n")
-		if strings.Contains(body, "useState") || strings.Contains(body, "useReducer") {
-			syms[i].HasState = true
+		setBodyFlags(&syms[i], body)
+		attachAnchors(&syms[i], anchors, lines, end)
+		attachInputs(&syms[i], inputs, end)
+		attachLinks(&syms[i], anchors, end)
+	}
+}
+
+func setBodyFlags(s *ast.Symbol, body string) {
+	if strings.Contains(body, "useState") || strings.Contains(body, "useReducer") {
+		s.HasState = true
+	}
+	if strings.Contains(body, "onClick=") {
+		s.HasOnClick = true
+	}
+	if strings.Contains(body, "onSubmit=") {
+		s.HasOnSubmit = true
+	}
+	if strings.Contains(body, "<form") {
+		s.HasForm = true
+	}
+	if strings.Contains(body, "navigate(") ||
+		strings.Contains(body, "router.push(") ||
+		strings.Contains(body, "useNavigate(") {
+		s.HasNavigate = true
+	}
+}
+
+func attachAnchors(s *ast.Symbol, anchors []ast.LocatorAnchor, lines []string, end int) {
+	seen := map[string]bool{}
+	for _, a := range anchors {
+		if a.Line < s.Line || a.Line > end {
+			continue
 		}
-		if strings.Contains(body, "onClick=") {
-			syms[i].HasOnClick = true
+		if a.Tag == "link-a" || a.Tag == "link-to" || a.Tag == "submit" {
+			continue // routed to attachLinks / firstSubmit helper
 		}
-		if strings.Contains(body, "onSubmit=") {
-			syms[i].HasOnSubmit = true
+		if a.Tag == "" {
+			a.Tag = openTagBefore(lines, a.Line, s.Line)
 		}
-		seen := map[string]bool{}
-		for _, a := range anchors {
-			if a.Line < syms[i].Line || a.Line > end {
-				continue
-			}
-			if a.Tag == "" {
-				a.Tag = openTagBefore(lines, a.Line, syms[i].Line)
-			}
-			key := a.TestID + "|" + a.Role + "|" + a.Aria + "|" + a.Tag
-			if seen[key] {
-				continue
-			}
-			seen[key] = true
-			syms[i].Anchors = append(syms[i].Anchors, a)
+		key := a.TestID + "|" + a.Role + "|" + a.Aria + "|" + a.Tag
+		if seen[key] {
+			continue
 		}
+		seen[key] = true
+		s.Anchors = append(s.Anchors, a)
+	}
+}
+
+func attachInputs(s *ast.Symbol, inputs []ast.FormInput, end int) {
+	seen := map[string]bool{}
+	for _, in := range inputs {
+		if in.Line < s.Line || in.Line > end {
+			continue
+		}
+		key := in.Name + "|" + in.Type
+		if seen[key] {
+			continue
+		}
+		seen[key] = true
+		s.Inputs = append(s.Inputs, in)
+	}
+}
+
+func attachLinks(s *ast.Symbol, anchors []ast.LocatorAnchor, end int) {
+	seen := map[string]bool{}
+	for _, a := range anchors {
+		if a.Tag != "link-a" && a.Tag != "link-to" {
+			continue
+		}
+		if a.Line < s.Line || a.Line > end {
+			continue
+		}
+		if seen[a.Aria] {
+			continue
+		}
+		seen[a.Aria] = true
+		s.Links = append(s.Links, a)
 	}
 }
 
@@ -427,8 +489,62 @@ func extractAnchors(file string, content []byte) []ast.LocatorAnchor {
 		if m := reRole.FindStringSubmatch(text); m != nil {
 			anchors = append(anchors, ast.LocatorAnchor{Role: m[1], File: file, Line: line, Tag: tag})
 		}
+		// Same-origin link discovery: <a href="/x"> or <Link to="/x">.
+		if tag == "a" {
+			if m := reHref.FindStringSubmatch(text); m != nil {
+				anchors = append(anchors, ast.LocatorAnchor{Aria: m[1], File: file, Line: line, Tag: "link-a"})
+			}
+		}
+		if m := reLinkTo.FindStringSubmatch(text); m != nil {
+			anchors = append(anchors, ast.LocatorAnchor{Aria: m[1], File: file, Line: line, Tag: "link-to"})
+		}
+		// Submit button hint: <button type="submit">.
+		if tag == "button" && reSubmitType.MatchString(text) {
+			anchors = append(anchors, ast.LocatorAnchor{File: file, Line: line, Tag: "submit"})
+		}
 	}
 	return anchors
+}
+
+// extractFormInputs returns the form inputs detected per file. One entry per
+// <input> / <select> / <textarea> line. Multi-line attributes are best-effort
+// — type/name/required must appear on the same line as the opening tag.
+func extractFormInputs(file string, content []byte) []ast.FormInput {
+	var inputs []ast.FormInput
+	sc := bufio.NewScanner(bytes.NewReader(content))
+	sc.Buffer(make([]byte, 1<<20), 16<<20)
+	line := 0
+	for sc.Scan() {
+		line++
+		text := sc.Text()
+		tag := tagOnLine(text)
+		switch tag {
+		case "input", "select", "textarea":
+		default:
+			continue
+		}
+		fi := ast.FormInput{File: file, Line: line, Tag: tag}
+		if tag == "input" {
+			if m := reInputType.FindStringSubmatch(text); m != nil {
+				fi.Type = strings.ToLower(m[1])
+			} else {
+				fi.Type = "text"
+			}
+		} else {
+			fi.Type = tag
+		}
+		if m := reInputName.FindStringSubmatch(text); m != nil {
+			fi.Name = m[1]
+		}
+		if m := reTestID.FindStringSubmatch(text); m != nil {
+			fi.TestID = m[1]
+		}
+		if reInputRequired.MatchString(text) {
+			fi.Required = true
+		}
+		inputs = append(inputs, fi)
+	}
+	return inputs
 }
 
 func KindFor(name string, hasJSX bool, file string) ast.Kind {

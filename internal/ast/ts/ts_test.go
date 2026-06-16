@@ -118,6 +118,52 @@ export function FAQ() {
 	}
 }
 
+func TestExtractFormInputsAndLinks(t *testing.T) {
+	src := []byte(`import { useState } from 'react'
+
+export function LoginForm() {
+  return (
+    <form data-testid="login-form">
+      <input type="email" name="email" required />
+      <input type="password" name="password" required />
+      <button type="submit" data-testid="submit">Sign in</button>
+      <a href="/forgot">Forgot password?</a>
+    </form>
+  )
+}
+`)
+	syms, _ := New().Extract("src/components/LoginForm.tsx", src)
+	var comp *ast.Symbol
+	for i := range syms {
+		if syms[i].Kind == ast.KindComponent && syms[i].Name == "LoginForm" {
+			comp = &syms[i]
+			break
+		}
+	}
+	if comp == nil {
+		t.Fatalf("missing LoginForm; syms = %+v", syms)
+	}
+	if !comp.HasForm {
+		t.Error("HasForm should be true")
+	}
+	if len(comp.Inputs) != 2 {
+		t.Fatalf("expected 2 inputs, got %d: %+v", len(comp.Inputs), comp.Inputs)
+	}
+	byType := map[string]ast.FormInput{}
+	for _, in := range comp.Inputs {
+		byType[in.Type] = in
+	}
+	if email, ok := byType["email"]; !ok || email.Name != "email" || !email.Required {
+		t.Errorf("email input wrong: %+v", email)
+	}
+	if pw, ok := byType["password"]; !ok || pw.Name != "password" || !pw.Required {
+		t.Errorf("password input wrong: %+v", pw)
+	}
+	if len(comp.Links) != 1 || comp.Links[0].Aria != "/forgot" {
+		t.Errorf("expected one /forgot link, got %+v", comp.Links)
+	}
+}
+
 func TestReactComponentMultiLineJSXTagDetection(t *testing.T) {
 	// Counter-shaped component: the button tag and the data-testid live on
 	// different lines. The extractor must associate the testid with <button>
