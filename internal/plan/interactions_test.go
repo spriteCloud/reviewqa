@@ -1,6 +1,10 @@
 package plan
 
-import "testing"
+import (
+	"testing"
+
+	"reflect"
+)
 
 func TestExtractHTMLInteractions(t *testing.T) {
 	tests := []struct {
