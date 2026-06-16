@@ -13,21 +13,28 @@ import (
 type Template string
 
 const (
-	TmplJestUnit          Template = "jest_unit"
-	TmplJestAPI           Template = "jest_api"
-	TmplPlaywrightE2E     Template = "pw_e2e"
-	TmplPytestUnit        Template = "pytest_unit"
-	TmplPytestAPI         Template = "pytest_api"
-	TmplGoUnit            Template = "gotest_unit"
-	TmplGoHTTPTest        Template = "gotest_httptest"
-	TmplJUnit5Unit        Template = "junit5_unit"
-	TmplJUnit5RestAssured Template = "junit5_restassured"
+	TmplJestUnit           Template = "jest_unit"
+	TmplJestAPI            Template = "jest_api"
+	TmplPlaywrightE2E      Template = "pw_e2e"
+	TmplPlaywrightHappyFlow Template = "pw_happyflow"
+	TmplPytestUnit         Template = "pytest_unit"
+	TmplPytestAPI          Template = "pytest_api"
+	TmplGoUnit             Template = "gotest_unit"
+	TmplGoHTTPTest         Template = "gotest_httptest"
+	TmplJUnit5Unit         Template = "junit5_unit"
+	TmplJUnit5RestAssured  Template = "junit5_restassured"
 )
 
 type Item struct {
 	Symbol   ast.Symbol
 	Template Template
 	OutPath  string
+	// Symbols carries multiple symbols when an Item represents a
+	// page-scoped happy-flow (TmplPlaywrightHappyFlow). For all other
+	// templates, Symbols is empty and Symbol is authoritative.
+	Symbols []ast.Symbol
+	// PageURL is the relative URL the happy-flow visits, e.g. "/", "/home".
+	PageURL string
 }
 
 type Layout struct {
@@ -107,6 +114,9 @@ func Build(files []diff.File, layout Layout) []Item {
 			it.OutPath = testPathFor(s, it.Template, layout)
 			items = append(items, it)
 		}
+	}
+	if os.Getenv("REVIEWQA_E2E_STYLE") != "per-component" {
+		items = groupByPage(items, files, layout)
 	}
 	return items
 }

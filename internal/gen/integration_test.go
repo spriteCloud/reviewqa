@@ -6,6 +6,8 @@ package gen_test
 // symbol.
 
 import (
+	"os"
+	"path/filepath"
 	"strings"
 	"testing"
 
@@ -17,6 +19,75 @@ import (
 	"github.com/reviewqa/reviewqa/internal/gen"
 	"github.com/reviewqa/reviewqa/internal/plan"
 )
+
+func TestEndToEnd_PageFlowGrouping(t *testing.T) {
+	dir := t.TempDir()
+	must := func(rel, body string) {
+		full := filepath.Join(dir, rel)
+		mkdir(t, filepath.Dir(full))
+		if err := os.WriteFile(full, []byte(body), 0o644); err != nil {
+			t.Fatal(err)
+		}
+	}
+	must("pages/Home.tsx", `import { Counter } from '../src/Counter'
+import { FAQ } from '../src/FAQ'
+export default function Home() { return (<main><Counter /><FAQ /></main>) }
+`)
+	counter := `import { useState } from 'react'
+export function Counter() {
+  const [v, setV] = useState(0)
+  return (<div data-testid="counter-root"><button data-testid="inc" onClick={()=>setV(v+1)}>+</button></div>)
+}
+`
+	faq := `export function FAQ() {
+  return (<div data-testid="faq-list"></div>)
+}
+`
+	must("src/Counter.tsx", counter)
+	must("src/FAQ.tsx", faq)
+
+	files := []diff.File{
+		{Path: "src/Counter.tsx", Added: []diff.Range{{Start: 1, End: 10}}, Status: "added", NewBlob: counter},
+		{Path: "src/FAQ.tsx", Added: []diff.Range{{Start: 1, End: 10}}, Status: "added", NewBlob: faq},
+	}
+	items := plan.Build(files, plan.Detect(dir))
+	var flow *plan.Item
+	for i := range items {
+		if items[i].Template == plan.TmplPlaywrightHappyFlow {
+			flow = &items[i]
+		}
+		if items[i].Template == plan.TmplPlaywrightE2E {
+			t.Errorf("unexpected per-component E2E item: %+v", items[i])
+		}
+	}
+	if flow == nil {
+		t.Fatalf("expected one happy-flow item, items = %+v", items)
+	}
+	rs, err := gen.Render([]plan.Item{*flow}, dir)
+	if err != nil {
+		t.Fatal(err)
+	}
+	body := string(rs[0].Content)
+	for _, want := range []string{
+		"page happy flow",
+		"walks 2 component(s) on /home",
+		"// --- Counter ---",
+		"// --- FAQ ---",
+		"getByTestId('counter-root')",
+		"getByTestId('faq-list')",
+	} {
+		if !strings.Contains(body, want) {
+			t.Errorf("happy-flow body missing %q in:\n%s", want, body)
+		}
+	}
+}
+
+func mkdir(t *testing.T, dir string) {
+	t.Helper()
+	if err := os.MkdirAll(dir, 0o755); err != nil {
+		t.Fatal(err)
+	}
+}
 
 func TestEndToEnd_AllLanguages(t *testing.T) {
 	files := []diff.File{

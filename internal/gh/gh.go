@@ -173,6 +173,14 @@ func (c *Client) OpenPR(ctx context.Context, opts PROpts) (string, error) {
 	} else {
 		log.Info("created branch", "branch", opts.NewBranch)
 	}
+	// Idempotency: if a PR for this head already exists (re-trigger of the
+	// same source PR, synchronize event, retry after transient failure),
+	// update its title/body in place instead of erroring.
+	if url, ok, err := c.updateExistingPR(ctx, owner, repo, opts); err != nil {
+		return "", fmt.Errorf("open pr: %w", err)
+	} else if ok {
+		return url, nil
+	}
 	pr, _, err := c.api.PullRequests.Create(ctx, owner, repo, &github.NewPullRequest{
 		Title:               github.String(opts.Title),
 		Head:                github.String(opts.NewBranch),
@@ -181,10 +189,44 @@ func (c *Client) OpenPR(ctx context.Context, opts PROpts) (string, error) {
 		MaintainerCanModify: github.Bool(true),
 	})
 	if err != nil {
+		// Race: the PR was created between our precheck and our Create. Fall
+		// back to the same edit path.
+		if isPRAlreadyExists(err) {
+			if url, ok, fbErr := c.updateExistingPR(ctx, owner, repo, opts); fbErr == nil && ok {
+				return url, nil
+			}
+		}
 		return "", fmt.Errorf("open pr: %w", err)
 	}
 	log.Info("opened pr", "url", pr.GetHTMLURL(), "branch", opts.NewBranch)
 	return pr.GetHTMLURL(), nil
+}
+
+// updateExistingPR returns (url, true, nil) when a PR exists for this branch
+// and was successfully patched with the new title and body. (_, false, nil)
+// when no PR was found.
+func (c *Client) updateExistingPR(ctx context.Context, owner, repo string, opts PROpts) (string, bool, error) {
+	existing, _, err := c.api.PullRequests.List(ctx, owner, repo, &github.PullRequestListOptions{
+		Head:        owner + ":" + opts.NewBranch,
+		State:       "open",
+		ListOptions: github.ListOptions{PerPage: 1},
+	})
+	if err != nil {
+		return "", false, fmt.Errorf("list prs: %w", err)
+	}
+	if len(existing) == 0 {
+		return "", false, nil
+	}
+	pr := existing[0]
+	patched, _, err := c.api.PullRequests.Edit(ctx, owner, repo, pr.GetNumber(), &github.PullRequest{
+		Title: github.String(opts.Title),
+		Body:  github.String(opts.Body),
+	})
+	if err != nil {
+		return "", false, fmt.Errorf("edit pr #%d: %w", pr.GetNumber(), err)
+	}
+	log.Info("updated existing pr", "url", patched.GetHTMLURL(), "branch", opts.NewBranch)
+	return patched.GetHTMLURL(), true, nil
 }
 
 func isAlreadyExists(err error) bool {
@@ -199,4 +241,18 @@ func isAlreadyExists(err error) bool {
 		}
 	}
 	return strings.Contains(err.Error(), "already exists")
+}
+
+func isPRAlreadyExists(err error) bool {
+	if err == nil {
+		return false
+	}
+	var ge *github.ErrorResponse
+	if errors.As(err, &ge) && ge.Response != nil {
+		if ge.Response.StatusCode == http.StatusUnprocessableEntity &&
+			strings.Contains(err.Error(), "A pull request already exists") {
+			return true
+		}
+	}
+	return strings.Contains(err.Error(), "A pull request already exists")
 }

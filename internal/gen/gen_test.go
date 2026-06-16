@@ -224,6 +224,61 @@ func TestRenderJUnit5Unit_DoesNotThrow(t *testing.T) {
 	}
 }
 
+func TestRenderPlaywrightHappyFlow(t *testing.T) {
+	symbols := []ast.Symbol{
+		{
+			Kind: ast.KindComponent, Name: "Counter",
+			File: "src/Counter.tsx", Language: "ts", Line: 1, EndLine: 10,
+			HasState: true, HasOnClick: true,
+			Anchors: []ast.LocatorAnchor{
+				{TestID: "counter-root", Tag: "div"},
+				{TestID: "counter-inc", Tag: "button"},
+			},
+		},
+		{
+			Kind: ast.KindComponent, Name: "FAQ",
+			File: "src/FAQ.tsx", Language: "ts", Line: 11, EndLine: 20,
+			Anchors: []ast.LocatorAnchor{
+				{TestID: "faq-list", Tag: "div"},
+			},
+		},
+	}
+	items := []plan.Item{{
+		Symbol:   symbols[0],
+		Symbols:  symbols,
+		PageURL:  "/home",
+		Template: plan.TmplPlaywrightHappyFlow,
+		OutPath:  "tests/e2e/Home.spec.ts",
+	}}
+	out, err := Render(items, ".")
+	if err != nil {
+		t.Fatal(err)
+	}
+	body := string(out[0].Content)
+	for _, want := range []string{
+		"test.describe('Counter page happy flow'",
+		"page.goto(BASE + '/home')",
+		"walks 2 component(s) on /home",
+		"// --- Counter ---",
+		"getByTestId('counter-root')",
+		"getByTestId('counter-inc')",
+		"// --- FAQ ---",
+		"getByTestId('faq-list')",
+		"target.click()",
+		"aria-expanded",
+	} {
+		if !strings.Contains(body, want) {
+			t.Errorf("missing %q in:\n%s", want, body)
+		}
+	}
+	if got := strings.Count(body, "test.describe("); got != 1 {
+		t.Errorf("describe count = %d, want 1", got)
+	}
+	if got := strings.Count(body, "  test("); got != 1 {
+		t.Errorf("test count = %d, want 1 (single walk-through)", got)
+	}
+}
+
 func TestRenderJUnit5RestAssured(t *testing.T) {
 	items := []plan.Item{{
 		Symbol: ast.Symbol{
