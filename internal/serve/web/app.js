@@ -8,6 +8,7 @@ const $projectName = document.querySelector('[data-project-name]')
 
 let activeFeature = null
 let activeDoc = null
+let activeHome = false
 let viewMode = 'pretty'
 let llmStatus = { enabled: false, model: '', endpoint: '' }
 let runStatus = { ready: false, message: '' }
@@ -673,6 +674,7 @@ async function deleteScenario (featurePath, name) {
 async function openFeature (path) {
   activeFeature = path
   activeDoc = null
+  activeHome = false
   refreshSidebarSelection()
   try {
     const data = await fetchJSON('/api/feature?path=' + encodeURIComponent(path))
@@ -700,6 +702,7 @@ async function refreshSidebarCounts () {
 async function openDoc (path, kind) {
   activeDoc = path
   activeFeature = null
+  activeHome = false
   refreshSidebarSelection()
   let viewRaw = false
 
@@ -753,6 +756,8 @@ function refreshSidebarSelection () {
   for (const li of $docList.querySelectorAll('li')) {
     li.classList.toggle('active', li.dataset.path === activeDoc)
   }
+  const $home = document.querySelector('[data-home]')
+  if ($home) $home.classList.toggle('active', activeHome)
 }
 
 async function init () {
@@ -795,6 +800,225 @@ async function init () {
   } catch (err) {
     $content.replaceChildren(el('div', { class: 'error' }, 'Failed to load project: ' + err.message))
   }
+
+  // First load lands on HOME so the user sees the probe form and
+  // capability shelf before picking a feature.
+  await openHome()
+}
+
+// ---------- HOME view ----------
+
+async function openHome () {
+  activeFeature = null
+  activeDoc = null
+  activeHome = true
+  refreshSidebarSelection()
+  await renderHome()
+}
+window.__openHome = openHome
+
+async function renderHome () {
+  const project = window.__project || { name: '', version: '', workdir: '', features: [], docs: [] }
+  const scenarioTotal = (project.features || []).reduce((acc, f) => acc + (f.scenarios || 0), 0)
+
+  const summary = el('div', { class: 'home-summary' },
+    summaryRow('workdir', project.workdir || '—'),
+    summaryRow('version', project.version ? `v${project.version}` : '—'),
+    summaryRow('features', String((project.features || []).length)),
+    summaryRow('scenarios', String(scenarioTotal)),
+    summaryRow('llm', llmStatus.enabled ? `${llmStatus.model} @ ${llmStatus.endpoint}` : 'off — set REVIEWQA_LLM to enable Chat'),
+    summaryRow('runtime', runStatus.ready ? 'ready (playwright installed)' : (runStatus.message || 'not ready')),
+  )
+
+  const $urlInput = el('input', { type: 'url', class: 'home-probe-input', placeholder: 'https://example.com', autocomplete: 'off' })
+  const $coverage = el('select', { class: 'home-probe-coverage' },
+    el('option', { value: '' }, 'coverage: default'),
+    el('option', { value: 'breadth' }, 'breadth'),
+    el('option', { value: 'standard' }, 'standard'),
+    el('option', { value: 'depth' }, 'depth'),
+    el('option', { value: 'max' }, 'max'),
+  )
+  const $btn = el('button', { class: 'btn-primary home-probe-btn', onclick: () => startProbe() }, '▶ Probe')
+  const $terminal = el('pre', { class: 'run-terminal home-probe-terminal' }, '$ awaiting probe…')
+  const $verdict = el('div', { class: 'home-probe-verdict' })
+
+  let activeStream = null
+
+  async function startProbe () {
+    const url = ($urlInput.value || '').trim()
+    if (!url) {
+      $verdict.textContent = 'Enter a URL first.'
+      $verdict.className = 'home-probe-verdict fail'
+      return
+    }
+    $btn.disabled = true
+    $btn.textContent = '… probing'
+    $verdict.textContent = ''
+    $verdict.className = 'home-probe-verdict'
+    $terminal.textContent = ''
+
+    if (activeStream) try { activeStream.close() } catch (_) {}
+
+    const ctrl = new AbortController()
+    try {
+      const res = await fetch('/api/probe', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ url, coverage: $coverage.value }),
+        signal: ctrl.signal,
+      })
+      if (!res.ok || !res.body) {
+        const txt = await res.text().catch(() => '')
+        throw new Error(`HTTP ${res.status} — ${txt}`)
+      }
+      const reader = res.body.getReader()
+      const dec = new TextDecoder()
+      let buf = ''
+      let lastEvent = ''
+      // eslint-disable-next-line no-constant-condition
+      while (true) {
+        const { value, done } = await reader.read()
+        if (done) break
+        buf += dec.decode(value, { stream: true })
+        const chunks = buf.split('\n\n')
+        buf = chunks.pop() || ''
+        for (const chunk of chunks) {
+          let evt = lastEvent
+          let data = ''
+          for (const line of chunk.split('\n')) {
+            if (line.startsWith('event: ')) evt = line.slice(7).trim()
+            else if (line.startsWith('data: ')) data += line.slice(6)
+          }
+          if (!data) continue
+          let payload
+          try { payload = JSON.parse(data) } catch (_) { continue }
+          lastEvent = evt
+          if (evt === 'start') {
+            $terminal.textContent += `$ ${payload.command}\n`
+          } else if (evt === 'line') {
+            $terminal.textContent += payload.text + '\n'
+            $terminal.scrollTop = $terminal.scrollHeight
+          } else if (evt === 'done') {
+            const ok = !!payload.passed
+            $verdict.textContent = ok
+              ? `Probe succeeded (exit ${payload.exitCode}) — refreshing project…`
+              : `Probe failed (exit ${payload.exitCode})${payload.error ? ' — ' + payload.error : ''}`
+            $verdict.className = 'home-probe-verdict ' + (ok ? 'pass' : 'fail')
+            if (ok) await reloadProject()
+          }
+        }
+      }
+    } catch (err) {
+      $verdict.textContent = 'Probe error: ' + err.message
+      $verdict.className = 'home-probe-verdict fail'
+    } finally {
+      $btn.disabled = false
+      $btn.textContent = '▶ Probe'
+    }
+  }
+
+  const shelf = el('div', { class: 'home-shelf' },
+    shelfTile('▶', 'Run any scenario',
+      'Pick a feature, hit Run. Streams Playwright output and stores the verdict next to the scenario.',
+      () => focusFeatures()),
+    shelfTile('💬', 'Chat-edit a scenario',
+      'Non-technical maintenance — describe a change in plain English, the LLM emits valid Gherkin bound to registered steps.',
+      () => focusFeatures()),
+    shelfTile('🔍', 'Locator suggest',
+      'Steps with quoted args or <placeholders> get a 🔍 button — probes the destination DOM and ranks Playwright selectors.',
+      () => focusFeatures()),
+    shelfTile('📋', 'Stakeholder summary',
+      'Narrative report for non-engineers — what was tested, what wasn\'t, what to do next.',
+      () => openDocByKind('summary')),
+    shelfTile('🗂', 'Test catalogue',
+      'Auto-generated map of every spec, what it covers, and which layer it lives in.',
+      () => openDocByKind('catalogue')),
+    shelfTile('🐞', 'Bug-discovery ledger',
+      'Findings deduped by (spec, test) after a run — surfaces real failures discovered while exercising the site.',
+      () => openDocByKind('findings')),
+  )
+
+  $content.replaceChildren(
+    el('div', { class: 'home-cover' },
+      el('span', { class: 'label' }, 'reviewqa /home'),
+      el('h1', { class: 'home-title' }, 'Probe a URL. Or pick a feature.'),
+      el('p', { class: 'home-sub' }, 'A local control room for the generated suite. Re-probe the site, run any scenario, chat-edit Gherkin, jump to the stakeholder docs.'),
+    ),
+    el('section', { class: 'home-card' },
+      el('h2', { class: 'home-card-title' }, 'Project'),
+      summary,
+    ),
+    el('section', { class: 'home-card home-probe-card' },
+      el('h2', { class: 'home-card-title' }, 'Probe a URL'),
+      el('p', { class: 'home-card-sub' }, 'Runs the same `reviewqa probe` your CLI does. New / updated features appear in the sidebar once it finishes.'),
+      el('div', { class: 'home-probe-row' }, $urlInput, $coverage, $btn),
+      $terminal,
+      $verdict,
+    ),
+    el('section', { class: 'home-card' },
+      el('h2', { class: 'home-card-title' }, 'What you can do from here'),
+      shelf,
+    ),
+  )
+}
+
+function summaryRow (label, value) {
+  return el('div', { class: 'home-summary-row' },
+    el('span', { class: 'home-summary-label' }, label),
+    el('span', { class: 'home-summary-value' }, value),
+  )
+}
+
+function shelfTile (icon, title, body, onclick) {
+  return el('div', { class: 'home-tile', onclick },
+    el('div', { class: 'home-tile-icon' }, icon),
+    el('div', { class: 'home-tile-title' }, title),
+    el('div', { class: 'home-tile-body' }, body),
+  )
+}
+
+function focusFeatures () {
+  // Scroll the sidebar to the features list — no feature switches.
+  const heading = document.querySelector('.sidebar-heading')
+  if (heading) heading.scrollIntoView({ behavior: 'smooth', block: 'start' })
+}
+
+function openDocByKind (kind) {
+  const project = window.__project
+  if (!project || !project.docs) return
+  const d = project.docs.find(x => x.kind === kind)
+  if (d) openDoc(d.path, d.kind)
+}
+
+async function reloadProject () {
+  try {
+    const project = await fetchJSON('/api/project')
+    window.__project = project
+    $featureList.replaceChildren()
+    if (!project.features.length) {
+      $featureList.appendChild(el('li', { class: 'empty' }, 'No .feature files found'))
+    } else {
+      for (const f of project.features) {
+        const meta = `${f.scenarios} scenario${f.scenarios === 1 ? '' : 's'}${f.tags && f.tags.length ? ' · ' + f.tags.join(' ') : ''}`
+        $featureList.appendChild(el('li', { 'data-path': f.path, onclick: () => openFeature(f.path) },
+          el('div', {}, f.name || f.path.split('/').pop()),
+          el('span', { class: 'meta' }, meta),
+        ))
+      }
+    }
+    $docList.replaceChildren()
+    if (!project.docs || !project.docs.length) {
+      $docList.appendChild(el('li', { class: 'empty' }, '—'))
+    } else {
+      for (const d of project.docs) {
+        $docList.appendChild(el('li', { 'data-path': d.path, onclick: () => openDoc(d.path, d.kind) },
+          el('div', {}, d.title),
+          el('span', { class: 'meta' }, d.path),
+        ))
+      }
+    }
+    refreshSidebarSelection()
+  } catch (_) { /* non-fatal */ }
 }
 
 init()

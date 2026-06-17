@@ -7,6 +7,49 @@ shipped the depth-parity arc (Contract, Integration, Mobile, A11y trio).
 v0.61–v0.62 are the live-execution + composer-validation arc — first
 real-site run + composer destination-DOM enforcement.
 
+## v0.76 — HOME view (probe-from-UI) + responsive scenario card
+
+Two threads from one screenshot — same release.
+
+### HOME view
+
+The sidebar now opens with a `HOME` row above `FEATURES`. The
+home panel is the first thing you see when you launch `reviewqa
+serve`:
+
+- **Project summary** — workdir, binary version, # features,
+  # scenarios, LLM status, Playwright preflight, all read off
+  the existing `/api/project`, `/api/llm-status` and
+  `/api/run-preflight` endpoints.
+- **Probe a URL** — a single input + coverage select + Probe
+  button. Hits a new `POST /api/probe` SSE endpoint, which
+  shells out to the reviewqa binary's own `probe` subcommand
+  (via `os.Executable()`) in the project's root directory and
+  streams stdout line-by-line into a terminal-style panel. On
+  success the sidebar refreshes so the new / updated features
+  appear immediately.
+- **Capability shelf** — six tiles pitching what you can do from
+  this UI: Run, Chat-edit, Locator suggest, Stakeholder summary,
+  Test catalogue, Bug-discovery ledger. Tiles deep-link straight
+  to the relevant doc or scroll the sidebar to the features
+  list.
+
+The probe endpoint validates the URL (http/https scheme + non-
+empty host), rejects GET, and inherits the streaming pattern from
+`/api/run-scenario` so the frontend SSE handler is almost the
+same code shape as Run.
+
+### Responsive scenario card
+
+The Scenario card head now uses `flex-wrap: wrap`. When the title
++ action button group can't share a row, the buttons drop onto
+their own line below instead of crushing the title into a 100-px
+column. Fixes the "one word per line" wrap the user flagged on a
+narrow viewport.
+
+No template / probe / chat behaviour changes; new tests cover
+the probe endpoint's URL validation and cwd derivation.
+
 ## v0.75.1 — UI polish: pill placement + brand-only feature names
 
 Two narrow-scope fixes on top of v0.75:
