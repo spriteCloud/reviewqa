@@ -2,6 +2,8 @@ package main
 
 import (
 	"context"
+	"os"
+	"strings"
 
 	"github.com/reviewqa/reviewqa/internal/ast"
 	"github.com/reviewqa/reviewqa/internal/composer"
@@ -11,22 +13,56 @@ import (
 	"github.com/reviewqa/reviewqa/internal/plan"
 )
 
+// buildLadder constructs the LLM model ladder. The primary rung is
+// always the configured cfg.Model (the default qwen3-coder-next when
+// --llm is set). Additional fallback rungs come from
+// REVIEWQA_LLM_LADDER (comma-separated model ids) — each is tried in
+// sequence on parse failure of the previous.
+func buildLadder(cfg config.Config, primary *llm.Client) composer.Ladder {
+	ladder := composer.Ladder{
+		Rungs: []composer.Rung{{Model: cfg.Model, Client: primary}},
+	}
+	extra := strings.TrimSpace(os.Getenv("REVIEWQA_LLM_LADDER"))
+	if extra == "" {
+		return ladder
+	}
+	for _, m := range strings.Split(extra, ",") {
+		m = strings.TrimSpace(m)
+		if m == "" || m == cfg.Model {
+			continue
+		}
+		// Clone the config with the alternate model; the same
+		// endpoint + api key are reused.
+		altCfg := cfg
+		altCfg.Model = m
+		ladder.Rungs = append(ladder.Rungs, composer.Rung{Model: m, Client: llm.New(altCfg)})
+	}
+	return ladder
+}
+
 // composeScenarios walks the post-probe item list and, when the LLM
 // is enabled, asks the composer for additional Scenarios per Gherkin
 // feature item. Returns the items list with `ExtraScenarios` populated
 // in place. No-ops when the LLM is disabled (default).
+//
+// v0.34: composer now supports a model ladder. When REVIEWQA_LLM_LADDER
+// is set (comma-separated model ids), each is tried in order and the
+// first to return parseable scenarios wins. The chosen model is
+// embedded as `@model:<id>` on each emitted scenario.
 func composeScenarios(ctx context.Context, cfg config.Config, items []plan.Item) []plan.Item {
 	client := llm.New(cfg)
 	if !client.Enabled() {
 		return items
 	}
-	// v0.33: read the bug-discovery ledger so the composer avoids
-	// repeating scenarios that have failed in prior runs.
 	feedback := composer.LoadFeedback(cfg.WorkDir)
 	if len(feedback.FailedTitles) > 0 {
 		rlog.Info("composer: feeding ledger findings to LLM", "failed_titles", len(feedback.FailedTitles))
 	}
-	rlog.Info("composer: requesting LLM scenarios", "model", cfg.Model, "endpoint", cfg.OpenAIBaseURL)
+	ladder := buildLadder(cfg, client)
+	rlog.Info("composer: requesting LLM scenarios",
+		"primary_model", ladder.First().Model,
+		"endpoint", cfg.OpenAIBaseURL,
+		"ladder_rungs", len(ladder.Rungs))
 	// v0.31 cross-journey dedup. Track every step-sequence we've
 	// accepted across the whole suite — duplicate scenarios from
 	// different journeys (e.g. "no error and no success" repeated
@@ -38,7 +74,7 @@ func composeScenarios(ctx context.Context, cfg config.Config, items []plan.Item)
 			continue
 		}
 		j := buildJourneyForComposer(items[i])
-		extras, err := composer.ProposeWithFeedback(ctx, client, j, 3, feedback)
+		extras, winningModel, err := composer.ProposeWithLadder(ctx, ladder, j, 3, feedback)
 		if err != nil {
 			rlog.Warn("composer: skipped journey", "kind", j.Kind, "err", err)
 			continue
@@ -57,8 +93,8 @@ func composeScenarios(ctx context.Context, cfg config.Config, items []plan.Item)
 			continue
 		}
 		items[i].ExtraScenarios = toExtraScenarios(fresh)
-		items[i].LLMModel = cfg.Model
-		rlog.Info("composer: added scenarios", "journey", j.Kind, "count", len(fresh))
+		items[i].LLMModel = winningModel
+		rlog.Info("composer: added scenarios", "journey", j.Kind, "count", len(fresh), "model", winningModel)
 	}
 	return items
 }
