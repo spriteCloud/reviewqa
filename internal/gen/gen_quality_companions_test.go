@@ -126,7 +126,12 @@ func TestContractTemplate_RendersDeclaredStatuses(t *testing.T) {
 	mustContain(t, body, "200,")
 	mustContain(t, body, "400,")
 	mustContain(t, body, "404,")
-	mustContain(t, body, "request.get('https://api.x.test/pets')")
+	// v0.55 — the template now routes every request through the
+	// `call()` helper using a centralised ENDPOINT constant, so
+	// the assertion changed from an inline `request.get(...)` to
+	// a constant + helper.
+	mustContain(t, body, `const ENDPOINT = 'https://api.x.test/pets'`)
+	mustContain(t, body, "call(request, METHOD)")
 }
 
 func TestConfigTemplate_CrossBrowserProjects(t *testing.T) {
