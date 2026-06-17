@@ -1281,6 +1281,51 @@ code, pre { font-family: 'Fira Code', ui-monospace, monospace; }
   box-sizing: border-box;
 }
 
+/* RUN HISTORY POPOVER — anchored to the scenario's last-run pill. */
+.last-run-pill-clickable { cursor: pointer; }
+.last-run-pill-clickable:hover { filter: brightness(.95); }
+.run-history-popover {
+  position: absolute;
+  z-index: 200;
+  margin-top: 6px;
+  background: var(--white);
+  border: 1px solid var(--border-warm);
+  border-radius: 10px;
+  box-shadow: 0 12px 32px rgba(15, 17, 23, 0.16);
+  padding: 12px 14px;
+  width: 260px;
+  font-family: 'Inter', sans-serif;
+  font-size: 12px;
+}
+.run-history-title {
+  font-family: 'Fira Code', monospace;
+  font-size: 10px;
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
+  color: var(--copper);
+  margin-bottom: 8px;
+}
+.sparkline { height: 40px; margin-bottom: 8px; }
+.sparkline-empty { background: var(--warm-white); border-radius: 4px; }
+.run-history-list { list-style: none; padding: 0; margin: 0; display: flex; flex-direction: column; gap: 4px; }
+.run-history-row {
+  display: grid;
+  grid-template-columns: 1fr auto auto;
+  gap: 8px;
+  align-items: baseline;
+  padding: 4px 0;
+  border-bottom: 1px dashed var(--border-warm);
+  font-family: 'Fira Code', monospace;
+  font-size: 11px;
+}
+.run-history-row:last-child { border-bottom: 0; }
+.r-status { color: var(--deep-water); }
+.run-history-passed .r-status { color: #15803D; }
+.run-history-failed .r-status { color: #B91C1C; }
+.r-when { color: var(--mist); }
+.r-dur { color: var(--deep-water); text-align: right; }
+.run-history-empty { color: var(--mist); font-style: italic; }
+
 /* TOAST — short ephemeral feedback (saved / probed / switched).
  * Stacks bottom-up when multiple fire; icon + text pair. */
 .toast {

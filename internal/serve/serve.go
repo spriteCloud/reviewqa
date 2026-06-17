@@ -131,6 +131,7 @@ func handlerForState(state *workdirState) http.Handler {
 	mux.HandleFunc("/api/settings", handleSettings)
 	mux.HandleFunc("/api/llm-test", handleLLMTest)
 	mux.HandleFunc("/api/run-scenario", handleRunScenario(state))
+	mux.HandleFunc("/api/scenario-runs", handleScenarioRuns(state))
 	mux.HandleFunc("/api/llm-status", handleLLMStatus)
 	mux.HandleFunc("/api/locator-candidates", handleLocatorCandidates)
 
@@ -377,6 +378,18 @@ func handleRunScenario(state *workdirState) http.HandlerFunc {
 			// arrive as the final "done" event.
 			http.Error(w, err.Error(), http.StatusBadRequest)
 		}
+	}
+}
+
+func handleScenarioRuns(state *workdirState) http.HandlerFunc {
+	return func(w http.ResponseWriter, r *http.Request) {
+		scenario := r.URL.Query().Get("scenario")
+		if scenario == "" {
+			http.Error(w, "scenario is required", http.StatusBadRequest)
+			return
+		}
+		runs := LoadScenarioTimeline(state.get(), scenario)
+		writeJSON(w, map[string]any{"runs": runs})
 	}
 }
 

@@ -11,6 +11,7 @@ import (
 	"os/exec"
 	"path/filepath"
 	"regexp"
+	"sort"
 	"strings"
 	"sync"
 	"time"
@@ -59,6 +60,61 @@ func LoadLastRunIndex(workdir string) LastRunIndex {
 		return LastRunIndex{}
 	}
 	return idx
+}
+
+// ScenarioRun is one entry in a scenario's multi-run timeline (v0.82).
+// Smaller than LastRunRecord — no step detail.
+type ScenarioRun struct {
+	At         string `json:"at"`
+	Status     string `json:"status"`
+	DurationMs int    `json:"durationMs"`
+}
+
+// LoadScenarioTimeline walks the per-run JSON reports in
+// tests/e2e/.reviewqa-runs/ (written one per Run by the JSON
+// reporter) and returns this scenario's runs sorted oldest→newest.
+// Capped at the last 20 entries so the popover stays compact.
+//
+// The .reviewqa-runs/ dir already exists from v0.75 — the JSON
+// reports were retained but never aggregated. This reader closes
+// that loop.
+func LoadScenarioTimeline(workdir, scenarioName string) []ScenarioRun {
+	if scenarioName == "" {
+		return nil
+	}
+	entries, err := os.ReadDir(runsDir(workdir))
+	if err != nil {
+		return nil
+	}
+	var out []ScenarioRun
+	for _, e := range entries {
+		name := e.Name()
+		if e.IsDir() || !strings.HasPrefix(name, "run-") || !strings.HasSuffix(name, ".json") {
+			continue
+		}
+		b, err := os.ReadFile(filepath.Join(runsDir(workdir), name))
+		if err != nil {
+			continue
+		}
+		recs := ParsePlaywrightJSON(b)
+		rec, ok := recs[scenarioName]
+		if !ok {
+			continue
+		}
+		at := rec.At
+		if at == "" {
+			// Fall back to the report file's mtime so older runs still sort.
+			if info, err := os.Stat(filepath.Join(runsDir(workdir), name)); err == nil {
+				at = info.ModTime().UTC().Format(time.RFC3339)
+			}
+		}
+		out = append(out, ScenarioRun{At: at, Status: rec.Status, DurationMs: rec.DurationMs})
+	}
+	sort.Slice(out, func(i, j int) bool { return out[i].At < out[j].At })
+	if len(out) > 20 {
+		out = out[len(out)-20:]
+	}
+	return out
 }
 
 func writeLastRunIndex(workdir string, idx LastRunIndex) error {
