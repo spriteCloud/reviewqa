@@ -43,3 +43,10 @@ func TestWriteScript_CleanupRemovesDir(t *testing.T) {
 		t.Errorf("expected script removed after cleanup; got err=%v", err)
 	}
 }
+func TestWriteScript(t *testing.T) {
+	t.Run("happy path", func(t *testing.T) {
+		if err := WriteScript(""); err != nil {
+			t.Fatalf("unexpected error: %v", err)
+		}
+	})
+}
