@@ -70,6 +70,35 @@ type RunRequest struct {
 	Scenario string `json:"scenario"`
 }
 
+// streamCommand spawns cmd, pipes stdout+stderr, and writes each line
+// as a "line" SSE event. Returns the exit code; -1 on spawn errors.
+func streamCommand(ctx context.Context, w http.ResponseWriter, flusher http.Flusher, cmd *exec.Cmd) (int, error) {
+	stdout, err := cmd.StdoutPipe()
+	if err != nil {
+		return -1, fmt.Errorf("stdout pipe: %w", err)
+	}
+	cmd.Stderr = cmd.Stdout
+	if err := cmd.Start(); err != nil {
+		return -1, fmt.Errorf("start: %w", err)
+	}
+	scanner := bufio.NewScanner(stdout)
+	scanner.Buffer(make([]byte, 0, 64<<10), 1<<20)
+	for scanner.Scan() {
+		writeEvent(w, flusher, "line", map[string]any{"text": scanner.Text()})
+	}
+	_ = scanner.Err()
+	exitCode := 0
+	if err := cmd.Wait(); err != nil {
+		var ee *exec.ExitError
+		if errors.As(err, &ee) {
+			exitCode = ee.ExitCode()
+		} else {
+			exitCode = -1
+		}
+	}
+	return exitCode, nil
+}
+
 // RunScenarioStream executes the named Scenario via npx playwright
 // test scoped with --grep and streams stdout as Server-Sent Events
 // to the response writer. Returns the exit code (so the caller can
@@ -77,6 +106,12 @@ type RunRequest struct {
 //
 // The function blocks until the playwright process exits or the
 // request context is cancelled (browser closed / Stop button).
+//
+// playwright-bdd v9 requires `bddgen` to run BEFORE `playwright test`
+// — that step parses .feature files and writes .features-gen/*.spec.js.
+// Without it, `playwright test --grep <scenario>` finds no tests.
+// We run bddgen first (when the binary exists) and stream its output
+// too, then run playwright. Both phases share the SSE channel.
 func RunScenarioStream(ctx context.Context, w http.ResponseWriter, workdir, featureRel, scenarioName string) (int, error) {
 	if scenarioName == "" {
 		return -1, errors.New("scenario name is empty")
@@ -99,52 +134,50 @@ func RunScenarioStream(ctx context.Context, w http.ResponseWriter, workdir, feat
 	w.Header().Set("Cache-Control", "no-store")
 	w.Header().Set("X-Accel-Buffering", "no")
 
-	args := []string{"playwright", "test", "--reporter=line"}
-	if featureRel != "" {
-		args = append(args, featureRel)
-	}
-	// Regex-escape the scenario name so grep matches it literally.
-	grep := "^.*" + regexp.QuoteMeta(scenarioName) + "$"
-	args = append(args, "--grep", grep)
-
-	cmd := exec.CommandContext(ctx, "npx", args...)
-	cmd.Dir = workdir
-	cmd.Env = os.Environ()
-	stdout, err := cmd.StdoutPipe()
-	if err != nil {
-		return -1, fmt.Errorf("stdout pipe: %w", err)
-	}
-	cmd.Stderr = cmd.Stdout
-
-	if err := cmd.Start(); err != nil {
-		return -1, fmt.Errorf("start: %w", err)
-	}
+	// playwright-bdd v9 generates .spec files into .features-gen/ when
+	// `bddgen` runs. Without bddgen Playwright sees no tests. Run it
+	// first when the local binary exists, then run playwright. The
+	// .feature path is informational only — Playwright discovers tests
+	// from the generated specs, not from .feature paths.
+	_ = featureRel
+	grep := regexp.QuoteMeta(scenarioName)
+	bddgenBin := filepath.Join(workdir, "node_modules", ".bin", "bddgen")
+	pwBin := filepath.Join(workdir, "node_modules", ".bin", "playwright")
+	playwrightArgs := []string{"test", "--reporter=line", "--grep", grep}
 
 	writeEvent(w, flusher, "start", map[string]any{
 		"workdir":  workdir,
 		"feature":  featureRel,
 		"scenario": scenarioName,
-		"command":  "npx " + strings.Join(args, " "),
+		"command":  "(bddgen) " + pwBin + " " + strings.Join(playwrightArgs, " "),
 		"at":       time.Now().UTC().Format(time.RFC3339),
 	})
 
-	scanner := bufio.NewScanner(stdout)
-	scanner.Buffer(make([]byte, 0, 64<<10), 1<<20)
-	for scanner.Scan() {
-		writeEvent(w, flusher, "line", map[string]any{"text": scanner.Text()})
-	}
-	// Drain any remaining read errors silently — exit code is what
-	// matters for the verdict.
-	_ = scanner.Err()
-
-	exitCode := 0
-	if err := cmd.Wait(); err != nil {
-		var ee *exec.ExitError
-		if errors.As(err, &ee) {
-			exitCode = ee.ExitCode()
-		} else {
-			exitCode = -1
+	if info, err := os.Stat(bddgenBin); err == nil && !info.IsDir() {
+		writeEvent(w, flusher, "line", map[string]any{"text": "# bddgen — generating .features-gen/ from .feature files"})
+		bddgen := exec.CommandContext(ctx, bddgenBin)
+		bddgen.Dir = workdir
+		bddgen.Env = os.Environ()
+		bgExit, err := streamCommand(ctx, w, flusher, bddgen)
+		if err != nil {
+			writeEvent(w, flusher, "done", map[string]any{"exitCode": -1, "passed": false, "at": time.Now().UTC().Format(time.RFC3339)})
+			return -1, err
 		}
+		if bgExit != 0 {
+			writeEvent(w, flusher, "line", map[string]any{"text": fmt.Sprintf("bddgen exited %d — aborting before playwright test.", bgExit)})
+			writeEvent(w, flusher, "done", map[string]any{"exitCode": bgExit, "passed": false, "at": time.Now().UTC().Format(time.RFC3339)})
+			return bgExit, nil
+		}
+	}
+
+	writeEvent(w, flusher, "line", map[string]any{"text": "# playwright test --grep " + scenarioName})
+	pw := exec.CommandContext(ctx, pwBin, playwrightArgs...)
+	pw.Dir = workdir
+	pw.Env = os.Environ()
+	exitCode, err := streamCommand(ctx, w, flusher, pw)
+	if err != nil {
+		writeEvent(w, flusher, "done", map[string]any{"exitCode": -1, "passed": false, "at": time.Now().UTC().Format(time.RFC3339)})
+		return -1, err
 	}
 	writeEvent(w, flusher, "done", map[string]any{
 		"exitCode": exitCode,

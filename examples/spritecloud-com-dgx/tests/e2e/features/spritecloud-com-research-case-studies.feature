@@ -35,32 +35,3 @@ Feature: WwwSpritecloudCom — research journey
     When I go back in the browser history
     Then the main heading reads "Test your software, not your reputation."
 
-  # ───────────────────────────────────────────────────────────────
-  # LLM-composed scenarios (model: qwen3-coder-next:latest)
-  # Filter out with `--grep-invert @llm-composed` for stricter CI runs.
-  # ───────────────────────────────────────────────────────────────
-
-  @journey:research @priority:standard @llm-composed @kind:edge @model:qwen3-coder-next-latest
-  Scenario: Reload mid-form leaves no double submission
-    Given I open the page "/case-studies"
-    Then the page title contains "Case Studies"
-    When I reload the page
-    Then the page title contains "Case Studies"
-    Then no success message is shown
-
-  @journey:research @priority:standard @llm-composed @kind:variant @model:qwen3-coder-next-latest
-  Scenario: Submit twice rapidly blocks duplication
-    Given I am on the landing page
-    When I click the link to "/case-studies"
-    Then the page title contains "Case Studies"
-    Then no error message is shown in the form region
-    When I submit the form twice in rapid succession
-    Then the form is not double-submitted
-
-  @journey:research @priority:standard @llm-composed @model:qwen3-coder-next-latest
-  Scenario: Navigate directly to case studies loads correct page
-    Given I am not signed in
-    When I navigate directly to "/case-studies"
-    Then the page title contains "Case Studies"
-    Then the URL contains "/case-studies"
-

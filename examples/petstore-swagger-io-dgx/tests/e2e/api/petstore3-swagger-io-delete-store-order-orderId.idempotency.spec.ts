@@ -15,9 +15,9 @@ test.describe.configure({ mode: 'parallel' })
 test.describe('Petstore3SwaggerIo — idempotency @ https://petstore3.swagger.io/store/order/{orderId}', () => {
   test('@kind:api-idempotency @smoke same DELETE twice → second call still succeeds', async ({ request }) => {
     const body = {
+      '200': '200-value',
       '400': '400-value',
       '404': '404-value',
-      '200': '200-value',
     }
     const first = await request.delete('https://petstore3.swagger.io/store/order/{orderId}', { form: body })
     expect(first.status(), 'first call should succeed').toBeLessThan(400)

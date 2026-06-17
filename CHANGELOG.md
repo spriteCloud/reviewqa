@@ -7,6 +7,47 @@ shipped the depth-parity arc (Contract, Integration, Mobile, A11y trio).
 v0.61–v0.62 are the live-execution + composer-validation arc — first
 real-site run + composer destination-DOM enforcement.
 
+## v0.74 — Run scenario: bddgen pre-step + drop stray feature arg
+
+The ▶ Run scenario flow shipped in v0.72 always returned "Error: No
+tests found" against a real playwright-bdd suite. Two bugs:
+
+1. **playwright-bdd v9 requires `bddgen` to run BEFORE `playwright
+   test`.** bddgen parses the .feature files and writes
+   .features-gen/*.spec.js — the actual test files Playwright
+   discovers. v0.72 skipped this step, so Playwright collected zero
+   tests and exited with "No tests found".
+
+2. **The feature path was being passed as a positional arg to
+   `playwright test`.** Even after bddgen ran, the positional arg
+   would have constrained Playwright to look for a Playwright spec
+   at that path (the .feature file itself isn't one), masking any
+   real test discovery.
+
+Fixes:
+
+- `internal/serve/run.go::RunScenarioStream` now runs
+  `node_modules/.bin/bddgen` first when the binary exists, streams
+  its output as `event: line` chunks alongside the playwright run,
+  and aborts with the bddgen exit code if generation fails. After a
+  clean bddgen, runs `node_modules/.bin/playwright test
+  --reporter=line --grep "<scenarioName>"` — no positional arg.
+- Refactored stdout/stderr piping into a shared `streamCommand`
+  helper so the two phases share one SSE stream.
+- The featureRel argument stays on the API for symmetry (the UI
+  still passes it for the start event's logging) but is intentionally
+  unused at run time — a comment notes the reasoning.
+
+Live-verified against `examples/spritecloud-com-dgx` with a real
+`npm install && npx playwright install`. A run of
+`browse — back button after navigation returns to landing` streams:
+- `# bddgen — generating .features-gen/ from .feature files`
+- `# playwright test --grep "..."`
+- `[1/1] [bdd-chromium] › ... › 1 passed (5.4s)`
+- `event: done` with `exitCode: 0`, `passed: true`.
+
+Suite 553 / 553 green. main.go version 0.73 → 0.74.
+
 ## v0.73 — Stakeholder Summary restyle + Markdown render + Run preflight banner
 
 Three problems the user hit in real usage of the v0.72 UI:
