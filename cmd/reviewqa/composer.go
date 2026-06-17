@@ -109,24 +109,92 @@ func buildJourneyForComposer(it plan.Item) composer.Journey {
 		Kind:     it.JourneyKind,
 		Priority: priorityForKind(it.JourneyKind),
 	}
-	if len(it.Symbols) > 0 {
-		first := it.Symbols[0]
-		j.Title = first.PageTitle
-		j.H1 = firstH1Text(first.Contents)
-		j.HasForm = first.HasForm
-		for _, l := range first.Links {
-			if l.Aria != "" {
-				j.Links = append(j.Links, l.Aria)
-			}
-			if len(j.Links) >= 10 {
-				break
-			}
+	if len(it.Symbols) == 0 {
+		return j
+	}
+	first := it.Symbols[0]
+	j.Title = first.PageTitle
+	j.H1 = firstH1Text(first.Contents)
+	j.HasForm = first.HasForm
+	for _, l := range first.Links {
+		if l.Aria != "" {
+			j.Links = append(j.Links, l.Aria)
 		}
-		if first.HasForm {
-			j.Forms = append(j.Forms, "form with inputs")
+		if len(j.Links) >= 10 {
+			break
 		}
 	}
+	if first.HasForm {
+		j.Forms = append(j.Forms, formSummary(first))
+	}
+	// v0.41a — fan every subsequent journey step into composer.PageContext
+	// so the LLM reasons about the actual destination pages (titles, h1,
+	// form presence) rather than re-asserting the landing on every step.
+	// Symbols[0] is the landing, already encoded above.
+	for _, sym := range it.Symbols[1:] {
+		ctx := composer.PageContext{
+			Href:  hrefForSymbol(sym),
+			Title: sym.PageTitle,
+			H1:    firstH1Text(sym.Contents),
+		}
+		if sym.HasForm {
+			j.Forms = append(j.Forms, formSummary(sym))
+		}
+		j.Pages = append(j.Pages, ctx)
+	}
 	return j
+}
+
+// hrefForSymbol prefers the relative href the journey followed
+// (EnteredVia) when present so the composer can refer to the link by
+// the same string a `When I click the link to "<href>"` step would use.
+// Falls back to AbsoluteURL when the step was reached via direct goto
+// (sitemap-discovered URLs, deep-links).
+func hrefForSymbol(s ast.Symbol) string {
+	if strings.TrimSpace(s.EnteredVia) != "" {
+		return s.EnteredVia
+	}
+	return s.AbsoluteURL
+}
+
+// formSummary renders a one-line human-readable form description from
+// the symbol's input list. Falls back to the v0.31 placeholder when no
+// per-input detail is available.
+func formSummary(s ast.Symbol) string {
+	if len(s.Inputs) == 0 {
+		return "form with inputs"
+	}
+	names := make([]string, 0, len(s.Inputs))
+	for _, in := range s.Inputs {
+		label := strings.TrimSpace(in.LabelText)
+		if label == "" {
+			label = strings.TrimSpace(in.Aria)
+		}
+		if label == "" {
+			label = strings.TrimSpace(in.Placeholder)
+		}
+		if label == "" {
+			label = strings.TrimSpace(in.Name)
+		}
+		if label == "" {
+			label = in.Type
+		}
+		if label == "" {
+			continue
+		}
+		typed := label
+		if in.Type != "" && in.Type != "text" {
+			typed = label + " (" + in.Type + ")"
+		}
+		names = append(names, typed)
+		if len(names) >= 6 {
+			break
+		}
+	}
+	if len(names) == 0 {
+		return "form with inputs"
+	}
+	return "form fields: " + strings.Join(names, ", ")
 }
 
 func toExtraScenarios(in []composer.ExtraScenario) []plan.ExtraScenario {
