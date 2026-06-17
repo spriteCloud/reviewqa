@@ -245,7 +245,30 @@ func outPathStem(u *url.URL) string {
 // user journeys (convert / browse / explore / read) — one plan.Item per
 // journey. A single source URL therefore yields several spec files,
 // each exercising a different user goal across the site.
+// JourneyFilter is the contract a prompt-derived filter satisfies. The
+// concrete implementation lives in internal/prompt to keep that package
+// free of probe-side dependencies; this interface lets RunAllWithFilter
+// accept any filter without an import cycle.
+type JourneyFilter interface {
+	Apply([]mindmap.Journey) []mindmap.Journey
+	IsEmpty() bool
+}
+
+// RunAllWithFilter is the focused variant of RunAll: it crawls each URL
+// then applies the given filter to the discovered journeys before
+// generating items. If the filter is nil or empty, behaviour is
+// identical to RunAll. When the filter drops every journey it logs a
+// warning and falls back to the unfiltered set — better to ship
+// something than nothing.
+func RunAllWithFilter(ctx context.Context, urls []string, filter JourneyFilter) ([]plan.Item, []error) {
+	return runAllImpl(ctx, urls, filter)
+}
+
 func RunAll(ctx context.Context, urls []string) ([]plan.Item, []error) {
+	return runAllImpl(ctx, urls, nil)
+}
+
+func runAllImpl(ctx context.Context, urls []string, filter JourneyFilter) ([]plan.Item, []error) {
 	var items []plan.Item
 	var errs []error
 	fetcher := mindmapFetcher(ctx)
@@ -277,6 +300,15 @@ func RunAll(ctx context.Context, urls []string) ([]plan.Item, []error) {
 			continue
 		}
 		journeys := mindmap.IdentifyJourneys(m, 3)
+		if filter != nil && !filter.IsEmpty() {
+			narrowed := filter.Apply(journeys)
+			if len(narrowed) == 0 {
+				log.Warn("prompt filter dropped every journey; falling back to unfiltered probe", "url", u)
+			} else {
+				log.Info("prompt filter applied", "journeys_before", len(journeys), "journeys_after", len(narrowed))
+				journeys = narrowed
+			}
+		}
 		if len(journeys) == 0 {
 			continue
 		}

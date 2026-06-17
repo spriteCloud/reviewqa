@@ -30,6 +30,7 @@ import (
 	"github.com/reviewqa/reviewqa/internal/merge"
 	"github.com/reviewqa/reviewqa/internal/plan"
 	"github.com/reviewqa/reviewqa/internal/probe"
+	"github.com/reviewqa/reviewqa/internal/prompt"
 )
 
 var (
@@ -54,7 +55,7 @@ func newRoot() *cobra.Command {
 		SilenceErrors: true,
 		Version:       version,
 	}
-	root.AddCommand(newGenerateCmd(), newHealCmd(), newScanCmd(), newProbeCmd())
+	root.AddCommand(newGenerateCmd(), newHealCmd(), newScanCmd(), newProbeCmd(), newPromptCmd())
 	return root
 }
 
@@ -140,6 +141,47 @@ func newProbeCmd() *cobra.Command {
 			}
 			cfg.DryRun = dryRun
 			return runProbe(cmd.Context(), cfg, urls)
+		},
+	}
+	cmd.Flags().StringSliceVar(&urls, "url", nil, "URL to probe (repeatable; may also be set via REVIEWQA_TARGET_URLS env)")
+	cmd.Flags().BoolVar(&dryRun, "dry-run", false, "Print rendered spec(s) instead of opening a PR")
+	return cmd
+}
+
+func newPromptCmd() *cobra.Command {
+	var urls []string
+	var dryRun bool
+	cmd := &cobra.Command{
+		Use:   "prompt [text]",
+		Short: "Generate Playwright tests for a focused area expressed as a natural-language prompt.",
+		Long: `Parse the prompt into a journey-kind filter, probe the target URL, and
+generate Playwright specs only for the journeys that match the prompt.
+
+When the prompt produces no recognised signal (e.g. all stop-words) the
+probe runs unfiltered with a warning. The probe layer is the same one
+the bare ` + "`probe`" + ` command uses; set REVIEWQA_BROWSER_PROBE=1 to
+drive Chromium when the target site is JS-rendered.
+
+Examples:
+  reviewqa prompt "test the checkout flow" --url https://shop.example.com
+  reviewqa prompt "verify the contact form rejects invalid emails" --url https://x.com
+  reviewqa prompt "explore the docs section" --url https://docs.x.com`,
+		Args: cobra.MinimumNArgs(1),
+		RunE: func(cmd *cobra.Command, args []string) error {
+			cfg := config.FromEnv()
+			text := strings.Join(args, " ")
+			if len(urls) == 0 {
+				if env := os.Getenv("REVIEWQA_TARGET_URLS"); env != "" {
+					urls = strings.Split(env, ",")
+				}
+			}
+			if len(urls) == 0 {
+				return fmt.Errorf("prompt: no urls provided (pass --url or set REVIEWQA_TARGET_URLS)")
+			}
+			cfg.DryRun = dryRun
+			filter := prompt.Parse(text)
+			rlog.Info("prompt parsed", "summary", filter.Describe())
+			return runProbeWithFilter(cmd.Context(), cfg, urls, filter)
 		},
 	}
 	cmd.Flags().StringSliceVar(&urls, "url", nil, "URL to probe (repeatable; may also be set via REVIEWQA_TARGET_URLS env)")
@@ -294,10 +336,24 @@ func siblingPath(p string) string {
 	return dir + strings.TrimSuffix(base, ext) + "_reviewqa" + ext
 }
 
+// runProbeWithFilter is the prompt-driven variant: same probe pipeline
+// as runProbe but with a journey-filter applied before generation.
+func runProbeWithFilter(ctx context.Context, cfg config.Config, urls []string, f prompt.Filter) error {
+	items, errs := probe.RunAllWithFilter(ctx, urls, f)
+	return finishProbe(ctx, cfg, urls, items, errs)
+}
+
 // runProbe fetches each URL, renders a Playwright happy-flow per URL,
 // and either prints them (dry-run) or opens a PR with the new specs.
 func runProbe(ctx context.Context, cfg config.Config, urls []string) error {
 	items, errs := probe.RunAll(ctx, urls)
+	return finishProbe(ctx, cfg, urls, items, errs)
+}
+
+// finishProbe shares the post-probe pipeline (render, humanize, dry-run
+// vs PR-open) between runProbe and runProbeWithFilter so neither path
+// drifts from the other.
+func finishProbe(ctx context.Context, cfg config.Config, urls []string, items []plan.Item, errs []error) error {
 	for _, e := range errs {
 		rlog.Warn("probe url failed", "err", e)
 	}
