@@ -13,6 +13,10 @@ import (
 // reviewqa-generated project and renders a read-only browser UI for
 // its Features, Scenarios, and stakeholder docs.
 func newServeCmd() *cobra.Command {
+	// Surface the binary version to the serve package so the topbar
+	// pill can always show the running binary, not a hard-coded string.
+	serve.BinaryVersion = version
+
 	var workdir string
 	var addr string
 	var noBrowser bool

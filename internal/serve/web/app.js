@@ -367,6 +367,8 @@ async function init () {
     const project = await fetchJSON('/api/project')
     $projectName.textContent = project.name
     document.title = `reviewqa · ${project.name}`
+    const $badge = document.querySelector('[data-brand-badge]')
+    if ($badge && project.version) $badge.textContent = `v${project.version} · local`
 
     $featureList.replaceChildren()
     if (!project.features.length) {

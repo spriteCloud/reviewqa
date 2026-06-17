@@ -6,22 +6,29 @@
   <title>reviewqa · local viewer</title>
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <link href="https://fonts.googleapis.com/css2?family=Sora:wght@500;600;700&family=Inter:wght@400;500;600&family=Fira+Code:wght@400;500&display=swap" rel="stylesheet">
+  <link href="https://fonts.googleapis.com/css2?family=Sora:wght@400;500;600;700;800&family=Inter:wght@400;500;600;900&family=Fira+Code:wght@400;500;600&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="/assets/style.css">
 </head>
 <body>
   <header class="topbar">
-    <div class="brand">
-      <span class="brand-mark">reviewqa</span>
-      <span class="brand-divider">·</span>
-      <span class="brand-by">by spriteCloud</span>
-      <span class="brand-divider">·</span>
-      <span class="brand-project" data-project-name>…</span>
+    <div class="topbar-left">
+      <span class="wm"><span class="s">sprite</span><span class="c">Cloud</span></span>
+      <span class="divider"></span>
+      <span class="topbar-product">reviewqa<span class="accent">/serve</span></span>
     </div>
     <div class="topbar-right">
-      <span class="brand-badge">read-only viewer</span>
+      <span class="brand-project" data-project-name>…</span>
+      <span class="brand-badge" data-brand-badge>local</span>
     </div>
   </header>
+
+  <div class="pixel-rail" aria-hidden="true">
+    <span class="pr-1"></span><span class="pr-2"></span><span class="pr-3"></span>
+    <span class="pr-4"></span><span class="pr-5"></span><span class="pr-6"></span>
+    <span class="pr-7"></span><span class="pr-8"></span><span class="pr-9"></span>
+    <span class="pr-10"></span><span class="pr-11"></span><span class="pr-12"></span>
+    <span class="pr-13"></span><span class="pr-14"></span><span class="pr-15"></span>
+  </div>
 
   <main class="layout">
     <aside class="sidebar">
@@ -37,10 +44,18 @@
 
     <section class="content" data-content>
       <div class="placeholder">
-        <h1>Pick a feature</h1>
-        <p>Open any <code>.feature</code> file from the sidebar to see its
-          Scenarios, tags, and Steps rendered in brand styling. Or open a
-          stakeholder doc — Catalogue, Summary, Findings — under Docs.</p>
+        <span class="label">Read-only viewer · Editor · AI compose</span>
+        <h1 style="margin-top:14px;">Pick a feature.</h1>
+        <p>
+          Open any <code>.feature</code> file from the sidebar to see its
+          Scenarios, tags, and Steps. Each Scenario gets <strong>Edit</strong>
+          and <strong>Delete</strong> buttons; steps with <code>"&hellip;"</code>
+          arguments or <code>&lt;placeholders&gt;</code> get a 🔍 suggest
+          button that probes the destination DOM and ranks Playwright locators.
+          Open the editor on any Scenario and the 🤖 <strong>AI compose</strong>
+          row lets you type free Gherkin against a destination URL — the LLM
+          returns valid bound steps.
+        </p>
       </div>
     </section>
   </main>
