@@ -388,9 +388,18 @@ func runAllImpl(ctx context.Context, urls []string, filter JourneyFilter, covera
 		// and a tests/e2e/README.md. Emitted once per probed origin so all
 		// per-journey specs in the same suite share a common test setup
 		// instead of duplicating the page-error tracking in every file.
+		//
+		// v0.21: journeys are now emitted as .feature files only —
+		// playwright-bdd compiles them to runnable specs at config-load
+		// time via the step definitions in tests/e2e/steps/. The legacy
+		// .spec.ts happy-flow emission is gone.
 		journeyItems := make([]plan.Item, 0, len(journeys))
 		for _, j := range journeys {
 			item := itemFromJourney(j, u)
+			// Promote to a feature file: the symbol carries the same data,
+			// only the template + outpath change.
+			item.Template = plan.TmplPlaywrightFeature
+			item.OutPath = featurePathFor(item.OutPath)
 			journeyItems = append(journeyItems, item)
 		}
 		fuzzCap := coverage.FuzzCap()
@@ -412,17 +421,10 @@ func runAllImpl(ctx context.Context, urls []string, filter JourneyFilter, covera
 		catalogue := buildCatalogue(u, m, journeyItems, fuzzItems)
 		catalogue.CoverageMode = string(coverage)
 		items = append(items, companionItems(u, m, catalogue)...)
-		for _, item := range journeyItems {
-			items = append(items, item)
-			// Gherkin documentation sibling: same plan.Item shape, different
-			// template + .feature extension. The TS spec stays the source of
-			// truth; the feature file is generated from the same Symbol so
-			// they can't drift.
-			featureItem := item
-			featureItem.Template = plan.TmplPlaywrightFeature
-			featureItem.OutPath = featurePathFor(item.OutPath)
-			items = append(items, featureItem)
-		}
+		// Journey items are already .feature shape (set above). No sibling
+		// .spec.ts to emit — playwright-bdd compiles features into runnable
+		// specs via the step definitions companion.
+		items = append(items, journeyItems...)
 		items = append(items, fuzzItems...)
 		// API-contract specs: one per (page, form) pair where the form's
 		// action resolves to a same-origin URL. Bounded at 8 per probe so
@@ -707,6 +709,13 @@ func companionItems(sourceURL string, m *mindmap.Map, cat *plan.Catalogue) []pla
 			PageURL:  originOnly,
 			Template: plan.TmplPlaywrightSteps,
 			OutPath:  "tests/e2e/lib/steps.ts",
+		},
+		{
+			Symbol:   stub,
+			Symbols:  []ast.Symbol{stub},
+			PageURL:  originOnly,
+			Template: plan.TmplPlaywrightStepsBDD,
+			OutPath:  "tests/e2e/steps/reviewqa.steps.ts",
 		},
 		{
 			Symbol:        stub,

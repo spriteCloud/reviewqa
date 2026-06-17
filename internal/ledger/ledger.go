@@ -219,10 +219,17 @@ func stripANSI(s string) string {
 
 // SeverityForSpec maps a spec filename to a ledger severity. Mirrors
 // the @priority:<level> mapping used by the generator templates.
+// Recognises both `.spec.ts` and `.feature` extensions — v0.21 moved
+// journey emission to playwright-bdd, but the stem (`x-convert`,
+// `x-contact`, …) still encodes the journey kind in either format.
 func SeverityForSpec(specFile string) string {
 	base := strings.ToLower(filepath.Base(specFile))
+	// Strip both possible extensions so the slug-substring checks below
+	// match regardless of which template path produced this finding.
+	base = strings.TrimSuffix(base, ".feature")
+	base = strings.TrimSuffix(base, ".spec.ts")
 	switch {
-	case strings.Contains(base, "-convert.") ||
+	case strings.Contains(base, "-convert") ||
 		strings.Contains(base, "-contact") ||
 		strings.Contains(base, "-authenticate"):
 		return "high"

@@ -67,7 +67,8 @@ func Render(items []plan.Item, workDir string) ([]Rendered, error) {
 		var notes []string
 		switch it.Template {
 		case plan.TmplPlaywrightCatalogue, plan.TmplPlaywrightSummary,
-			plan.TmplPlaywrightSteps, plan.TmplPlaywrightFindings:
+			plan.TmplPlaywrightSteps, plan.TmplPlaywrightFindings,
+			plan.TmplPlaywrightStepsBDD:
 			content = buf.Bytes()
 		default:
 			content, notes = annotateQualityReport(buf.Bytes(), it.Symbol)
@@ -178,6 +179,8 @@ func templateLocation(t plan.Template) (string, string) {
 		return "ts", "pw_api.tmpl"
 	case plan.TmplPlaywrightFindings:
 		return "ts", "pw_findings.tmpl"
+	case plan.TmplPlaywrightStepsBDD:
+		return "ts", "pw_steps_bdd.tmpl"
 	case plan.TmplPytestUnit:
 		return "py", "pytest_unit.tmpl"
 	case plan.TmplPytestAPI:

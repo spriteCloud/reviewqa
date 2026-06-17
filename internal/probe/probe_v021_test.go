@@ -1,0 +1,60 @@
+package probe
+
+import (
+	"context"
+	"net/http"
+	"net/http/httptest"
+	"strings"
+	"testing"
+
+	"github.com/reviewqa/reviewqa/internal/plan"
+)
+
+// TestRunAll_EmitsFeatureFilesAndBDDSteps proves the v0.21 inversion:
+// journeys ship as .feature files (not .spec.ts) and the suite includes
+// the playwright-bdd step-definitions companion.
+func TestRunAll_EmitsFeatureFilesAndBDDSteps(t *testing.T) {
+	t.Setenv("REVIEWQA_PROBE_ALLOW_LOOPBACK", "1")
+	mux := http.NewServeMux()
+	mux.HandleFunc("/", func(w http.ResponseWriter, r *http.Request) {
+		if r.URL.Path != "/" {
+			http.NotFound(w, r)
+			return
+		}
+		_, _ = w.Write([]byte(`<html><body><h1>Home</h1><a href="/contact">Contact</a></body></html>`))
+	})
+	mux.HandleFunc("/contact", func(w http.ResponseWriter, r *http.Request) {
+		_, _ = w.Write([]byte(`<html><body><h1>Contact</h1></body></html>`))
+	})
+	srv := httptest.NewServer(mux)
+	defer srv.Close()
+
+	items, _ := RunAll(context.Background(), []string{srv.URL + "/"})
+
+	gotFeatureFiles, gotSpecTs, gotStepsFile := 0, 0, false
+	for _, it := range items {
+		switch {
+		case strings.HasSuffix(it.OutPath, ".feature"):
+			gotFeatureFiles++
+			if it.Template != plan.TmplPlaywrightFeature {
+				t.Errorf("feature file %s should use TmplPlaywrightFeature; got %s", it.OutPath, it.Template)
+			}
+		case strings.HasPrefix(it.OutPath, "tests/e2e/") &&
+			strings.HasSuffix(it.OutPath, ".spec.ts") &&
+			!strings.Contains(it.OutPath, "/api/") &&
+			!strings.HasSuffix(it.OutPath, "-fuzz.spec.ts"):
+			gotSpecTs++
+		case it.OutPath == "tests/e2e/steps/reviewqa.steps.ts":
+			gotStepsFile = true
+		}
+	}
+	if gotFeatureFiles == 0 {
+		t.Errorf("expected ≥1 .feature journey file; got 0")
+	}
+	if gotSpecTs > 0 {
+		t.Errorf("v0.21 should NOT emit happy-flow .spec.ts files; got %d", gotSpecTs)
+	}
+	if !gotStepsFile {
+		t.Errorf("expected tests/e2e/steps/reviewqa.steps.ts companion to be emitted")
+	}
+}

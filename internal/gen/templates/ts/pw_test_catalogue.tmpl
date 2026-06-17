@@ -19,7 +19,10 @@ suite covers — anything missing here is a coverage gap.
 
 ## Journeys identified ({{len .Catalogue.Journeys}})
 
-Journey kinds map to user goals. Priority groups them for ramp-up runs:
+Each journey ships as a Gherkin `.feature` file under `tests/e2e/features/`.
+playwright-bdd compiles features into Playwright specs at config-load
+time via the step definitions in `tests/e2e/steps/`. Journey kinds map
+to user goals. Priority groups them for ramp-up runs:
 
 - **critical** — revenue / identity flows (convert, contact, authenticate). Run on every PR.
 - **standard** — evaluative flows (evaluate, research, browse, discover, exercise). Run on nightly / pre-merge.
@@ -31,7 +34,7 @@ Filter examples:
     npx playwright test --grep @journey:convert
     npx playwright test --grep @smoke
 
-| Spec | Kind | Priority | Steps |
+| Feature file | Kind | Priority | Steps |
 |---|---|---|---|
 {{- range $j := .Catalogue.Journeys }}
 | `{{$j.OutPath}}` | `{{$j.Kind}}` | `{{$j.Priority}}` | {{len $j.Steps}} |

@@ -46,6 +46,13 @@ func TestSeverityForSpec(t *testing.T) {
 		"tests/e2e/x-explore-docs.spec.ts":     "low",
 		"tests/e2e/x-read-blog.spec.ts":        "low",
 		"tests/e2e/api/x-api.api.spec.ts":      "medium",
+		// v0.21: .feature paths must resolve the same severity.
+		"tests/e2e/features/x-convert.feature":      "high",
+		"tests/e2e/features/x-contact.feature":      "high",
+		"tests/e2e/features/x-authenticate.feature": "high",
+		"tests/e2e/features/x-explore-docs.feature": "low",
+		"tests/e2e/features/x-read-blog.feature":    "low",
+		"tests/e2e/features/x-browse-blog.feature":  "medium",
 	}
 	for path, want := range cases {
 		if got := SeverityForSpec(path); got != want {

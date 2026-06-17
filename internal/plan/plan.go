@@ -30,6 +30,7 @@ const (
 	TmplPlaywrightSummary   Template = "pw_work_summary"
 	TmplPlaywrightAPI       Template = "pw_api"
 	TmplPlaywrightFindings  Template = "pw_findings"
+	TmplPlaywrightStepsBDD  Template = "pw_steps_bdd"
 	TmplRaw                 Template = "raw" // sentinel: emit Item.RawContent verbatim
 	TmplPytestUnit          Template = "pytest_unit"
 	TmplPytestAPI           Template = "pytest_api"

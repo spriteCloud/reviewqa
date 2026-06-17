@@ -13,25 +13,26 @@ broken locators when they drift.
 - **LLM only humanizes**: titles, step comments, PR body. Falls back to the deterministic file on any error.
 - **Inference is yours**: any OpenAI-compatible base URL (ollama, vLLM, DGX-hosted vLLM, OpenAI).
 
-## What a `probe` run produces (v0.20)
+## What a `probe` run produces (v0.21)
 
 A single probe of a live URL emits a full, runnable suite plus stakeholder
-docs. From [`https://www.spritecloud.com`](https://www.spritecloud.com) on
-`--coverage standard`:
+docs. Journeys ship as Gherkin `.feature` files; `playwright-bdd` compiles
+them into runnable Playwright specs at config-load time via the step
+definitions in `tests/e2e/steps/`.
 
 | File | Purpose |
 |---|---|
-| `tests/e2e/*.spec.ts` | One file per identified user journey — `convert`, `contact`, `authenticate`, `evaluate`, `research`, `browse`, `discover`, `explore`, `read`, `exercise`. Tags: `@journey:<kind> @priority:<level> @smoke`. |
-| `tests/e2e/features/*.feature` | Gherkin documentation sibling for each spec — same Symbol drives both, can't drift. |
-| `tests/e2e/*-fuzz.spec.ts` | Per-page negative / keyboard / oversize-input checks. Capped per probe. |
-| `tests/e2e/api/*.api.spec.ts` | One API-contract spec per `<form action="...">` — happy + 4xx-on-missing + malformed-email + oversized + wrong-method. |
-| `tests/e2e/lib/steps.ts` | Steps API helper module — `visit`, `fillForm`, `submit`, `convert`, `authenticate`, … so specs read at the journey level. |
+| `tests/e2e/features/*.feature` | One Gherkin file per identified user journey — `convert`, `contact`, `authenticate`, `evaluate`, `research`, `browse`, `discover`, `explore`, `read`, `exercise`. Tags above each Scenario: `@journey:<kind> @priority:<level> @smoke` (or `@negative`). |
+| `tests/e2e/steps/reviewqa.steps.ts` | Step definitions binding Given/When/Then to `lib/steps.ts`. One file per suite, stable across re-probes. |
+| `tests/e2e/lib/steps.ts` | Steps API helper module — `visit`, `fillForm`, `submit`, `convert`, `authenticate`, …. Step defs compose these. |
+| `tests/e2e/*-fuzz.spec.ts` | Per-page negative / keyboard / oversize-input checks. Plain Playwright TS. Capped per probe. |
+| `tests/e2e/api/*.api.spec.ts` | One API-contract spec per `<form action="...">` — happy + 4xx-on-missing + malformed-email + oversized + wrong-method. Plain Playwright TS. |
 | `tests/e2e/_fixtures.ts` | Shared `test`/`expect` with auto page-error tracking. |
 | `tests/e2e/_dom/*.html` | Browser-mode DOM snapshots (when `REVIEWQA_BROWSER_PROBE=1`). |
 | `tests/e2e/docs/test-catalogue.md` | Stakeholder doc: every page crawled, every journey, every priority. |
 | `tests/e2e/docs/summary.html` | Branded HTML deck with priority-mix bar. |
 | `tests/e2e/docs/findings.md` | Bug-discovery ledger — failed tests deduped + persisted across runs. Run `reviewqa ledger update --report playwright-report.json` to refresh. |
-| `playwright.config.ts`, `package.json`, `tsconfig.json`, `.github/workflows/e2e.yml` | Complete project scaffolding — `npx playwright test` works out of the box. |
+| `playwright.config.ts`, `package.json`, `tsconfig.json`, `.github/workflows/e2e.yml` | Complete project scaffolding — `npm install && npx playwright test` works out of the box. The config wires `playwright-bdd` and a second project for the api/fuzz specs. |
 
 Per-site `--coverage standard` matrix (today): `https://books.toscrape.com` →
 16 files; `https://www.spritecloud.com` → 30 files including 1 API spec.
