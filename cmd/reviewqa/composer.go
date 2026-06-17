@@ -59,6 +59,10 @@ func composeScenarios(ctx context.Context, cfg config.Config, items []plan.Item)
 		rlog.Info("composer: feeding ledger findings to LLM", "failed_titles", len(feedback.FailedTitles))
 	}
 	ladder := buildLadder(cfg, client)
+	cache := composer.Cache{Dir: composer.ResolveCacheDir("", cfg.WorkDir)}
+	if cache.Dir != "" {
+		rlog.Info("composer: cache active", "dir", cache.Dir)
+	}
 	rlog.Info("composer: requesting LLM scenarios",
 		"primary_model", ladder.First().Model,
 		"endpoint", cfg.OpenAIBaseURL,
@@ -74,7 +78,7 @@ func composeScenarios(ctx context.Context, cfg config.Config, items []plan.Item)
 			continue
 		}
 		j := buildJourneyForComposer(items[i])
-		extras, winningModel, err := composer.ProposeWithLadder(ctx, ladder, j, 3, feedback)
+		extras, winningModel, err := composer.ProposeWithLadderAndCache(ctx, ladder, j, 3, feedback, cache)
 		if err != nil {
 			rlog.Warn("composer: skipped journey", "kind", j.Kind, "err", err)
 			continue

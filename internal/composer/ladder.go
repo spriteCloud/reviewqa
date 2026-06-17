@@ -40,14 +40,32 @@ func (l Ladder) First() Rung {
 // rung's scenarios that parse cleanly. Embeds the winning model id
 // in the @model:<id> tag on each returned scenario.
 func ProposeWithLadder(ctx context.Context, ladder Ladder, j Journey, n int, fb Feedback) ([]ExtraScenario, string, error) {
+	return ProposeWithLadderAndCache(ctx, ladder, j, n, fb, Cache{})
+}
+
+// ProposeWithLadderAndCache is the cache-aware variant. When the
+// cache has a hit for the (model, journey) tuple of the FIRST rung,
+// the cached scenarios are returned without an LLM call. Cache
+// misses fall through to the normal ladder walk and the result is
+// written back. Set Cache.Dir = "" to disable.
+func ProposeWithLadderAndCache(ctx context.Context, ladder Ladder, j Journey, n int, fb Feedback, cache Cache) ([]ExtraScenario, string, error) {
 	if ladder.Empty() {
 		return nil, "", nil
+	}
+	primary := ladder.Rungs[0]
+	primaryKey := CacheKey(primary.Model, j)
+	if hit, ok := cache.Get(primaryKey); ok && len(hit) > 0 {
+		return hit, primary.Model, nil
 	}
 	var lastErr error
 	for _, rung := range ladder.Rungs {
 		scenarios, err := ProposeWithFeedback(ctx, rung.Client, j, n, fb)
 		if err == nil && len(scenarios) > 0 {
 			tagged := tagWithModel(scenarios, rung.Model)
+			// Store under the PRIMARY rung's key — the cache is keyed
+			// by the model the caller asked for, not the fallback that
+			// rescued the request.
+			_ = cache.Put(primaryKey, tagged)
 			return tagged, rung.Model, nil
 		}
 		lastErr = err
