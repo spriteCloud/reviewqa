@@ -7,6 +7,38 @@ shipped the depth-parity arc (Contract, Integration, Mobile, A11y trio).
 v0.61–v0.62 are the live-execution + composer-validation arc — first
 real-site run + composer destination-DOM enforcement.
 
+## v0.83 — Design tokens + responsive polish + final docs
+
+End-of-arc release closing out the v0.80–v0.83 onboarding /
+history / polish thread.
+
+### Status color tokens
+- New `--ok-green`, `--ok-soft`, `--fail-red`, `--fail-soft`,
+  `--bad-red`, `--bad-soft`, `--bad-dark` design tokens in
+  `:root`. Scattered hex literals (`#c0392b`, `#15803D`,
+  `#B91C1C`, `#2e7d32`, `#6b2118`) replaced project-wide so
+  status colors stay consistent.
+- New `--shadow-soft` and `--shadow-pop` shadow tokens, plus
+  `--t-fast` (`.12s ease`) for transition standardization.
+
+### Responsive polish
+- New `@media (max-width: 720px)` breakpoint below the existing
+  900 px sidebar-collapse rule: smaller topbar padding,
+  shorter pixel-rail, tighter scenario-card spacing, content
+  padding shrinks to 20 px / 14 px.
+
+### Docs
+- README "What's new" section extended through v0.83.
+- README example callout: v0.79 → v0.83.
+- CHANGELOG entries for v0.80–v0.83.
+
+### Out of scope (deferred)
+- The Stakeholder Summary "What changed" delta needs persisted
+  Catalogue JSON sidecars to compute reliably; deferred to a
+  future release when the storage shape settles.
+
+584 tests still passing.
+
 ## v0.82 — Multi-run history + pass-rate sparkline
 
 The per-run JSON reports written under `tests/e2e/.reviewqa-runs/`

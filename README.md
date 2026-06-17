@@ -18,7 +18,7 @@ broken locators when they drift.
 
 ## See it on real sites
 
-Live output from the **v0.79 binary** is committed under [`examples/`](./examples/).
+Live output from the **v0.83 binary** is committed under [`examples/`](./examples/).
 Six reference probes covering a spread of site shapes; each is a complete,
 runnable Playwright + Gherkin project. Re-emit on every release via
 [`scripts/refresh-examples.sh`](./scripts/refresh-examples.sh).
@@ -53,10 +53,22 @@ and Apply the assistant's proposed update with one click.
   timeout (with a Test-connection button), set probe + run defaults.
 - **v0.78 — Project switcher + Stakeholder Summary rewrite + history.**
   The header pill is now a dropdown that lists sibling reviewqa
-  projects auto-discovered in the parent dir, plus a recents list and
-  a free-form "Open path" input. Each probe writes timestamped copies
-  to `tests/e2e/docs/history/`; the sidebar surfaces them in a "Past
-  summaries · findings" group.
+  projects, plus a recents list and a free-form "Open path" input.
+  Each probe writes timestamped copies to `tests/e2e/docs/history/`.
+- **v0.79.1 — UI verbosity sweep + dropped redundant PRETTY/RAW toggle.**
+- **v0.80 — Onboard non-reviewqa projects + vanilla Playwright.**
+  The switcher accepts any directory with a `playwright.config.{ts,js}`
+  or a `*.spec.{ts,js}` under `tests/`, `e2e/`, `playwright/`. A new
+  `Tests` sidebar section surfaces vanilla `test('…')` blocks alongside
+  Gherkin Scenarios.
+- **v0.81 — Probe-into-new-project.** Probing a fresh URL from the
+  HOME form now creates a sibling project dir named after the URL's
+  brand and auto-switches into it on success.
+- **v0.82 — Multi-run history + sparkline.** The last-run pill is now
+  clickable; opens an SVG sparkline of the last 20 runs plus the most
+  recent 5 as a list.
+- **v0.83 — Design tokens + responsive polish.** Status colors
+  centralized, narrower-viewport rules tightened.
 
 ```bash
 reviewqa serve --workdir ./my-generated-suite
