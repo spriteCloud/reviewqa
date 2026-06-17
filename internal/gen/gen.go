@@ -68,7 +68,15 @@ func Render(items []plan.Item, workDir string) ([]Rendered, error) {
 		switch it.Template {
 		case plan.TmplPlaywrightCatalogue, plan.TmplPlaywrightSummary,
 			plan.TmplPlaywrightSteps, plan.TmplPlaywrightFindings,
-			plan.TmplPlaywrightStepsBDD:
+			plan.TmplPlaywrightStepsBDD,
+			// v0.61 — .feature files are Gherkin, not TypeScript;
+			// prepending a /* ... */ block makes the Gherkin parser
+			// reject the file with "expected: #EOF, #Language,
+			// #TagLine, #FeatureLine, #Comment, #Empty". The
+			// quality-report notes are about TS locator weakness
+			// anyway — they belong on the .spec.ts file, not the
+			// .feature contract.
+			plan.TmplPlaywrightFeature:
 			content = buf.Bytes()
 		default:
 			content, notes = annotateQualityReport(buf.Bytes(), it.Symbol)

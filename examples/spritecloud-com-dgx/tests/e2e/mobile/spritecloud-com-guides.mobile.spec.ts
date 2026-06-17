@@ -21,35 +21,28 @@ const DEVICES = ['iPhone 13', 'Pixel 5', 'iPad Pro 11', 'Galaxy S9+'] as const
 test.describe.configure({ mode: 'parallel' })
 
 for (const deviceName of DEVICES) {
-  test.describe(`WwwSpritecloudCom — mobile-web @ ${deviceName} @ https://www.spritecloud.com/guides`, () => {
-    test.use({ ...devices[deviceName] })
+  test(`@kind:mobile @smoke @device:${deviceName} viewport renders without breakage`, async ({ browser }) => {
+    const ctx = await browser.newContext({ ...devices[deviceName] })
+    const page = await ctx.newPage()
+    await page.goto('/guides')
+    await expect(page.locator('h1, [role="heading"][aria-level="1"]').first()).toBeVisible()
+    const cta = page.getByRole('link').first()
+    if (await cta.count() > 0) {
+      await cta.tap().catch(() => {})
+    }
+    await ctx.close()
+  })
 
-    test(`@kind:mobile @smoke @device:${deviceName} viewport renders without breakage`, async ({ page }) => {
-      await page.goto('/guides')
-      await expect(page.locator('h1, [role="heading"][aria-level="1"]').first()).toBeVisible()
-      // Touch tap on the primary CTA, when present.
-      const cta = page.getByRole('link').first()
-      if (await cta.count() > 0) {
-        await cta.tap().catch(() => {})
-      }
+  test(`@kind:mobile @orientation @device:${deviceName} landscape rotation keeps the page interactive`, async ({ browser }) => {
+    const profile = devices[deviceName]
+    if (!profile.viewport) test.skip()
+    const ctx = await browser.newContext({
+      ...profile,
+      viewport: { width: profile.viewport!.height, height: profile.viewport!.width },
     })
-
-    test(`@kind:mobile @orientation @device:${deviceName} landscape rotation keeps the page interactive`, async ({ browser }) => {
-      // Playwright doesn't expose a runtime `setViewportSize` for the
-      // *emulated* device's orientation, so we rebuild a context with
-      // the height/width swapped. Same engine, same UA, same DPR.
-      const profile = devices[deviceName]
-      const portrait = profile.viewport
-      if (!portrait) test.skip()
-      const ctx = await browser.newContext({
-        ...profile,
-        viewport: { width: portrait!.height, height: portrait!.width },
-      })
-      const page = await ctx.newPage()
-      await page.goto('/guides')
-      await expect(page.locator('h1, [role="heading"][aria-level="1"]').first()).toBeVisible()
-      await ctx.close()
-    })
+    const page = await ctx.newPage()
+    await page.goto('/guides')
+    await expect(page.locator('h1, [role="heading"][aria-level="1"]').first()).toBeVisible()
+    await ctx.close()
   })
 }
-
