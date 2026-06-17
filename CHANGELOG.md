@@ -7,6 +7,46 @@ shipped the depth-parity arc (Contract, Integration, Mobile, A11y trio).
 v0.61–v0.62 are the live-execution + composer-validation arc — first
 real-site run + composer destination-DOM enforcement.
 
+## v0.69 — reviewqa serve UI branding parity
+
+User feedback after the v0.65–v0.68 serve arc: the local UI shipped
+with the brand CSS *variables* but not the full design *system* of
+the public site (https://spritecloud.github.io/reviewqa/). The GH
+Pages site is meaningfully more polished — wordmark, pixel-bar motif,
+Sora display hierarchy, copper Fira Code labels, card-and-hover rhythm.
+
+This release brings the serve UI native to that system. No new
+features — pure polish:
+
+- **Wordmark** (`spriteCloud` with blue sprite + grey Cloud, Inter
+  900) anchors the topbar.
+- **Pixel-rail** under the topbar — 15 small varying-height blocks
+  with the copper peak at #9 — mirrors the public hero's `.pixel-bar`.
+- **Sora display hierarchy** with -0.025em letter-spacing on feature
+  names and the placeholder hero.
+- **Copper Fira Code labels** (uppercase, 0.16em tracking) for section
+  markers throughout.
+- **Scenario cards** now have the public-site `.card` rhythm:
+  border-warm border, hover lift to copper border + soft shadow,
+  Sora 600 scenario names.
+- **Step rows** use a borderless layout with copper-tinted keyword
+  pills. 🔍 suggest button fades in on row hover.
+- **`.btn-primary`** is copper with `translate-y(-1px)` + copper
+  shadow on hover (matches the public hero CTA). `.btn-ghost` white
+  with copper on hover. `.btn-add` (dashed copper ring) for new
+  Scenarios.
+- **Modal** gains backdrop-blur, fade-in animation, big Sora h2, and
+  a copper focus ring (3px box-shadow) on the textarea.
+- **AI compose row** in the editor modal is copper-tinted with a
+  copper-soft background.
+- **Brand badge** in the topbar now shows the live binary version,
+  sourced from a new `Version` field on `GET /api/project` and a
+  `serve.BinaryVersion` package variable set from `cmd/reviewqa/`
+  at process startup.
+
+Bumped main.go version 0.68 → 0.69. Suite 539/539 green (no API
+changes; pure visual).
+
 ## v0.68 — reviewqa serve Phase D: AI compose step bindings
 
 Closes out the `reviewqa serve` arc. The Scenario editor gains an "AI

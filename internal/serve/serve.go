@@ -347,9 +347,14 @@ func safeJoin(workdir, rel string) (string, bool) {
 type Project struct {
 	Name     string       `json:"name"`
 	Workdir  string       `json:"workdir"`
+	Version  string       `json:"version,omitempty"`
 	Features []FeatureRef `json:"features"`
 	Docs     []DocRef     `json:"docs,omitempty"`
 }
+
+// BinaryVersion is the version constant injected by main at process
+// startup. Defaulted here so unit tests don't need to set it.
+var BinaryVersion = "dev"
 
 // FeatureRef is a shallow reference to one .feature file — name + tags
 // + scenario count, NOT the full parse. The UI uses this for the
@@ -372,6 +377,7 @@ func loadProject(workdir string) Project {
 	p := Project{
 		Name:    filepath.Base(workdir),
 		Workdir: workdir,
+		Version: BinaryVersion,
 	}
 	featuresDir := filepath.Join(workdir, "tests", "e2e", "features")
 	if entries, err := os.ReadDir(featuresDir); err == nil {
