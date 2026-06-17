@@ -50,9 +50,19 @@ Feature: WwwSpritecloudCom — explore journey
   # ───────────────────────────────────────────────────────────────
 
   @journey:explore @priority:nice-to-have @llm-composed @kind:edge @model:qwen3-coder-next-latest
-  Scenario: Open contact page via top navigation
+  Scenario: Submit contact form twice rapidly
     Given I am on the landing page
     When I click the link to "/contact"
-    Then the page title contains "spriteCloud — Meeting Booking Form"
-    Then the main heading reads "Let's Chat"
+    Then I see the heading "Let's Chat"
+    When I submit the form twice in rapid succession
+    Then the form is not double-submitted
+
+  @journey:explore @priority:nice-to-have @llm-composed @kind:edge @model:qwen3-coder-next-latest
+  Scenario: Submit form without required fields
+    Given I am on the landing page
+    When I click the link to "/contact"
+    Then I see the heading "Let's Chat"
+    When I submit the form without filling any required field
+    Then no success message is shown
+    Then I remain on the same page
 

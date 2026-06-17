@@ -574,8 +574,54 @@ func qualityCompanions(sourceURL string, m *mindmap.Map, coverage CoverageMode) 
 		})
 	}
 
-	// Per-page: a11y, responsive, perf. Capped to keep CI cheap.
-	perPageCap := coverage.FuzzCap() // same dial — breadth 3, standard 5, depth 10
+	// v0.59 — split the per-page loop into two passes:
+	//
+	//   Pass A (always emit, no cap): a11y / landmarks / keyboard.
+	//     axe-core runs in ~2s per page; capping these produces
+	//     avoidable blind spots on crawls that exceed the cap.
+	//
+	//   Pass B (capped by coverage.FuzzCap()): responsive / perf /
+	//     visual / visual-states / zoom / prefs / network / storage /
+	//     print / mobile / iframe / history-depth / touch /
+	//     auth-expiry / race / clipboard / file-upload / date-edges /
+	//     pwa / integration-* stubs. These templates have per-page
+	//     costs that DO scale (multi-viewport snapshots, perf
+	//     budgets, multi-device emulation).
+	perPageCap := coverage.FuzzCap() // breadth 3, standard 5, depth/max 10
+
+	// Pass A — uncapped a11y trio for every crawled page.
+	for _, pURL := range m.Order {
+		page := m.Pages[pURL]
+		if page == nil {
+			continue
+		}
+		stem := domSnapshotStem(page.URL)
+		pageStub := ast.Symbol{
+			Name:     hostToName(parseHost(page.URL)),
+			Kind:     ast.KindComponent,
+			File:     page.URL,
+			Language: "ts",
+		}
+		for _, kind := range []struct {
+			tmpl   plan.Template
+			subdir string
+			suffix string
+		}{
+			{plan.TmplPlaywrightA11y, "a11y", "a11y"},
+			{plan.TmplPlaywrightKeyboardNav, "a11y", "keyboard"},
+			{plan.TmplPlaywrightA11yLandmarks, "a11y", "landmarks"},
+		} {
+			out = append(out, plan.Item{
+				Symbol:   pageStub,
+				Symbols:  []ast.Symbol{pageStub},
+				PageURL:  page.URL,
+				Template: kind.tmpl,
+				OutPath:  "tests/e2e/" + kind.subdir + "/" + stem + "." + kind.suffix + ".spec.ts",
+			})
+		}
+	}
+
+	// Pass B — capped per-page companions.
 	emitted := 0
 	for _, pURL := range m.Order {
 		if emitted >= perPageCap {
@@ -597,25 +643,19 @@ func qualityCompanions(sourceURL string, m *mindmap.Map, coverage CoverageMode) 
 			subdir string
 			suffix string // optional disambiguator when multiple kinds share a subdir
 		}{
-			{plan.TmplPlaywrightA11y, "a11y", "a11y"},
 			{plan.TmplPlaywrightResponsive, "responsive", "responsive"},
 			{plan.TmplPlaywrightPerf, "perf", "perf"},
 			{plan.TmplPlaywrightVisual, "visual", "visual"},
-			// v0.39: deeper visual + a11y axes — interaction-state
-			// baselines, keyboard navigation, landmark structure.
+			// v0.39: deeper visual axes — interaction-state baselines.
 			{plan.TmplPlaywrightVisualStates, "visual", "visual-states"},
-			{plan.TmplPlaywrightKeyboardNav, "a11y", "keyboard"},
-			{plan.TmplPlaywrightA11yLandmarks, "a11y", "landmarks"},
-			// v0.42: edge-case families — always emitted per page.
+			// v0.42: edge-case families — capped because they're heavy.
 			{plan.TmplPlaywrightNetworkResilience, "network", "network"},
 			{plan.TmplPlaywrightStorage, "storage", "storage"},
 			{plan.TmplPlaywrightZoom, "a11y", "zoom"},
 			{plan.TmplPlaywrightA11yPrefs, "a11y", "prefs"},
 			{plan.TmplPlaywrightPrint, "print", "print"},
-			// v0.43: Mobile (iPhone 13 emulation, touch) — was
-			// previously gated and never emitted by the probe. Restored
-			// as unconditional per-page so the suite covers mobile-web
-			// regressions out of the box.
+			// v0.43: Mobile — capped because it's 4 devices × 2
+			// orientations (v0.56) so per-page emission is heavy.
 			{plan.TmplPlaywrightMobile, "mobile", "mobile"},
 		} {
 			out = append(out, plan.Item{
