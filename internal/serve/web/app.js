@@ -9,6 +9,7 @@ const $projectName = document.querySelector('[data-project-name]')
 let activeFeature = null
 let activeDoc = null
 let viewMode = 'pretty'
+let llmStatus = { enabled: false, model: '', endpoint: '' }
 
 async function fetchJSON (url, opts = {}) {
   const r = await fetch(url, { headers: { 'Accept': 'application/json' }, ...opts })
@@ -81,6 +82,11 @@ function renderFeature (feature, gherkin) {
       el('div', { class: 'scenario-head' },
         el('div', { class: 'scenario-name' }, sc.name || '(unnamed)'),
         el('div', { class: 'scenario-actions' },
+          el('button', {
+            class: 'btn-ghost' + (llmStatus.enabled ? '' : ' disabled'),
+            title: llmStatus.enabled ? 'Chat with the LLM about this scenario' : 'Set REVIEWQA_LLM to enable',
+            onclick: () => llmStatus.enabled && openChat(feature, sc, block),
+          }, '💬 Chat'),
           el('button', { class: 'btn-ghost', onclick: () => openEditor(feature.path, sc.name, block, feature) }, 'Edit'),
           el('button', { class: 'btn-ghost danger', onclick: () => deleteScenario(feature.path, sc.name) }, 'Delete'),
         ),
@@ -290,6 +296,161 @@ function openLocatorSuggest (feature, scenario, step) {
   if (urlInput.value) doSuggest()
 }
 
+function chatStorageKey (featurePath, scenarioName) {
+  return `reviewqa-chat::${featurePath}::${scenarioName}`
+}
+
+function loadChatHistory (featurePath, scenarioName) {
+  try {
+    const raw = localStorage.getItem(chatStorageKey(featurePath, scenarioName))
+    return raw ? JSON.parse(raw) : []
+  } catch (_) {
+    return []
+  }
+}
+
+function saveChatHistory (featurePath, scenarioName, history) {
+  try {
+    localStorage.setItem(chatStorageKey(featurePath, scenarioName), JSON.stringify(history))
+  } catch (_) { /* ignore quota errors */ }
+}
+
+function openChat (feature, scenario, currentBlock) {
+  const drawer = el('aside', { class: 'chat-drawer' })
+  const transcript = el('div', { class: 'chat-transcript' })
+  const composer = el('textarea', { class: 'chat-composer', placeholder: 'e.g. add a step asserting the success toast is visible', spellcheck: 'true' })
+  const urlInput = el('input', { class: 'locator-url chat-url', placeholder: 'destination URL (optional, gives DOM grounding)' })
+  const m = (feature.narrative || '').match(/https?:\/\/\S+/)
+  if (m) urlInput.value = m[0].replace(/[)\.,;]$/, '')
+
+  let history = loadChatHistory(feature.path, scenario.name)
+  let currentScenarioBlock = currentBlock
+  let pendingProposed = null
+
+  function renderTranscript () {
+    transcript.replaceChildren()
+    if (history.length === 0) {
+      transcript.appendChild(el('div', { class: 'chat-empty' }, 'Talk to the assistant about this Scenario. Ask it to change a step, add an assertion, rename, or simply describe what you want — it will propose an updated block you can Apply.'))
+    }
+    for (const msg of history) {
+      const bubble = el('div', { class: 'chat-bubble chat-' + msg.role }, msg.content)
+      transcript.appendChild(bubble)
+    }
+    if (pendingProposed) {
+      const wrap = el('div', { class: 'chat-proposed' },
+        el('div', { class: 'chat-proposed-head' },
+          el('span', { class: 'label' }, pendingProposed.valid ? 'Proposed update' : 'Proposed update — INVALID'),
+          el('button', {
+            class: 'btn-primary' + (pendingProposed.valid ? '' : ' disabled'),
+            onclick: () => pendingProposed.valid && applyProposed(),
+          }, 'Apply'),
+          el('button', { class: 'btn-ghost', onclick: () => { pendingProposed = null; renderTranscript() } }, 'Dismiss'),
+        ),
+        el('pre', { class: 'raw-block chat-proposed-block' }, pendingProposed.gherkin),
+        pendingProposed.notes ? el('div', { class: 'meta' }, pendingProposed.notes) : null,
+      )
+      transcript.appendChild(wrap)
+    }
+    transcript.scrollTop = transcript.scrollHeight
+  }
+
+  async function applyProposed () {
+    if (!pendingProposed || !pendingProposed.valid) return
+    try {
+      const url = '/api/scenario?feature=' + encodeURIComponent(feature.path) + '&name=' + encodeURIComponent(scenario.name)
+      const res = await fetch(url, {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ gherkin: pendingProposed.gherkin }),
+      })
+      if (!res.ok) {
+        alert('Apply failed: ' + (await res.text()))
+        return
+      }
+      currentScenarioBlock = pendingProposed.gherkin
+      pendingProposed = null
+      drawer.remove()
+      await openFeature(feature.path)
+    } catch (e) {
+      alert('Apply failed: ' + e.message)
+    }
+  }
+
+  async function send () {
+    const text = composer.value.trim()
+    if (!text) return
+    history.push({ role: 'user', content: text })
+    composer.value = ''
+    renderTranscript()
+    saveChatHistory(feature.path, scenario.name, history)
+    const thinking = el('div', { class: 'chat-bubble chat-assistant chat-thinking' }, 'thinking…')
+    transcript.appendChild(thinking)
+    transcript.scrollTop = transcript.scrollHeight
+    try {
+      const res = await fetchJSON('/api/scenario-chat', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          scenario: currentScenarioBlock,
+          url: urlInput.value.trim(),
+          history: history.slice(0, -1),
+          user: text,
+        }),
+      })
+      thinking.remove()
+      history.push({ role: 'assistant', content: res.assistant })
+      saveChatHistory(feature.path, scenario.name, history)
+      if (res.proposed) {
+        pendingProposed = { gherkin: res.proposed, valid: !!res.valid, notes: res.notes || '' }
+      } else {
+        pendingProposed = null
+      }
+      renderTranscript()
+    } catch (e) {
+      thinking.remove()
+      history.push({ role: 'assistant', content: '⚠️ ' + e.message })
+      saveChatHistory(feature.path, scenario.name, history)
+      renderTranscript()
+    }
+  }
+
+  function clearChat () {
+    if (!confirm('Clear conversation history for this Scenario?')) return
+    history = []
+    pendingProposed = null
+    saveChatHistory(feature.path, scenario.name, history)
+    renderTranscript()
+  }
+
+  drawer.appendChild(el('div', { class: 'chat-head' },
+    el('div', {},
+      el('div', { class: 'label' }, 'AI maintenance · ' + (llmStatus.model || 'LLM')),
+      el('div', { class: 'chat-scenario-name' }, scenario.name || '(unnamed)'),
+    ),
+    el('div', { class: 'chat-head-actions' },
+      el('button', { class: 'btn-ghost', onclick: clearChat }, 'Clear'),
+      el('button', { class: 'btn-ghost', onclick: () => drawer.remove() }, 'Close'),
+    ),
+  ))
+  drawer.appendChild(el('div', { class: 'chat-url-row' }, urlInput))
+  drawer.appendChild(transcript)
+  drawer.appendChild(el('div', { class: 'chat-composer-row' },
+    composer,
+    el('button', { class: 'btn-primary', onclick: send }, 'Send'),
+  ))
+
+  composer.addEventListener('keydown', (e) => {
+    if (e.key === 'Enter' && (e.ctrlKey || e.metaKey)) {
+      e.preventDefault()
+      send()
+    }
+  })
+
+  document.body.appendChild(drawer)
+  renderTranscript()
+  composer.focus()
+}
+
 async function deleteScenario (featurePath, name) {
   if (!confirm(`Delete scenario "${name}"?\n\nA backup is saved under tests/e2e/.reviewqa-history/ for recovery.`)) return
   try {
@@ -363,6 +524,9 @@ function refreshSidebarSelection () {
 }
 
 async function init () {
+  try {
+    llmStatus = await fetchJSON('/api/llm-status').catch(() => llmStatus)
+  } catch (_) { /* non-fatal */ }
   try {
     const project = await fetchJSON('/api/project')
     $projectName.textContent = project.name

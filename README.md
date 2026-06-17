@@ -30,12 +30,17 @@ Features, Scenarios, and stakeholder docs of an existing project. As of
 v0.66 you can delete, edit, and append Scenarios from the UI; each edit
 is backed up under `tests/e2e/.reviewqa-history/`. v0.67 adds a 🔍 suggest
 button on each step — probe a destination URL and the UI ranks candidate
-Playwright locators against your hint (`getByRole`, `getByLabel`,
-`page.locator(...)`). v0.68 wires an **AI compose** button into the
-Scenario editor: type free Gherkin, set a destination URL, and the LLM
-returns a Scenario whose steps match the registered patterns and whose
-assertions reference the real DOM. Falls back to a deterministic
-landing → navigate → heading-assert path when `REVIEWQA_LLM` is unset.
+Playwright locators against your hint. v0.68 wires an **AI compose**
+button into the editor: type free Gherkin, set a destination URL, and
+the LLM returns a Scenario whose steps match the registered patterns and
+whose assertions reference the real DOM. v0.69 ports the public site's
+full design system (wordmark, pixel-bar, Sora display, copper Fira Code
+labels) so the local UI looks native next to GH Pages. v0.70 ships a
+**💬 Chat** button per Scenario — a non-technical reviewer can talk to
+the LLM about that specific Scenario ("add a step asserting the success
+toast"; "change the form to contact, not login") and Apply the
+assistant's proposed update with one click. History persists per
+Scenario in `localStorage`.
 
 ```bash
 reviewqa serve --workdir ./my-generated-suite
@@ -251,4 +256,4 @@ By submitting a pull request you agree to the
 [Contributor License Agreement](./CLA.md). The `cla-assistant` check on PRs
 will prompt you to sign if you haven't.
 
-For the release-by-release history (v0.19 → v0.69), see [`CHANGELOG.md`](./CHANGELOG.md).
+For the release-by-release history (v0.19 → v0.70), see [`CHANGELOG.md`](./CHANGELOG.md).

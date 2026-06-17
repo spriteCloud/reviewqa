@@ -245,6 +245,36 @@ func Handler(workdir string) http.Handler {
 		writeJSON(w, res)
 	})
 
+	mux.HandleFunc("/api/scenario-chat", func(w http.ResponseWriter, r *http.Request) {
+		if r.Method != http.MethodPost {
+			http.Error(w, "method not allowed", http.StatusMethodNotAllowed)
+			return
+		}
+		var in ChatInput
+		if err := json.NewDecoder(r.Body).Decode(&in); err != nil {
+			http.Error(w, err.Error(), http.StatusBadRequest)
+			return
+		}
+		ctx, cancel := context.WithTimeout(r.Context(), 90*time.Second)
+		defer cancel()
+		res, err := Chat(ctx, in)
+		if err != nil {
+			http.Error(w, err.Error(), http.StatusBadRequest)
+			return
+		}
+		writeJSON(w, res)
+	})
+
+	mux.HandleFunc("/api/llm-status", func(w http.ResponseWriter, r *http.Request) {
+		cfg := llmConfigFromEnv()
+		enabled := cfg.OpenAIAPIKey != "" && cfg.Model != ""
+		writeJSON(w, map[string]any{
+			"enabled":  enabled,
+			"endpoint": cfg.OpenAIBaseURL,
+			"model":    cfg.Model,
+		})
+	})
+
 	mux.HandleFunc("/api/locator-candidates", func(w http.ResponseWriter, r *http.Request) {
 		if r.Method != http.MethodPost {
 			http.Error(w, "method not allowed", http.StatusMethodNotAllowed)
