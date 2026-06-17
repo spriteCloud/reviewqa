@@ -16,7 +16,7 @@
 import { test, expect } from '@playwright/test'
 
 test.describe.configure({ mode: 'parallel' })
-test.describe('EsWikipediaOrg — a11y landmarks @ https://es.wikipedia.org/wiki/Archivo:Museo_del_Prado_2016_(25185969599).jpg', () => {
+test.describe('EsWikipedia — a11y landmarks @ https://es.wikipedia.org/wiki/Archivo:Museo_del_Prado_2016_(25185969599).jpg', () => {
   test('@kind:a11y-landmarks @smoke single main + h1 + nav', async ({ page }) => {
     await page.goto('/wiki/Archivo:Museo_del_Prado_2016_(25185969599).jpg')
 

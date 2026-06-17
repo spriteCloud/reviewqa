@@ -16,7 +16,7 @@
  */
 import { test, expect } from '@playwright/test'
 
-test.describe('BooksToscrapeCom — integration: observability scaffold (skipped)', () => {
+test.describe('BooksToscrape — integration: observability scaffold (skipped)', () => {
   test.skip('@kind:integration-obs @wireable @trace-propagation traceparent header propagates downstream', async ({ request }) => {
     // When wired:
     //   1. Issue a request with traceparent: 00-<traceId>-<spanId>-01

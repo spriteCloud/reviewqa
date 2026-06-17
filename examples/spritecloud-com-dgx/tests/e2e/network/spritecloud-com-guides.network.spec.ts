@@ -12,7 +12,7 @@
 import { test, expect } from '@playwright/test'
 
 test.describe.configure({ mode: 'parallel' })
-test.describe('WwwSpritecloudCom — network resilience @ https://www.spritecloud.com/guides', () => {
+test.describe('Spritecloud — network resilience @ https://www.spritecloud.com/guides', () => {
   test('@kind:network @slow-3g page renders under throttled bandwidth', async ({ page, context }) => {
     // Throttle every request by 1.5s before responding. Page must
     // still render the primary content (h1) within a generous budget.

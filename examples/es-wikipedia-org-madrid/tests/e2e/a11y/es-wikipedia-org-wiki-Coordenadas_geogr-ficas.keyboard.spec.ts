@@ -16,7 +16,7 @@
 import { test, expect } from '@playwright/test'
 
 test.describe.configure({ mode: 'parallel' })
-test.describe('EsWikipediaOrg — keyboard navigation @ https://es.wikipedia.org/wiki/Coordenadas_geogr%C3%A1ficas', () => {
+test.describe('EsWikipedia — keyboard navigation @ https://es.wikipedia.org/wiki/Coordenadas_geogr%C3%A1ficas', () => {
   test('@kind:keyboard @smoke tab through the first 10 focusables', async ({ page }) => {
     await page.goto('/wiki/Coordenadas_geográficas')
 

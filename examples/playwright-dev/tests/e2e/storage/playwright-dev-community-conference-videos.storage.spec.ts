@@ -12,7 +12,7 @@
 import { test, expect } from '@playwright/test'
 
 test.describe.configure({ mode: 'parallel' })
-test.describe('PlaywrightDev — storage resilience @ https://playwright.dev/community/conference-videos', () => {
+test.describe('Playwright — storage resilience @ https://playwright.dev/community/conference-videos', () => {
   test('@kind:storage @smoke renders with empty storage', async ({ page, context }) => {
     await context.clearCookies()
     await page.goto('/community/conference-videos')

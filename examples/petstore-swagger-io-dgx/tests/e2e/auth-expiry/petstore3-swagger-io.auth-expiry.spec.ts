@@ -11,7 +11,7 @@
 import { test, expect } from '@playwright/test'
 
 test.describe.configure({ mode: 'parallel' })
-test.describe('Petstore3SwaggerIo — auth expiry @ https://petstore3.swagger.io', () => {
+test.describe('Petstore3Swagger — auth expiry @ https://petstore3.swagger.io', () => {
   test('@kind:auth-expiry @smoke clearing cookies mid-journey surfaces a sign-in prompt', async ({ page, context }) => {
     await page.goto('/')
     // Simulate the user's session expiring server-side.

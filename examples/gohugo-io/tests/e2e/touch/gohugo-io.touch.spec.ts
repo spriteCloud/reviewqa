@@ -18,7 +18,7 @@ import { test, expect, devices } from '@playwright/test'
 test.use({ ...devices['iPhone 13'] })
 
 test.describe.configure({ mode: 'parallel' })
-test.describe('GohugoIo — touch gestures @ https://gohugo.io', () => {
+test.describe('Gohugo — touch gestures @ https://gohugo.io', () => {
   test('@kind:touch @smoke long-press on the primary CTA does not double-fire', async ({ page }) => {
     await page.goto('/')
     const cta = page.getByRole('button').first().or(page.getByRole('link').first())

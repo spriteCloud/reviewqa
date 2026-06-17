@@ -16,7 +16,7 @@
 import { test, expect } from '@playwright/test'
 
 test.describe.configure({ mode: 'parallel' })
-test.describe('PlaywrightDev — keyboard navigation @ https://playwright.dev/agent-cli/commands/storage', () => {
+test.describe('Playwright — keyboard navigation @ https://playwright.dev/agent-cli/commands/storage', () => {
   test('@kind:keyboard @smoke tab through the first 10 focusables', async ({ page }) => {
     await page.goto('/agent-cli/commands/storage')
 

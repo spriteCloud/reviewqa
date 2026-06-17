@@ -16,7 +16,7 @@
 import { test, expect } from '@playwright/test'
 
 test.describe.configure({ mode: 'parallel' })
-test.describe('WwwSpritecloudCom — keyboard navigation @ https://www.spritecloud.com/software-testing', () => {
+test.describe('Spritecloud — keyboard navigation @ https://www.spritecloud.com/software-testing', () => {
   test('@kind:keyboard @smoke tab through the first 10 focusables', async ({ page }) => {
     await page.goto('/software-testing')
 

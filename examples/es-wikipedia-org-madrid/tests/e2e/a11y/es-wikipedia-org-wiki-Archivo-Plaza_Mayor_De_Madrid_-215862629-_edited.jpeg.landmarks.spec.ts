@@ -16,7 +16,7 @@
 import { test, expect } from '@playwright/test'
 
 test.describe.configure({ mode: 'parallel' })
-test.describe('EsWikipediaOrg — a11y landmarks @ https://es.wikipedia.org/wiki/Archivo:Plaza_Mayor_De_Madrid_(215862629)_edited.jpeg', () => {
+test.describe('EsWikipedia — a11y landmarks @ https://es.wikipedia.org/wiki/Archivo:Plaza_Mayor_De_Madrid_(215862629)_edited.jpeg', () => {
   test('@kind:a11y-landmarks @smoke single main + h1 + nav', async ({ page }) => {
     await page.goto('/wiki/Archivo:Plaza_Mayor_De_Madrid_(215862629)_edited.jpeg')
 

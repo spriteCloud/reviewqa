@@ -21,7 +21,7 @@ import { test, expect } from '@playwright/test'
 import { AxeBuilder } from '@axe-core/playwright'
 
 test.describe.configure({ mode: 'parallel' })
-test.describe('WwwSpritecloudCom — accessibility @ https://www.spritecloud.com/functional-testing', () => {
+test.describe('Spritecloud — accessibility @ https://www.spritecloud.com/functional-testing', () => {
   test('@kind:a11y @smoke no serious or critical axe violations', async ({ page }) => {
     await page.goto('/functional-testing')
     const results = await new AxeBuilder({ page })

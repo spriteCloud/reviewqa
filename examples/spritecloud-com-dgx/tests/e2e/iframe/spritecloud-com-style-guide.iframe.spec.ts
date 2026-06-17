@@ -11,7 +11,7 @@
 import { test, expect } from '@playwright/test'
 
 test.describe.configure({ mode: 'parallel' })
-test.describe('WwwSpritecloudCom — iframe @ https://www.spritecloud.com/style-guide', () => {
+test.describe('Spritecloud — iframe @ https://www.spritecloud.com/style-guide', () => {
   test('@kind:iframe @smoke embedded iframes load without console errors', async ({ page }) => {
     const errors: string[] = []
     page.on('pageerror', e => errors.push(e.message))

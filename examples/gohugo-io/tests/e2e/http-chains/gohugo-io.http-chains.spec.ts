@@ -11,7 +11,7 @@
 import { test, expect } from '@playwright/test'
 
 test.describe.configure({ mode: 'parallel' })
-test.describe('GohugoIo — http chains @ https://gohugo.io', () => {
+test.describe('Gohugo — http chains @ https://gohugo.io', () => {
   test('@kind:http-chain @redirect-chain follows multi-hop redirects', async ({ request }) => {
     // 301 + 302 + 200 — the common cdn → canonical → asset chain.
     const resp = await request.get('/', { maxRedirects: 10 })

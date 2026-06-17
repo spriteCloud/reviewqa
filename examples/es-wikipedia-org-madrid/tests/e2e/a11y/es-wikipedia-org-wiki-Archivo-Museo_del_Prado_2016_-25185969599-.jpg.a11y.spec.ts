@@ -21,7 +21,7 @@ import { test, expect } from '@playwright/test'
 import { AxeBuilder } from '@axe-core/playwright'
 
 test.describe.configure({ mode: 'parallel' })
-test.describe('EsWikipediaOrg — accessibility @ https://es.wikipedia.org/wiki/Archivo:Museo_del_Prado_2016_(25185969599).jpg', () => {
+test.describe('EsWikipedia — accessibility @ https://es.wikipedia.org/wiki/Archivo:Museo_del_Prado_2016_(25185969599).jpg', () => {
   test('@kind:a11y @smoke no serious or critical axe violations', async ({ page }) => {
     await page.goto('/wiki/Archivo:Museo_del_Prado_2016_(25185969599).jpg')
     const results = await new AxeBuilder({ page })

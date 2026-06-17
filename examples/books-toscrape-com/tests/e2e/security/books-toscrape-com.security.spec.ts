@@ -15,7 +15,7 @@
 import { test, expect } from '@playwright/test'
 
 test.describe.configure({ mode: 'parallel' })
-test.describe('BooksToscrapeCom — security headers @ https://books.toscrape.com', () => {
+test.describe('BooksToscrape — security headers @ https://books.toscrape.com', () => {
   test('@kind:security @smoke baseline security headers present', async ({ request }) => {
     const response = await request.get('https://books.toscrape.com')
     expect(response.status(), 'origin should respond').toBeLessThan(500)

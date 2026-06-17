@@ -12,7 +12,7 @@
 import { test, expect } from '@playwright/test'
 
 test.describe.configure({ mode: 'parallel' })
-test.describe('EsWikipediaOrg — a11y prefs @ https://es.wikipedia.org/wiki/Madrid', () => {
+test.describe('EsWikipedia — a11y prefs @ https://es.wikipedia.org/wiki/Madrid', () => {
   test('@kind:a11y-prefs @reduced-motion renders with prefers-reduced-motion', async ({ browser }) => {
     const context = await browser.newContext({ reducedMotion: 'reduce' })
     const page = await context.newPage()

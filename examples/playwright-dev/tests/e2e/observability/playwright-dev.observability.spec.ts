@@ -11,7 +11,7 @@
 import { test, expect } from '@playwright/test'
 
 test.describe.configure({ mode: 'parallel' })
-test.describe('PlaywrightDev — observability headers @ https://playwright.dev', () => {
+test.describe('Playwright — observability headers @ https://playwright.dev', () => {
   test('@kind:observability @smoke origin emits at least one observability header', async ({ request }) => {
     const response = await request.get('https://playwright.dev')
     const headers = response.headers()

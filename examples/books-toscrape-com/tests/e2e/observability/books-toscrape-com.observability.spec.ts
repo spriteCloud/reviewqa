@@ -11,7 +11,7 @@
 import { test, expect } from '@playwright/test'
 
 test.describe.configure({ mode: 'parallel' })
-test.describe('BooksToscrapeCom — observability headers @ https://books.toscrape.com', () => {
+test.describe('BooksToscrape — observability headers @ https://books.toscrape.com', () => {
   test('@kind:observability @smoke origin emits at least one observability header', async ({ request }) => {
     const response = await request.get('https://books.toscrape.com')
     const headers = response.headers()

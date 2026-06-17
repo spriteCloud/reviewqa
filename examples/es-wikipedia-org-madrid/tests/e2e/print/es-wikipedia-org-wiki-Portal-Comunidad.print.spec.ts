@@ -11,7 +11,7 @@
 import { test, expect } from '@playwright/test'
 
 test.describe.configure({ mode: 'parallel' })
-test.describe('EsWikipediaOrg — print @ https://es.wikipedia.org/wiki/Portal:Comunidad', () => {
+test.describe('EsWikipedia — print @ https://es.wikipedia.org/wiki/Portal:Comunidad', () => {
   test('@kind:print @smoke renders under media: print', async ({ page }) => {
     await page.goto('/wiki/Portal:Comunidad')
     await page.emulateMedia({ media: 'print' })

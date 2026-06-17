@@ -11,7 +11,7 @@
 import { test, expect } from '@playwright/test'
 
 test.describe.configure({ mode: 'parallel' })
-test.describe('Petstore3SwaggerIo — iframe @ https://petstore3.swagger.io', () => {
+test.describe('Petstore3Swagger — iframe @ https://petstore3.swagger.io', () => {
   test('@kind:iframe @smoke embedded iframes load without console errors', async ({ page }) => {
     const errors: string[] = []
     page.on('pageerror', e => errors.push(e.message))

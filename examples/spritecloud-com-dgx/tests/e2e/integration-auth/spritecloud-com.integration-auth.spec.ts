@@ -17,7 +17,7 @@
  */
 import { test, expect } from '@playwright/test'
 
-test.describe('WwwSpritecloudCom — integration: auth scaffold (skipped)', () => {
+test.describe('Spritecloud — integration: auth scaffold (skipped)', () => {
   test.skip('@kind:integration-auth @wireable @unauth missing Authorization returns 401', async ({ request }) => {
     // When wired:
     //   1. Probe a protected endpoint without Authorization

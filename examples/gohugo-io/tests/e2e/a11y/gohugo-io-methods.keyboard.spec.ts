@@ -16,7 +16,7 @@
 import { test, expect } from '@playwright/test'
 
 test.describe.configure({ mode: 'parallel' })
-test.describe('GohugoIo — keyboard navigation @ https://gohugo.io/methods', () => {
+test.describe('Gohugo — keyboard navigation @ https://gohugo.io/methods', () => {
   test('@kind:keyboard @smoke tab through the first 10 focusables', async ({ page }) => {
     await page.goto('/methods')
 

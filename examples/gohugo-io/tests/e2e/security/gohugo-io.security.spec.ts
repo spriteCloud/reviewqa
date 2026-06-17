@@ -15,7 +15,7 @@
 import { test, expect } from '@playwright/test'
 
 test.describe.configure({ mode: 'parallel' })
-test.describe('GohugoIo — security headers @ https://gohugo.io', () => {
+test.describe('Gohugo — security headers @ https://gohugo.io', () => {
   test('@kind:security @smoke baseline security headers present', async ({ request }) => {
     const response = await request.get('https://gohugo.io')
     expect(response.status(), 'origin should respond').toBeLessThan(500)

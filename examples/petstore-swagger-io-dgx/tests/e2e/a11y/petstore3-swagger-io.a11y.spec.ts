@@ -21,7 +21,7 @@ import { test, expect } from '@playwright/test'
 import { AxeBuilder } from '@axe-core/playwright'
 
 test.describe.configure({ mode: 'parallel' })
-test.describe('Petstore3SwaggerIo — accessibility @ https://petstore3.swagger.io', () => {
+test.describe('Petstore3Swagger — accessibility @ https://petstore3.swagger.io', () => {
   test('@kind:a11y @smoke no serious or critical axe violations', async ({ page }) => {
     await page.goto('/')
     const results = await new AxeBuilder({ page })

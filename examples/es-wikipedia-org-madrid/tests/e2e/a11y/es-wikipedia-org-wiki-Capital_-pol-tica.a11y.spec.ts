@@ -21,7 +21,7 @@ import { test, expect } from '@playwright/test'
 import { AxeBuilder } from '@axe-core/playwright'
 
 test.describe.configure({ mode: 'parallel' })
-test.describe('EsWikipediaOrg — accessibility @ https://es.wikipedia.org/wiki/Capital_%28pol%C3%ADtica%29', () => {
+test.describe('EsWikipedia — accessibility @ https://es.wikipedia.org/wiki/Capital_%28pol%C3%ADtica%29', () => {
   test('@kind:a11y @smoke no serious or critical axe violations', async ({ page }) => {
     await page.goto('/wiki/Capital_(política)')
     const results = await new AxeBuilder({ page })

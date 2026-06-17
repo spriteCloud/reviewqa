@@ -12,7 +12,7 @@
 import { test, expect } from '@playwright/test'
 
 test.describe.configure({ mode: 'parallel' })
-test.describe('EsWikipediaOrg — history depth @ https://es.wikipedia.org/wiki/Portal:Comunidad', () => {
+test.describe('EsWikipedia — history depth @ https://es.wikipedia.org/wiki/Portal:Comunidad', () => {
   test('@kind:history-depth @smoke back twice then forward keeps the page interactive', async ({ page }) => {
     const errors: string[] = []
     page.on('pageerror', e => errors.push(e.message))

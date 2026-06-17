@@ -12,7 +12,7 @@
 import { test, expect } from '@playwright/test'
 
 test.describe.configure({ mode: 'parallel' })
-test.describe('EsWikipediaOrg — race @ https://es.wikipedia.org/wiki/Especial:CambiosRecientes', () => {
+test.describe('EsWikipedia — race @ https://es.wikipedia.org/wiki/Especial:CambiosRecientes', () => {
   test('@kind:race @smoke form survives a rapid double-submit', async ({ page }) => {
     await page.goto('/wiki/Especial:CambiosRecientes')
     const form = page.locator('form').first()

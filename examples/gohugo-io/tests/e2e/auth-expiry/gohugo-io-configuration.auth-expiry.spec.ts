@@ -11,7 +11,7 @@
 import { test, expect } from '@playwright/test'
 
 test.describe.configure({ mode: 'parallel' })
-test.describe('GohugoIo — auth expiry @ https://gohugo.io/configuration', () => {
+test.describe('Gohugo — auth expiry @ https://gohugo.io/configuration', () => {
   test('@kind:auth-expiry @smoke clearing cookies mid-journey surfaces a sign-in prompt', async ({ page, context }) => {
     await page.goto('/configuration')
     // Simulate the user's session expiring server-side.

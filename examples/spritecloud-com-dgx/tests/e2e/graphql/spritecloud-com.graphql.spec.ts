@@ -37,7 +37,7 @@ async function endpointExists(request: any): Promise<boolean> {
 }
 
 test.describe.configure({ mode: 'parallel' })
-test.describe('WwwSpritecloudCom — GraphQL discovery @ https://www.spritecloud.com', () => {
+test.describe('Spritecloud — GraphQL discovery @ https://www.spritecloud.com', () => {
   test('@kind:graphql-stub @smoke introspection succeeds OR endpoint is absent', async ({ request }) => {
     const r = await request.post(ENDPOINT, {
       data: INTROSPECTION,

@@ -12,7 +12,7 @@ import { test, expect } from '@playwright/test'
 const SLO_MS = Number(process.env.PERF_SLO_MS ?? 3000)
 
 test.describe.configure({ mode: 'parallel' })
-test.describe('EsWikipediaOrg — performance @ https://es.wikipedia.org/wiki/Wikipedia:Portada', () => {
+test.describe('EsWikipedia — performance @ https://es.wikipedia.org/wiki/Wikipedia:Portada', () => {
   test(`@kind:perf @smoke loads under ${SLO_MS}ms`, async ({ page }) => {
     const start = Date.now()
     await page.goto('/wiki/Wikipedia:Portada', { waitUntil: 'load' })

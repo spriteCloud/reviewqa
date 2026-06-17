@@ -18,7 +18,7 @@ import { test, expect } from '@playwright/test'
 const STATES = ['default', 'hover', 'focus'] as const
 
 test.describe.configure({ mode: 'parallel' })
-test.describe('PlaywrightDev — interaction-state visual @ https://playwright.dev/community/live-streams', () => {
+test.describe('Playwright — interaction-state visual @ https://playwright.dev/community/live-streams', () => {
   test('@kind:visual-state @smoke primary CTA across states', async ({ page }) => {
     await page.goto('/community/live-streams')
     await page.waitForLoadState('networkidle').catch(() => {})
@@ -40,7 +40,7 @@ test.describe('PlaywrightDev — interaction-state visual @ https://playwright.d
           // default state — no interaction
           break
       }
-      await expect(target).toHaveScreenshot(`playwrightdev-cta-${state}.png`, {
+      await expect(target).toHaveScreenshot(`playwright-cta-${state}.png`, {
         maxDiffPixelRatio: 0.02,
         animations: 'disabled',
       })

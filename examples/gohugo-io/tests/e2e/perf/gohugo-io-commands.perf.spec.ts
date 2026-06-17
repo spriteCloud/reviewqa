@@ -12,7 +12,7 @@ import { test, expect } from '@playwright/test'
 const SLO_MS = Number(process.env.PERF_SLO_MS ?? 3000)
 
 test.describe.configure({ mode: 'parallel' })
-test.describe('GohugoIo — performance @ https://gohugo.io/commands', () => {
+test.describe('Gohugo — performance @ https://gohugo.io/commands', () => {
   test(`@kind:perf @smoke loads under ${SLO_MS}ms`, async ({ page }) => {
     const start = Date.now()
     await page.goto('/commands', { waitUntil: 'load' })

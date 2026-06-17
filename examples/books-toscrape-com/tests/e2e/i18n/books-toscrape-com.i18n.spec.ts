@@ -18,7 +18,7 @@ const LOCALES: Locale[] = [
 ]
 
 test.describe.configure({ mode: 'parallel' })
-test.describe('BooksToscrapeCom — i18n locales', () => {
+test.describe('BooksToscrape — i18n locales', () => {
   // v0.43: always-attempt baseline — <html lang> attribute must be
   // present even when the site exposes no hreflang siblings. Catches
   // the common a11y/SEO regression where lang is dropped during a

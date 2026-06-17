@@ -12,7 +12,7 @@
 import { test, expect } from '@playwright/test'
 
 test.describe.configure({ mode: 'parallel' })
-test.describe('WwwSpritecloudCom — storage resilience @ https://www.spritecloud.com/style-guide', () => {
+test.describe('Spritecloud — storage resilience @ https://www.spritecloud.com/style-guide', () => {
   test('@kind:storage @smoke renders with empty storage', async ({ page, context }) => {
     await context.clearCookies()
     await page.goto('/style-guide')

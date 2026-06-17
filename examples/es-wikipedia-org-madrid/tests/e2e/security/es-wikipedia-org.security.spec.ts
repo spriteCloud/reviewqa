@@ -15,7 +15,7 @@
 import { test, expect } from '@playwright/test'
 
 test.describe.configure({ mode: 'parallel' })
-test.describe('EsWikipediaOrg — security headers @ https://es.wikipedia.org', () => {
+test.describe('EsWikipedia — security headers @ https://es.wikipedia.org', () => {
   test('@kind:security @smoke baseline security headers present', async ({ request }) => {
     const response = await request.get('https://es.wikipedia.org')
     expect(response.status(), 'origin should respond').toBeLessThan(500)

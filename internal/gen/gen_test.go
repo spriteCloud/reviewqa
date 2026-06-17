@@ -326,7 +326,7 @@ func TestRenderPlaywrightHappyFlow_AbsoluteURL(t *testing.T) {
 	// `BASE + 'https://...'` (the old shape would have produced an
 	// unrunnable concatenation).
 	sym := ast.Symbol{
-		Kind: ast.KindComponent, Name: "WwwSpritecloudCom",
+		Kind: ast.KindComponent, Name: "Spritecloud",
 		File: "https://www.spritecloud.com/", Language: "ts",
 		Anchors: []ast.LocatorAnchor{{Role: "banner", Tag: "header"}},
 	}

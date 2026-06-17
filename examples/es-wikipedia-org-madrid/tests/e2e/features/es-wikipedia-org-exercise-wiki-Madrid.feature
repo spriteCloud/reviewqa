@@ -11,7 +11,7 @@
 #   npx playwright test --grep @journey:exercise
 #   npx playwright test --grep @smoke
 
-Feature: EsWikipediaOrg — exercise journey
+Feature: EsWikipedia — exercise journey
   As a visitor of https://es.wikipedia.org/wiki/Madrid
   I want to complete the exercise flow
   So that the page delivers on its user goal

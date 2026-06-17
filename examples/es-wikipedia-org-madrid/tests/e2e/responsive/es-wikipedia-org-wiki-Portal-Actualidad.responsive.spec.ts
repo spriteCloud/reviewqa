@@ -17,7 +17,7 @@ const VIEWPORTS = [
 ] as const
 
 test.describe.configure({ mode: 'parallel' })
-test.describe('EsWikipediaOrg — responsive @ https://es.wikipedia.org/wiki/Portal:Actualidad', () => {
+test.describe('EsWikipedia — responsive @ https://es.wikipedia.org/wiki/Portal:Actualidad', () => {
   for (const vp of VIEWPORTS) {
     test(`@kind:responsive @smoke renders at ${vp.name} (${vp.width}x${vp.height})`, async ({ page }) => {
       await page.setViewportSize({ width: vp.width, height: vp.height })

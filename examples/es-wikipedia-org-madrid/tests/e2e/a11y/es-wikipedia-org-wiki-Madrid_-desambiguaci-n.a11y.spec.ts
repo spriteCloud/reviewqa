@@ -21,7 +21,7 @@ import { test, expect } from '@playwright/test'
 import { AxeBuilder } from '@axe-core/playwright'
 
 test.describe.configure({ mode: 'parallel' })
-test.describe('EsWikipediaOrg — accessibility @ https://es.wikipedia.org/wiki/Madrid_%28desambiguaci%C3%B3n%29', () => {
+test.describe('EsWikipedia — accessibility @ https://es.wikipedia.org/wiki/Madrid_%28desambiguaci%C3%B3n%29', () => {
   test('@kind:a11y @smoke no serious or critical axe violations', async ({ page }) => {
     await page.goto('/wiki/Madrid_(desambiguación)')
     const results = await new AxeBuilder({ page })

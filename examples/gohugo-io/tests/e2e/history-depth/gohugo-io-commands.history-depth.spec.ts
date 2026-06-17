@@ -12,7 +12,7 @@
 import { test, expect } from '@playwright/test'
 
 test.describe.configure({ mode: 'parallel' })
-test.describe('GohugoIo — history depth @ https://gohugo.io/commands', () => {
+test.describe('Gohugo — history depth @ https://gohugo.io/commands', () => {
   test('@kind:history-depth @smoke back twice then forward keeps the page interactive', async ({ page }) => {
     const errors: string[] = []
     page.on('pageerror', e => errors.push(e.message))

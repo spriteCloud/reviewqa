@@ -16,7 +16,7 @@
 import { test, expect } from '@playwright/test'
 
 test.describe.configure({ mode: 'parallel' })
-test.describe('PlaywrightDev — keyboard navigation @ https://playwright.dev/community/mcp-videos', () => {
+test.describe('Playwright — keyboard navigation @ https://playwright.dev/community/mcp-videos', () => {
   test('@kind:keyboard @smoke tab through the first 10 focusables', async ({ page }) => {
     await page.goto('/community/mcp-videos')
 

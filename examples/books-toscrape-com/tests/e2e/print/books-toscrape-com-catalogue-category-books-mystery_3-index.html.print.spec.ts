@@ -11,7 +11,7 @@
 import { test, expect } from '@playwright/test'
 
 test.describe.configure({ mode: 'parallel' })
-test.describe('BooksToscrapeCom — print @ https://books.toscrape.com/catalogue/category/books/mystery_3/index.html', () => {
+test.describe('BooksToscrape — print @ https://books.toscrape.com/catalogue/category/books/mystery_3/index.html', () => {
   test('@kind:print @smoke renders under media: print', async ({ page }) => {
     await page.goto('/catalogue/category/books/mystery_3/index.html')
     await page.emulateMedia({ media: 'print' })

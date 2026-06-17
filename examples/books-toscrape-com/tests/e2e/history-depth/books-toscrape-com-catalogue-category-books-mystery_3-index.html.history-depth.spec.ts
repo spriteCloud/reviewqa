@@ -12,7 +12,7 @@
 import { test, expect } from '@playwright/test'
 
 test.describe.configure({ mode: 'parallel' })
-test.describe('BooksToscrapeCom — history depth @ https://books.toscrape.com/catalogue/category/books/mystery_3/index.html', () => {
+test.describe('BooksToscrape — history depth @ https://books.toscrape.com/catalogue/category/books/mystery_3/index.html', () => {
   test('@kind:history-depth @smoke back twice then forward keeps the page interactive', async ({ page }) => {
     const errors: string[] = []
     page.on('pageerror', e => errors.push(e.message))

@@ -12,7 +12,7 @@
 import { test, expect } from '@playwright/test'
 
 test.describe.configure({ mode: 'parallel' })
-test.describe('Petstore3SwaggerIo — a11y prefs @ https://petstore3.swagger.io', () => {
+test.describe('Petstore3Swagger — a11y prefs @ https://petstore3.swagger.io', () => {
   test('@kind:a11y-prefs @reduced-motion renders with prefers-reduced-motion', async ({ browser }) => {
     const context = await browser.newContext({ reducedMotion: 'reduce' })
     const page = await context.newPage()

@@ -21,7 +21,7 @@ import { test, expect } from '@playwright/test'
 import { AxeBuilder } from '@axe-core/playwright'
 
 test.describe.configure({ mode: 'parallel' })
-test.describe('EsWikipediaOrg — accessibility @ https://es.wikipedia.org/wiki/Archivo:Plaza_Mayor_De_Madrid_(215862629)_edited.jpeg', () => {
+test.describe('EsWikipedia — accessibility @ https://es.wikipedia.org/wiki/Archivo:Plaza_Mayor_De_Madrid_(215862629)_edited.jpeg', () => {
   test('@kind:a11y @smoke no serious or critical axe violations', async ({ page }) => {
     await page.goto('/wiki/Archivo:Plaza_Mayor_De_Madrid_(215862629)_edited.jpeg')
     const results = await new AxeBuilder({ page })

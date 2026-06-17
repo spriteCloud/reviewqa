@@ -18,7 +18,7 @@ import { test, expect } from '@playwright/test'
 const STATES = ['default', 'hover', 'focus'] as const
 
 test.describe.configure({ mode: 'parallel' })
-test.describe('WwwSpritecloudCom — interaction-state visual @ https://www.spritecloud.com/guides', () => {
+test.describe('Spritecloud — interaction-state visual @ https://www.spritecloud.com/guides', () => {
   test('@kind:visual-state @smoke primary CTA across states', async ({ page }) => {
     await page.goto('/guides')
     await page.waitForLoadState('networkidle').catch(() => {})

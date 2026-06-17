@@ -11,7 +11,7 @@
 import { test, expect } from '@playwright/test'
 
 test.describe.configure({ mode: 'parallel' })
-test.describe('EsWikipediaOrg — auth expiry @ https://es.wikipedia.org/wiki/Portal:Actualidad', () => {
+test.describe('EsWikipedia — auth expiry @ https://es.wikipedia.org/wiki/Portal:Actualidad', () => {
   test('@kind:auth-expiry @smoke clearing cookies mid-journey surfaces a sign-in prompt', async ({ page, context }) => {
     await page.goto('/wiki/Portal:Actualidad')
     // Simulate the user's session expiring server-side.

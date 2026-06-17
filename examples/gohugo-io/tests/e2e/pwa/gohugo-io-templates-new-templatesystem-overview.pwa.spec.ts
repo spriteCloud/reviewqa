@@ -11,7 +11,7 @@
 import { test, expect } from '@playwright/test'
 
 test.describe.configure({ mode: 'parallel' })
-test.describe('GohugoIo — PWA manifest @ https://gohugo.io/templates/new-templatesystem-overview', () => {
+test.describe('Gohugo — PWA manifest @ https://gohugo.io/templates/new-templatesystem-overview', () => {
   test('@kind:pwa @smoke manifest is reachable and well-formed', async ({ page, request }) => {
     await page.goto('/templates/new-templatesystem-overview')
     const href = await page.locator('link[rel="manifest"]').first().getAttribute('href')

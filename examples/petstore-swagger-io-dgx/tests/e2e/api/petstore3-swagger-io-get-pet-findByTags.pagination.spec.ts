@@ -10,7 +10,7 @@
 import { test, expect } from '@playwright/test'
 
 test.describe.configure({ mode: 'parallel' })
-test.describe('Petstore3SwaggerIo — pagination @ https://petstore3.swagger.io/pet/findByTags', () => {
+test.describe('Petstore3Swagger — pagination @ https://petstore3.swagger.io/pet/findByTags', () => {
   test('@kind:api-pagination @smoke distinct pages return distinct bodies', async ({ request }) => {
     const page1 = await request.get('https://petstore3.swagger.io/pet/findByTags?page=1&limit=5')
     const page2 = await request.get('https://petstore3.swagger.io/pet/findByTags?page=2&limit=5')

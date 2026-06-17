@@ -16,7 +16,7 @@
 import { test, expect } from './_fixtures'
 
 test.describe.configure({ mode: 'parallel' })
-test.describe('GohugoIo — fuzz / negative input', () => {
+test.describe('Gohugo — fuzz / negative input', () => {
   test.beforeEach(async ({ page }) => {
     await page.goto('/templates/new-templatesystem-overview')
   })

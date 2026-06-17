@@ -15,7 +15,7 @@
 import { test, expect } from '@playwright/test'
 
 test.describe.configure({ mode: 'parallel' })
-test.describe('Petstore3SwaggerIo — security headers @ https://petstore3.swagger.io', () => {
+test.describe('Petstore3Swagger — security headers @ https://petstore3.swagger.io', () => {
   test('@kind:security @smoke baseline security headers present', async ({ request }) => {
     const response = await request.get('https://petstore3.swagger.io')
     expect(response.status(), 'origin should respond').toBeLessThan(500)

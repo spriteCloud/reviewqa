@@ -16,7 +16,7 @@
 import { test, expect } from '@playwright/test'
 
 test.describe.configure({ mode: 'parallel' })
-test.describe('PlaywrightDev — API contract @ https://playwright.dev/search', () => {
+test.describe('Playwright — API contract @ https://playwright.dev/search', () => {
 
   test('@kind:api @smoke happy: realistic body returns 2xx', async ({ request }) => {
     const response = await request.post('https://playwright.dev/search', {

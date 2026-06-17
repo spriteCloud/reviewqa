@@ -12,7 +12,7 @@
 import { test, expect } from '@playwright/test'
 
 test.describe.configure({ mode: 'parallel' })
-test.describe('GohugoIo — storage resilience @ https://gohugo.io/configuration', () => {
+test.describe('Gohugo — storage resilience @ https://gohugo.io/configuration', () => {
   test('@kind:storage @smoke renders with empty storage', async ({ page, context }) => {
     await context.clearCookies()
     await page.goto('/configuration')

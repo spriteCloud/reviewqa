@@ -21,7 +21,7 @@ import { test, expect } from '@playwright/test'
 import { AxeBuilder } from '@axe-core/playwright'
 
 test.describe.configure({ mode: 'parallel' })
-test.describe('WwwSpritecloudCom — accessibility @ https://www.spritecloud.com/guides/from-sandboxes-to-production-navigating-salesforce-test-automation-like-a-pro', () => {
+test.describe('Spritecloud — accessibility @ https://www.spritecloud.com/guides/from-sandboxes-to-production-navigating-salesforce-test-automation-like-a-pro', () => {
   test('@kind:a11y @smoke no serious or critical axe violations', async ({ page }) => {
     await page.goto('/guides/from-sandboxes-to-production-navigating-salesforce-test-automation-like-a-pro')
     const results = await new AxeBuilder({ page })

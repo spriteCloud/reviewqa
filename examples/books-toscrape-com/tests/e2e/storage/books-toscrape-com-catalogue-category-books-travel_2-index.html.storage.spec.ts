@@ -12,7 +12,7 @@
 import { test, expect } from '@playwright/test'
 
 test.describe.configure({ mode: 'parallel' })
-test.describe('BooksToscrapeCom — storage resilience @ https://books.toscrape.com/catalogue/category/books/travel_2/index.html', () => {
+test.describe('BooksToscrape — storage resilience @ https://books.toscrape.com/catalogue/category/books/travel_2/index.html', () => {
   test('@kind:storage @smoke renders with empty storage', async ({ page, context }) => {
     await context.clearCookies()
     await page.goto('/catalogue/category/books/travel_2/index.html')

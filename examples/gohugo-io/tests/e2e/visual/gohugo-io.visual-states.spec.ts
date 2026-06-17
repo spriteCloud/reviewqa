@@ -18,7 +18,7 @@ import { test, expect } from '@playwright/test'
 const STATES = ['default', 'hover', 'focus'] as const
 
 test.describe.configure({ mode: 'parallel' })
-test.describe('GohugoIo — interaction-state visual @ https://gohugo.io', () => {
+test.describe('Gohugo — interaction-state visual @ https://gohugo.io', () => {
   test('@kind:visual-state @smoke primary CTA across states', async ({ page }) => {
     await page.goto('/')
     await page.waitForLoadState('networkidle').catch(() => {})
@@ -40,7 +40,7 @@ test.describe('GohugoIo — interaction-state visual @ https://gohugo.io', () =>
           // default state — no interaction
           break
       }
-      await expect(target).toHaveScreenshot(`gohugoio-cta-${state}.png`, {
+      await expect(target).toHaveScreenshot(`gohugo-cta-${state}.png`, {
         maxDiffPixelRatio: 0.02,
         animations: 'disabled',
       })

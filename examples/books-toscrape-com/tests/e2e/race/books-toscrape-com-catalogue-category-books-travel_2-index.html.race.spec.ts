@@ -12,7 +12,7 @@
 import { test, expect } from '@playwright/test'
 
 test.describe.configure({ mode: 'parallel' })
-test.describe('BooksToscrapeCom — race @ https://books.toscrape.com/catalogue/category/books/travel_2/index.html', () => {
+test.describe('BooksToscrape — race @ https://books.toscrape.com/catalogue/category/books/travel_2/index.html', () => {
   test('@kind:race @smoke form survives a rapid double-submit', async ({ page }) => {
     await page.goto('/catalogue/category/books/travel_2/index.html')
     const form = page.locator('form').first()

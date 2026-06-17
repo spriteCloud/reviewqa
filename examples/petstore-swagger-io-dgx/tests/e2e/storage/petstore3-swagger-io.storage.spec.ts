@@ -12,7 +12,7 @@
 import { test, expect } from '@playwright/test'
 
 test.describe.configure({ mode: 'parallel' })
-test.describe('Petstore3SwaggerIo — storage resilience @ https://petstore3.swagger.io', () => {
+test.describe('Petstore3Swagger — storage resilience @ https://petstore3.swagger.io', () => {
   test('@kind:storage @smoke renders with empty storage', async ({ page, context }) => {
     await context.clearCookies()
     await page.goto('/')

@@ -16,7 +16,7 @@
  */
 import { test, expect } from '@playwright/test'
 
-test.describe('BooksToscrapeCom — integration: cache scaffold (skipped)', () => {
+test.describe('BooksToscrape — integration: cache scaffold (skipped)', () => {
   test.skip('@kind:integration-cache @wireable @set-get round-trip persists and reads back', async ({ request }) => {
     // When wired:
     //   1. SET key=k val=v in cache

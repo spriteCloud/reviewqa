@@ -37,7 +37,7 @@ async function endpointExists(request: any): Promise<boolean> {
 }
 
 test.describe.configure({ mode: 'parallel' })
-test.describe('Petstore3SwaggerIo — GraphQL discovery @ https://petstore3.swagger.io', () => {
+test.describe('Petstore3Swagger — GraphQL discovery @ https://petstore3.swagger.io', () => {
   test('@kind:graphql-stub @smoke introspection succeeds OR endpoint is absent', async ({ request }) => {
     const r = await request.post(ENDPOINT, {
       data: INTROSPECTION,

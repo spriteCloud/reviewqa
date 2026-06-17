@@ -16,7 +16,7 @@
  */
 import { test, expect } from '@playwright/test'
 
-test.describe('EsWikipediaOrg — integration scaffold (skipped)', () => {
+test.describe('EsWikipedia — integration scaffold (skipped)', () => {
   test.skip('@kind:integration-stub @wireable backing resource not declared', async ({ request }) => {
     // When wired, this test would:
     //   1. Start a Testcontainers-backed dependency (db / broker / cache)

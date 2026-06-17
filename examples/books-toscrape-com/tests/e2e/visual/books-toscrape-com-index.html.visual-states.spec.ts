@@ -18,7 +18,7 @@ import { test, expect } from '@playwright/test'
 const STATES = ['default', 'hover', 'focus'] as const
 
 test.describe.configure({ mode: 'parallel' })
-test.describe('BooksToscrapeCom — interaction-state visual @ https://books.toscrape.com/index.html', () => {
+test.describe('BooksToscrape — interaction-state visual @ https://books.toscrape.com/index.html', () => {
   test('@kind:visual-state @smoke primary CTA across states', async ({ page }) => {
     await page.goto('/index.html')
     await page.waitForLoadState('networkidle').catch(() => {})
@@ -40,7 +40,7 @@ test.describe('BooksToscrapeCom — interaction-state visual @ https://books.tos
           // default state — no interaction
           break
       }
-      await expect(target).toHaveScreenshot(`bookstoscrapecom-cta-${state}.png`, {
+      await expect(target).toHaveScreenshot(`bookstoscrape-cta-${state}.png`, {
         maxDiffPixelRatio: 0.02,
         animations: 'disabled',
       })

@@ -16,7 +16,7 @@
 import { test, expect } from '@playwright/test'
 
 test.describe.configure({ mode: 'parallel' })
-test.describe('EsWikipediaOrg — a11y landmarks @ https://es.wikipedia.org/wiki/Archivo:Escultura_del_Oso_y_el_Madro%C3%B1o,_Puerta_del_Sol,_Madrid,_Espa%C3%B1a,_Spain.jpg', () => {
+test.describe('EsWikipedia — a11y landmarks @ https://es.wikipedia.org/wiki/Archivo:Escultura_del_Oso_y_el_Madro%C3%B1o,_Puerta_del_Sol,_Madrid,_Espa%C3%B1a,_Spain.jpg', () => {
   test('@kind:a11y-landmarks @smoke single main + h1 + nav', async ({ page }) => {
     await page.goto('/wiki/Archivo:Escultura_del_Oso_y_el_Madroño,_Puerta_del_Sol,_Madrid,_España,_Spain.jpg')
 

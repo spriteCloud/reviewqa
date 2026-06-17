@@ -21,7 +21,7 @@ import { test, expect } from '@playwright/test'
 import { AxeBuilder } from '@axe-core/playwright'
 
 test.describe.configure({ mode: 'parallel' })
-test.describe('GohugoIo — accessibility @ https://gohugo.io/troubleshooting', () => {
+test.describe('Gohugo — accessibility @ https://gohugo.io/troubleshooting', () => {
   test('@kind:a11y @smoke no serious or critical axe violations', async ({ page }) => {
     await page.goto('/troubleshooting')
     const results = await new AxeBuilder({ page })

@@ -213,9 +213,24 @@ func BuildItem(target string, html []byte) (plan.Item, error) {
 	}, nil
 }
 
-// hostToName turns "www.spritecloud.com" into "WwwSpritecloudCom".
+// hostToName turns "www.spritecloud.com" into "Spritecloud" — strips
+// the leading "www." subdomain and the public suffix (".com", ".co.uk",
+// ".github.io", …) so the generated symbol reads as the brand only.
 func hostToName(host string) string {
-	parts := strings.FieldsFunc(host, func(r rune) bool { return r == '.' || r == '-' })
+	// Drop the optional port and lower-case for stable suffix matching.
+	if i := strings.IndexByte(host, ':'); i != -1 {
+		host = host[:i]
+	}
+	cleaned := strings.ToLower(host)
+	// Strip the public suffix (".com", ".co.uk", ".github.io", …) so the
+	// generated symbol reads as the brand, not the TLD plumbing.
+	if suffix, _ := publicsuffix.PublicSuffix(cleaned); suffix != "" && strings.HasSuffix(cleaned, "."+suffix) {
+		cleaned = strings.TrimSuffix(cleaned, "."+suffix)
+	}
+	// Drop a leading "www." subdomain — it's never part of the brand name.
+	cleaned = strings.TrimPrefix(cleaned, "www.")
+
+	parts := strings.FieldsFunc(cleaned, func(r rune) bool { return r == '.' || r == '-' })
 	var b strings.Builder
 	for _, p := range parts {
 		if p == "" {

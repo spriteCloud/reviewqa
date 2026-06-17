@@ -12,7 +12,7 @@
 import { test, expect } from '@playwright/test'
 
 test.describe.configure({ mode: 'parallel' })
-test.describe('EsWikipediaOrg — storage resilience @ https://es.wikipedia.org/wiki/Portal:Actualidad', () => {
+test.describe('EsWikipedia — storage resilience @ https://es.wikipedia.org/wiki/Portal:Actualidad', () => {
   test('@kind:storage @smoke renders with empty storage', async ({ page, context }) => {
     await context.clearCookies()
     await page.goto('/wiki/Portal:Actualidad')

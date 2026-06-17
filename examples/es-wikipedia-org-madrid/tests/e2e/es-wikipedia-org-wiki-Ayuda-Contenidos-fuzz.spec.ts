@@ -16,7 +16,7 @@
 import { test, expect } from './_fixtures'
 
 test.describe.configure({ mode: 'parallel' })
-test.describe('EsWikipediaOrg — fuzz / negative input', () => {
+test.describe('EsWikipedia — fuzz / negative input', () => {
   test.beforeEach(async ({ page }) => {
     await page.goto('/wiki/Ayuda:Contenidos')
   })

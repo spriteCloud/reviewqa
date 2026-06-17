@@ -12,7 +12,7 @@
 import { test, expect } from '@playwright/test'
 
 test.describe.configure({ mode: 'parallel' })
-test.describe('WwwSpritecloudCom — race @ https://www.spritecloud.com', () => {
+test.describe('Spritecloud — race @ https://www.spritecloud.com', () => {
   test('@kind:race @smoke form survives a rapid double-submit', async ({ page }) => {
     await page.goto('/')
     const form = page.locator('form').first()
