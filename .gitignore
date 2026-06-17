@@ -52,3 +52,4 @@ examples/*/test-results/
 examples/*/playwright-report/
 examples/*/package-lock.json
 examples/*/.features-gen/
+examples/*/tests/e2e/.reviewqa-runs/
