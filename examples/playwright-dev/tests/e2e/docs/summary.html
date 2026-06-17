@@ -1,0 +1,154 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>reviewqa work summary — https://playwright.dev</title>
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<style>
+  :root {
+    --bg: #0b0d12;
+    --panel: #161924;
+    --panel-2: #1d2130;
+    --text: #e7ebf3;
+    --muted: #8a93a8;
+    --accent: #7aa2ff;
+    --crit: #ff6f6f;
+    --std: #ffb86b;
+    --nice: #7ee0a2;
+  }
+  * { box-sizing: border-box }
+  body {
+    margin: 0;
+    background: var(--bg);
+    color: var(--text);
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, system-ui, sans-serif;
+    line-height: 1.5;
+  }
+  header {
+    padding: 32px 48px 16px;
+    border-bottom: 1px solid #232839;
+  }
+  h1 { font-size: 22px; margin: 0 0 4px; font-weight: 600 }
+  .sub { color: var(--muted); font-size: 13px }
+  main { padding: 24px 48px 64px }
+  .grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+    gap: 16px;
+    margin: 24px 0 32px;
+  }
+  .card {
+    background: var(--panel);
+    border: 1px solid #232839;
+    border-radius: 8px;
+    padding: 16px;
+  }
+  .card .n { font-size: 28px; font-weight: 700 }
+  .card .label { color: var(--muted); font-size: 12px; text-transform: uppercase; letter-spacing: 0.04em }
+  section { margin-top: 32px }
+  h2 { font-size: 16px; font-weight: 600; margin: 0 0 12px; letter-spacing: 0.01em }
+  table { width: 100%; border-collapse: collapse; font-size: 13px }
+  th, td { text-align: left; padding: 8px 12px; border-bottom: 1px solid #232839 }
+  th { color: var(--muted); font-weight: 500; text-transform: uppercase; font-size: 11px; letter-spacing: 0.04em }
+  code { font-family: ui-monospace, SFMono-Regular, Menlo, monospace; font-size: 12px; color: var(--accent) }
+  .pri { display: inline-block; padding: 2px 8px; border-radius: 99px; font-size: 11px; font-weight: 600 }
+  .pri-critical { background: rgba(255, 111, 111, 0.16); color: var(--crit) }
+  .pri-standard { background: rgba(255, 184, 107, 0.16); color: var(--std) }
+  .pri-nice-to-have { background: rgba(126, 224, 162, 0.16); color: var(--nice) }
+  .bar { height: 8px; border-radius: 4px; background: var(--panel-2); overflow: hidden; display: flex }
+  .bar > span { display: block; height: 100% }
+  .legend { display: flex; gap: 16px; font-size: 12px; color: var(--muted); margin-top: 8px }
+  .legend i { display: inline-block; width: 10px; height: 10px; border-radius: 2px; margin-right: 6px; vertical-align: middle }
+</style>
+</head>
+<body>
+<header>
+  <h1>reviewqa work summary</h1>
+  <div class="sub">https://playwright.dev · coverage: <code>standard</code></div>
+</header>
+<main>
+
+  <div class="grid">
+    <div class="card"><div class="n">20</div><div class="label">pages crawled</div></div>
+    <div class="card"><div class="n">3</div><div class="label">journeys identified</div></div>
+    <div class="card"><div class="n">0</div><div class="label">critical specs</div></div>
+    <div class="card"><div class="n">1</div><div class="label">fuzz specs</div></div>
+  </div>
+
+  <section>
+    <h2>Priority mix</h2>
+    <div class="bar">
+      <span class="pri-critical" style="width: 0%; background: var(--crit)"></span>
+      <span class="pri-standard" style="width: 0%; background: var(--std)"></span>
+      <span class="pri-nice-to-have" style="width: 100%; background: var(--nice)"></span>
+    </div>
+    <div class="legend">
+      <span><i style="background: var(--crit)"></i>critical (0)</span>
+      <span><i style="background: var(--std)"></i>standard (0)</span>
+      <span><i style="background: var(--nice)"></i>nice-to-have (3)</span>
+    </div>
+  </section>
+
+  <section>
+    <h2>Journeys</h2>
+    <table>
+      <thead><tr><th>Feature file</th><th>Kind</th><th>Priority</th><th>Steps</th></tr></thead>
+      <tbody>
+      <tr>
+        <td><code>tests/e2e/features/playwright-dev-read-community-conference-videos.feature</code></td>
+        <td><code>read</code></td>
+        <td><span class="pri pri-nice-to-have">nice-to-have</span></td>
+        <td>2</td>
+      </tr>
+      <tr>
+        <td><code>tests/e2e/features/playwright-dev-read-community-feature-videos.feature</code></td>
+        <td><code>read</code></td>
+        <td><span class="pri pri-nice-to-have">nice-to-have</span></td>
+        <td>2</td>
+      </tr>
+      <tr>
+        <td><code>tests/e2e/features/playwright-dev-read-community-learn-videos.feature</code></td>
+        <td><code>read</code></td>
+        <td><span class="pri pri-nice-to-have">nice-to-have</span></td>
+        <td>2</td>
+      </tr>
+      </tbody>
+    </table>
+  </section>
+  <section>
+    <h2>Pages</h2>
+    <table>
+      <thead><tr><th>URL</th><th>Title</th></tr></thead>
+      <tbody>
+      <tr><td><code>https://playwright.dev</code></td><td>Fast and reliable end-to-end testing for modern web apps | Playwright</td></tr>
+      <tr><td><code>https://playwright.dev/community/conference-videos</code></td><td>Conference Videos | Playwright</td></tr>
+      <tr><td><code>https://playwright.dev/community/feature-videos</code></td><td>Feature Videos | Playwright</td></tr>
+      <tr><td><code>https://playwright.dev/community/learn-videos</code></td><td>Learn Videos | Playwright</td></tr>
+      <tr><td><code>https://playwright.dev/community/live-streams</code></td><td>Live Streams | Playwright</td></tr>
+      <tr><td><code>https://playwright.dev/community/mcp-videos</code></td><td>MCP Videos | Playwright</td></tr>
+      <tr><td><code>https://playwright.dev/community/release-videos</code></td><td>Release Videos | Playwright</td></tr>
+      <tr><td><code>https://playwright.dev/search</code></td><td>Search the documentation | Playwright</td></tr>
+      <tr><td><code>https://playwright.dev/agent-cli/capabilities</code></td><td>Capabilities | Playwright</td></tr>
+      <tr><td><code>https://playwright.dev/agent-cli/commands/attach</code></td><td>Attach | Playwright</td></tr>
+      <tr><td><code>https://playwright.dev/agent-cli/commands/console-eval</code></td><td>Console & Eval | Playwright</td></tr>
+      <tr><td><code>https://playwright.dev/agent-cli/commands/dialogs</code></td><td>Dialogs | Playwright</td></tr>
+      <tr><td><code>https://playwright.dev/agent-cli/commands/interaction</code></td><td>Interaction | Playwright</td></tr>
+      <tr><td><code>https://playwright.dev/agent-cli/commands/keyboard-mouse</code></td><td>Keyboard & Mouse | Playwright</td></tr>
+      <tr><td><code>https://playwright.dev/agent-cli/commands/navigation</code></td><td>Navigation | Playwright</td></tr>
+      <tr><td><code>https://playwright.dev/agent-cli/commands/network-routing</code></td><td>Network & Mocking | Playwright</td></tr>
+      <tr><td><code>https://playwright.dev/agent-cli/commands/screenshots-pdf</code></td><td>Screenshots & PDF | Playwright</td></tr>
+      <tr><td><code>https://playwright.dev/agent-cli/commands/storage</code></td><td>Storage & Authentication | Playwright</td></tr>
+      <tr><td><code>https://playwright.dev/agent-cli/commands/tabs</code></td><td>Tabs | Playwright</td></tr>
+      <tr><td><code>https://playwright.dev/agent-cli/commands/test-debugging</code></td><td>Test Debugging | Playwright</td></tr>
+      </tbody>
+    </table>
+  </section>
+
+  <section class="sub">
+    Re-generate this deck by re-running <code>reviewqa probe</code> or <code>reviewqa prompt</code>.
+    A fresh run picks up new pages, new forms, and any priority re-classifications.
+  </section>
+
+</main>
+</body>
+</html>

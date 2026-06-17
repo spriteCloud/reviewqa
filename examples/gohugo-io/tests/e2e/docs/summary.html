@@ -1,0 +1,154 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>reviewqa work summary — https://gohugo.io</title>
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<style>
+  :root {
+    --bg: #0b0d12;
+    --panel: #161924;
+    --panel-2: #1d2130;
+    --text: #e7ebf3;
+    --muted: #8a93a8;
+    --accent: #7aa2ff;
+    --crit: #ff6f6f;
+    --std: #ffb86b;
+    --nice: #7ee0a2;
+  }
+  * { box-sizing: border-box }
+  body {
+    margin: 0;
+    background: var(--bg);
+    color: var(--text);
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, system-ui, sans-serif;
+    line-height: 1.5;
+  }
+  header {
+    padding: 32px 48px 16px;
+    border-bottom: 1px solid #232839;
+  }
+  h1 { font-size: 22px; margin: 0 0 4px; font-weight: 600 }
+  .sub { color: var(--muted); font-size: 13px }
+  main { padding: 24px 48px 64px }
+  .grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+    gap: 16px;
+    margin: 24px 0 32px;
+  }
+  .card {
+    background: var(--panel);
+    border: 1px solid #232839;
+    border-radius: 8px;
+    padding: 16px;
+  }
+  .card .n { font-size: 28px; font-weight: 700 }
+  .card .label { color: var(--muted); font-size: 12px; text-transform: uppercase; letter-spacing: 0.04em }
+  section { margin-top: 32px }
+  h2 { font-size: 16px; font-weight: 600; margin: 0 0 12px; letter-spacing: 0.01em }
+  table { width: 100%; border-collapse: collapse; font-size: 13px }
+  th, td { text-align: left; padding: 8px 12px; border-bottom: 1px solid #232839 }
+  th { color: var(--muted); font-weight: 500; text-transform: uppercase; font-size: 11px; letter-spacing: 0.04em }
+  code { font-family: ui-monospace, SFMono-Regular, Menlo, monospace; font-size: 12px; color: var(--accent) }
+  .pri { display: inline-block; padding: 2px 8px; border-radius: 99px; font-size: 11px; font-weight: 600 }
+  .pri-critical { background: rgba(255, 111, 111, 0.16); color: var(--crit) }
+  .pri-standard { background: rgba(255, 184, 107, 0.16); color: var(--std) }
+  .pri-nice-to-have { background: rgba(126, 224, 162, 0.16); color: var(--nice) }
+  .bar { height: 8px; border-radius: 4px; background: var(--panel-2); overflow: hidden; display: flex }
+  .bar > span { display: block; height: 100% }
+  .legend { display: flex; gap: 16px; font-size: 12px; color: var(--muted); margin-top: 8px }
+  .legend i { display: inline-block; width: 10px; height: 10px; border-radius: 2px; margin-right: 6px; vertical-align: middle }
+</style>
+</head>
+<body>
+<header>
+  <h1>reviewqa work summary</h1>
+  <div class="sub">https://gohugo.io · coverage: <code>standard</code></div>
+</header>
+<main>
+
+  <div class="grid">
+    <div class="card"><div class="n">20</div><div class="label">pages crawled</div></div>
+    <div class="card"><div class="n">3</div><div class="label">journeys identified</div></div>
+    <div class="card"><div class="n">0</div><div class="label">critical specs</div></div>
+    <div class="card"><div class="n">5</div><div class="label">fuzz specs</div></div>
+  </div>
+
+  <section>
+    <h2>Priority mix</h2>
+    <div class="bar">
+      <span class="pri-critical" style="width: 0%; background: var(--crit)"></span>
+      <span class="pri-standard" style="width: 0%; background: var(--std)"></span>
+      <span class="pri-nice-to-have" style="width: 100%; background: var(--nice)"></span>
+    </div>
+    <div class="legend">
+      <span><i style="background: var(--crit)"></i>critical (0)</span>
+      <span><i style="background: var(--std)"></i>standard (0)</span>
+      <span><i style="background: var(--nice)"></i>nice-to-have (3)</span>
+    </div>
+  </section>
+
+  <section>
+    <h2>Journeys</h2>
+    <table>
+      <thead><tr><th>Feature file</th><th>Kind</th><th>Priority</th><th>Steps</th></tr></thead>
+      <tbody>
+      <tr>
+        <td><code>tests/e2e/features/gohugo-io-read-templates-new-templatesystem-overview.feature</code></td>
+        <td><code>read</code></td>
+        <td><span class="pri pri-nice-to-have">nice-to-have</span></td>
+        <td>2</td>
+      </tr>
+      <tr>
+        <td><code>tests/e2e/features/gohugo-io-read-about.feature</code></td>
+        <td><code>read</code></td>
+        <td><span class="pri pri-nice-to-have">nice-to-have</span></td>
+        <td>2</td>
+      </tr>
+      <tr>
+        <td><code>tests/e2e/features/gohugo-io-read-commands.feature</code></td>
+        <td><code>read</code></td>
+        <td><span class="pri pri-nice-to-have">nice-to-have</span></td>
+        <td>2</td>
+      </tr>
+      </tbody>
+    </table>
+  </section>
+  <section>
+    <h2>Pages</h2>
+    <table>
+      <thead><tr><th>URL</th><th>Title</th></tr></thead>
+      <tbody>
+      <tr><td><code>https://gohugo.io</code></td><td>The world's fastest framework for building websites</td></tr>
+      <tr><td><code>https://gohugo.io/templates/new-templatesystem-overview</code></td><td>New template system in Hugo v0.146.0</td></tr>
+      <tr><td><code>https://gohugo.io/about</code></td><td>About Hugo</td></tr>
+      <tr><td><code>https://gohugo.io/commands</code></td><td>Command line interface</td></tr>
+      <tr><td><code>https://gohugo.io/configuration</code></td><td>Configuration</td></tr>
+      <tr><td><code>https://gohugo.io/content-management</code></td><td>Content management</td></tr>
+      <tr><td><code>https://gohugo.io/contribute</code></td><td>Contribute to the Hugo project</td></tr>
+      <tr><td><code>https://gohugo.io/tools</code></td><td>Developer tools</td></tr>
+      <tr><td><code>https://gohugo.io/tools/editors</code></td><td>Editor plugins</td></tr>
+      <tr><td><code>https://gohugo.io/functions</code></td><td>Functions</td></tr>
+      <tr><td><code>https://gohugo.io/getting-started</code></td><td>Getting started</td></tr>
+      <tr><td><code>https://gohugo.io/host-and-deploy</code></td><td>Host and deploy</td></tr>
+      <tr><td><code>https://gohugo.io/hugo-modules</code></td><td>Hugo modules</td></tr>
+      <tr><td><code>https://gohugo.io/hugo-pipes</code></td><td>Hugo Pipes</td></tr>
+      <tr><td><code>https://gohugo.io/installation</code></td><td>Installation</td></tr>
+      <tr><td><code>https://gohugo.io/about/introduction</code></td><td>Introduction</td></tr>
+      <tr><td><code>https://gohugo.io/configuration/introduction</code></td><td>Introduction</td></tr>
+      <tr><td><code>https://gohugo.io/hugo-modules/introduction</code></td><td>Introduction</td></tr>
+      <tr><td><code>https://gohugo.io/hugo-pipes/introduction</code></td><td>Hugo Pipes</td></tr>
+      <tr><td><code>https://gohugo.io/render-hooks/introduction</code></td><td>Introduction</td></tr>
+      </tbody>
+    </table>
+  </section>
+
+  <section class="sub">
+    Re-generate this deck by re-running <code>reviewqa probe</code> or <code>reviewqa prompt</code>.
+    A fresh run picks up new pages, new forms, and any priority re-classifications.
+  </section>
+
+</main>
+</body>
+</html>

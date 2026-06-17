@@ -13,6 +13,23 @@ broken locators when they drift.
 - **LLM only humanizes**: titles, step comments, PR body. Falls back to the deterministic file on any error.
 - **Inference is yours**: any OpenAI-compatible base URL (ollama, vLLM, DGX-hosted vLLM, OpenAI).
 
+## See it on real sites
+
+Live output from the v0.21 binary against four reference sites is committed
+under [`examples/`](./examples/):
+
+| Site | Files | Journeys (.feature) | API specs | Fuzz specs |
+|---|---|---|---|---|
+| [`playwright.dev`](./examples/playwright-dev/) | 16 | 3 | 1 | 1 |
+| [`gohugo.io`](./examples/gohugo-io/) | 19 | 3 | 0 | 5 |
+| [`books.toscrape.com`](./examples/books-toscrape-com/) | 14 | 3 | 0 | 0 |
+| [`es.wikipedia.org/wiki/Madrid`](./examples/es-wikipedia-org-madrid/) | 28 | 4 | 8 | 5 |
+
+Open any of them to see a complete project: feature files, step
+definitions, Steps API, API contract specs, fuzz specs, catalogue,
+summary HTML, ledger seed, and the Playwright config that wires
+`playwright-bdd`.
+
 ## What a `probe` run produces (v0.21)
 
 A single probe of a live URL emits a full, runnable suite plus stakeholder
