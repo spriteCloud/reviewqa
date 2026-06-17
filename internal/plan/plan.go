@@ -95,6 +95,10 @@ const (
 	TmplPlaywrightPrint             Template = "pw_print"
 	TmplPlaywrightClipboard         Template = "pw_clipboard"
 	TmplPlaywrightHTTPChains        Template = "pw_http_chains"
+	// v0.43 — integration-layer scaffold emitted per origin when an
+	// API endpoint is detected. Test.skip()s until the consumer wires
+	// a real backing resource via reviewqa.yml.
+	TmplPlaywrightIntegrationStub Template = "pw_integration_api_stub"
 	TmplRaw                 Template = "raw" // sentinel: emit Item.RawContent verbatim
 	TmplPytestUnit          Template = "pytest_unit"
 	TmplPytestAPI           Template = "pytest_api"
