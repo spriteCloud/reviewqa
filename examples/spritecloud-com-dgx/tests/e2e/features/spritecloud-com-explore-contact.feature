@@ -44,3 +44,15 @@ Feature: WwwSpritecloudCom — explore journey
     And I go back in the browser history
     Then no error message is shown in the form region
 
+  # ───────────────────────────────────────────────────────────────
+  # LLM-composed scenarios (model: qwen3-coder-next:latest)
+  # Filter out with `--grep-invert @llm-composed` for stricter CI runs.
+  # ───────────────────────────────────────────────────────────────
+
+  @journey:explore @priority:nice-to-have @llm-composed @kind:edge @model:qwen3-coder-next-latest
+  Scenario: Open contact page via top navigation
+    Given I am on the landing page
+    When I click the link to "/contact"
+    Then the page title contains "spriteCloud — Meeting Booking Form"
+    Then the main heading reads "Let's Chat"
+

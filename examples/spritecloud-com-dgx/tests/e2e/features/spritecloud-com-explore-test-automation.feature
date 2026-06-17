@@ -44,3 +44,35 @@ Feature: WwwSpritecloudCom — explore journey
     And I go back in the browser history
     Then no error message is shown in the form region
 
+  # ───────────────────────────────────────────────────────────────
+  # LLM-composed scenarios (model: qwen3-coder-next:latest)
+  # Filter out with `--grep-invert @llm-composed` for stricter CI runs.
+  # ───────────────────────────────────────────────────────────────
+
+  @journey:explore @priority:nice-to-have @llm-composed @kind:edge @model:qwen3-coder-next-latest
+  Scenario: reload after navigation to test automation
+    Given I open the landing page
+    When I click the link to "/test-automation"
+    Then the page title contains "Test Automation"
+    And the main heading reads "Expert Test Automation Services"
+    When I reload the page
+    Then the page title contains "Test Automation"
+    Then the main heading reads "Expert Test Automation Services"
+
+  @journey:explore @priority:nice-to-have @llm-composed @kind:edge @model:qwen3-coder-next-latest
+  Scenario: back navigation from test automation
+    Given I open the landing page
+    When I click the link to "/test-automation"
+    Then the page title contains "Test Automation"
+    When I go back in the browser history
+    Then the page title contains "spriteCloud - Test your software, not your reputation!"
+    Then the main heading reads "Test your software, not your reputation."
+
+  @journey:explore @priority:nice-to-have @llm-composed @kind:variant @model:qwen3-coder-next-latest
+  Scenario: navigate directly to test automation
+    Given I am not signed in
+    When I navigate directly to "/test-automation"
+    Then the page title contains "Test Automation"
+    Then the main heading reads "Expert Test Automation Services"
+    Then no error message is shown in the form region
+

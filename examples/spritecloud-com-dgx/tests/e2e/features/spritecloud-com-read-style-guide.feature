@@ -44,3 +44,35 @@ Feature: WwwSpritecloudCom — read journey
     And I go back in the browser history
     Then no error message is shown in the form region
 
+  # ───────────────────────────────────────────────────────────────
+  # LLM-composed scenarios (model: qwen3-coder-next:latest)
+  # Filter out with `--grep-invert @llm-composed` for stricter CI runs.
+  # ───────────────────────────────────────────────────────────────
+
+  @journey:read @priority:nice-to-have @llm-composed @kind:edge @model:qwen3-coder-next-latest
+  Scenario: Navigate to style guide and reload
+    Given I open the landing page
+    When I click the link to "/style-guide"
+    Then the page title contains "Style Guide - Healix Webflow website HTML template"
+    Then the main heading reads "Aa"
+    When I reload the page
+    Then the page title contains "Style Guide - Healix Webflow website HTML template"
+
+  @journey:read @priority:nice-to-have @llm-composed @kind:variant @model:qwen3-coder-next-latest
+  Scenario: Navigate to style guide twice in succession
+    Given I open the landing page
+    When I click the link to "/style-guide"
+    Then the page title contains "Style Guide - Healix Webflow website HTML template"
+    Then the main heading reads "Aa"
+    When I navigate directly to "/style-guide"
+    Then the main heading reads "Aa"
+
+  @journey:read @priority:nice-to-have @llm-composed @kind:edge @model:qwen3-coder-next-latest
+  Scenario: Go back from style guide to landing
+    Given I open the landing page
+    When I click the link to "/style-guide"
+    Then the page title contains "Style Guide - Healix Webflow website HTML template"
+    Then the main heading reads "Aa"
+    When I go back in the browser history
+    Then the page title contains "spriteCloud - Test your software, not your reputation!"
+

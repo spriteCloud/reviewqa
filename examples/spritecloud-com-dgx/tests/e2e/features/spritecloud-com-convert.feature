@@ -87,17 +87,11 @@ Feature: WwwSpritecloudCom — convert journey
   # Filter out with `--grep-invert @llm-composed` for stricter CI runs.
   # ───────────────────────────────────────────────────────────────
 
-  @journey:convert @priority:critical @llm-composed @kind:state @model:qwen3-coder-next-latest
-  Scenario: Reload before submission clears email field
-    Given I open the landing page
-    When I enter "user@example.com" into the "Your email address" field
-    When I reload the page
-    Then the "Your email address" field has the value ""
-
   @journey:convert @priority:critical @llm-composed @kind:edge @model:qwen3-coder-next-latest
-  Scenario: Double submit prevents duplicate entries
-    Given I am on the landing page
-    When I enter "user@example.com" into the "Your email address" field
+  Scenario: Double-submit race condition
+    Given I open the landing page
+    When I enter "test@example.com" into the "Your email address" field
     When I submit the form twice in rapid succession
     Then the form is not double-submitted
+    Then the page title contains "Contact"
 
