@@ -6,6 +6,8 @@ import (
 	"net/http/httptest"
 	"strings"
 	"testing"
+
+	"github.com/reviewqa/reviewqa/internal/mindmap"
 )
 
 func TestFetch_HappyPath(t *testing.T) {
@@ -196,6 +198,31 @@ func TestRunAll_EmitsMultipleJourneys(t *testing.T) {
 				t.Errorf("chained symbol %d missing EnteredVia: %+v", i, s)
 			}
 		}
+	}
+}
+
+func TestOutPathStemForJourney_ExerciseGetsSlugSuffix(t *testing.T) {
+	// Two exercise journeys against different pages on the same site
+	// must produce DIFFERENT filenames so they don't overwrite each
+	// other on disk. Before v0.12.1 both stems were just `host-exercise`.
+	landing := &mindmap.Page{URL: "https://x.test/"}
+	about := &mindmap.Page{URL: "https://x.test/about"}
+	stemLanding := outPathStemForJourney(
+		mindmap.Journey{Kind: mindmap.JourneyExercise, Steps: []mindmap.Step{{Page: landing}}},
+		landing,
+	)
+	stemAbout := outPathStemForJourney(
+		mindmap.Journey{Kind: mindmap.JourneyExercise, Steps: []mindmap.Step{{Page: about}}},
+		about,
+	)
+	if stemLanding == stemAbout {
+		t.Errorf("expected different stems for landing vs /about exercise; got both = %q", stemLanding)
+	}
+	if stemLanding != "x-test-exercise" {
+		t.Errorf("landing exercise stem = %q; want x-test-exercise", stemLanding)
+	}
+	if stemAbout != "x-test-exercise-about" {
+		t.Errorf("about exercise stem = %q; want x-test-exercise-about", stemAbout)
 	}
 }
 
