@@ -1,6 +1,10 @@
 package plan
 
-import "testing"
+import (
+	"testing"
+
+	"reflect"
+)
 
 func TestExtractImages_KeepsAlt(t *testing.T) {
 	html := []byte(`<html><body>
@@ -71,4 +75,19 @@ func TestExtractMetaTags_Empty(t *testing.T) {
 	if meta.OGTitle != "" || meta.Description != "" || meta.Canonical != "" {
 		t.Errorf("expected zero-value MetaTags for meta-less page; got %+v", meta)
 	}
+}
+func TestExtractImages(t *testing.T) {
+	t.Run("happy path", func(t *testing.T) {
+		got := ExtractImages("", nil)
+		if reflect.DeepEqual(got, *new([]ast.ImageRef)) {
+			t.Fatalf("got zero value: %#v", got)
+		}
+	})
+
+	t.Run("returns expected type", func(t *testing.T) {
+		got := ExtractImages("", nil)
+		if got, want := reflect.TypeOf(got), reflect.TypeOf(*new([]ast.ImageRef)); got != want {
+			t.Fatalf("type = %v, want %v", got, want)
+		}
+	})
 }

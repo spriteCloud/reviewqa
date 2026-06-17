@@ -1,6 +1,10 @@
 package patterns
 
-import "testing"
+import (
+	"testing"
+
+	"reflect"
+)
 
 func TestPatternRegistry_HiddenClass(t *testing.T) {
 	tests := []struct {
@@ -129,4 +133,19 @@ func TestPatternRegistry_AllReturnsCopy(t *testing.T) {
 	if all2 := All(); all2[0] == nil {
 		t.Error("All() must return a defensive copy; registry was mutated")
 	}
+}
+func TestMatchingPattern(t *testing.T) {
+	t.Run("happy path", func(t *testing.T) {
+		got := MatchingPattern(nil)
+		if reflect.DeepEqual(got, *new(Pattern)) {
+			t.Fatalf("got zero value: %#v", got)
+		}
+	})
+
+	t.Run("returns expected type", func(t *testing.T) {
+		got := MatchingPattern(nil)
+		if got, want := reflect.TypeOf(got), reflect.TypeOf(*new(Pattern)); got != want {
+			t.Fatalf("type = %v, want %v", got, want)
+		}
+	})
 }
