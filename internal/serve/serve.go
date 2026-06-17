@@ -281,6 +281,8 @@ func Handler(workdir string) http.Handler {
 		writeJSON(w, Preflight(workdir))
 	})
 
+	mux.HandleFunc("/api/probe", handleProbe(workdir))
+
 	mux.HandleFunc("/api/run-scenario", func(w http.ResponseWriter, r *http.Request) {
 		if r.Method != http.MethodPost {
 			http.Error(w, "method not allowed", http.StatusMethodNotAllowed)
