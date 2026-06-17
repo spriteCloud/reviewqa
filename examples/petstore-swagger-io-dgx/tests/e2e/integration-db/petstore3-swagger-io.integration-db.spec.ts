@@ -18,7 +18,7 @@
  */
 import { test, expect } from '@playwright/test'
 
-test.describe('Petstore3SwaggerIo — integration: DB scaffold (skipped)', () => {
+test.describe('Petstore3Swagger — integration: DB scaffold (skipped)', () => {
   test.skip('@kind:integration-db @wireable @round-trip CREATE / INSERT / SELECT / DELETE round-trip', async ({ request }) => {
     // When wired this test would:
     //   1. Start a Testcontainers DB instance (postgres / mysql / mariadb)

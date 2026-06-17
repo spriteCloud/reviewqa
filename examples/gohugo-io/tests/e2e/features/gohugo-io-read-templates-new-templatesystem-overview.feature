@@ -11,7 +11,7 @@
 #   npx playwright test --grep @journey:read
 #   npx playwright test --grep @smoke
 
-Feature: GohugoIo — read journey
+Feature: Gohugo — read journey
   As a visitor of https://gohugo.io
   I want to complete the read flow
   So that the page delivers on its user goal

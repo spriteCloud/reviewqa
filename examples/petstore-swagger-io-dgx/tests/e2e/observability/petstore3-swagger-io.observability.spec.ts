@@ -11,7 +11,7 @@
 import { test, expect } from '@playwright/test'
 
 test.describe.configure({ mode: 'parallel' })
-test.describe('Petstore3SwaggerIo — observability headers @ https://petstore3.swagger.io', () => {
+test.describe('Petstore3Swagger — observability headers @ https://petstore3.swagger.io', () => {
   test('@kind:observability @smoke origin emits at least one observability header', async ({ request }) => {
     const response = await request.get('https://petstore3.swagger.io')
     const headers = response.headers()

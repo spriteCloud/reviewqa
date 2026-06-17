@@ -16,7 +16,7 @@
 import { test, expect } from '@playwright/test'
 
 test.describe.configure({ mode: 'parallel' })
-test.describe('WwwSpritecloudCom — a11y landmarks @ https://www.spritecloud.com/book-performance-test', () => {
+test.describe('Spritecloud — a11y landmarks @ https://www.spritecloud.com/book-performance-test', () => {
   test('@kind:a11y-landmarks @smoke single main + h1 + nav', async ({ page }) => {
     await page.goto('/book-performance-test')
 

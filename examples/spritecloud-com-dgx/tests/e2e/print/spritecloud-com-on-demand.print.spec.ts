@@ -11,7 +11,7 @@
 import { test, expect } from '@playwright/test'
 
 test.describe.configure({ mode: 'parallel' })
-test.describe('WwwSpritecloudCom — print @ https://www.spritecloud.com/on-demand', () => {
+test.describe('Spritecloud — print @ https://www.spritecloud.com/on-demand', () => {
   test('@kind:print @smoke renders under media: print', async ({ page }) => {
     await page.goto('/on-demand')
     await page.emulateMedia({ media: 'print' })

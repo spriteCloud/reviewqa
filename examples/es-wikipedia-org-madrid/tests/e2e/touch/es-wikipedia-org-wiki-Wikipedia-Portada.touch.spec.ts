@@ -18,7 +18,7 @@ import { test, expect, devices } from '@playwright/test'
 test.use({ ...devices['iPhone 13'] })
 
 test.describe.configure({ mode: 'parallel' })
-test.describe('EsWikipediaOrg — touch gestures @ https://es.wikipedia.org/wiki/Wikipedia:Portada', () => {
+test.describe('EsWikipedia — touch gestures @ https://es.wikipedia.org/wiki/Wikipedia:Portada', () => {
   test('@kind:touch @smoke long-press on the primary CTA does not double-fire', async ({ page }) => {
     await page.goto('/wiki/Wikipedia:Portada')
     const cta = page.getByRole('button').first().or(page.getByRole('link').first())

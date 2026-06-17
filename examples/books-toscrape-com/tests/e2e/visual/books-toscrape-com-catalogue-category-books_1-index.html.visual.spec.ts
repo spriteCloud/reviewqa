@@ -21,7 +21,7 @@ const VIEWPORTS = [
 ] as const
 
 test.describe.configure({ mode: 'parallel' })
-test.describe('BooksToscrapeCom — visual regression @ https://books.toscrape.com/catalogue/category/books_1/index.html', () => {
+test.describe('BooksToscrape — visual regression @ https://books.toscrape.com/catalogue/category/books_1/index.html', () => {
   for (const vp of VIEWPORTS) {
     test(`@kind:visual @smoke page matches baseline (${vp.name})`, async ({ page }) => {
       await page.setViewportSize({ width: vp.width, height: vp.height })
@@ -29,7 +29,7 @@ test.describe('BooksToscrapeCom — visual regression @ https://books.toscrape.c
       await page.waitForLoadState('networkidle').catch(() => {})
       // maxDiffPixelRatio: 0.01 — tolerate up to 1% pixel drift to
       // absorb anti-aliasing differences across CI / local renders.
-      await expect(page).toHaveScreenshot(`bookstoscrapecom-${vp.name}.png`, {
+      await expect(page).toHaveScreenshot(`bookstoscrape-${vp.name}.png`, {
         fullPage: true,
         maxDiffPixelRatio: 0.01,
         animations: 'disabled',

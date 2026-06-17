@@ -16,7 +16,7 @@
 import { test, expect } from '@playwright/test'
 
 test.describe.configure({ mode: 'parallel' })
-test.describe('EsWikipediaOrg — a11y landmarks @ https://es.wikipedia.org/wiki/Wikipedia:Portada', () => {
+test.describe('EsWikipedia — a11y landmarks @ https://es.wikipedia.org/wiki/Wikipedia:Portada', () => {
   test('@kind:a11y-landmarks @smoke single main + h1 + nav', async ({ page }) => {
     await page.goto('/wiki/Wikipedia:Portada')
 

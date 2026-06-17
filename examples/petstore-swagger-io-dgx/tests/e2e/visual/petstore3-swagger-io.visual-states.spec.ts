@@ -18,7 +18,7 @@ import { test, expect } from '@playwright/test'
 const STATES = ['default', 'hover', 'focus'] as const
 
 test.describe.configure({ mode: 'parallel' })
-test.describe('Petstore3SwaggerIo — interaction-state visual @ https://petstore3.swagger.io', () => {
+test.describe('Petstore3Swagger — interaction-state visual @ https://petstore3.swagger.io', () => {
   test('@kind:visual-state @smoke primary CTA across states', async ({ page }) => {
     await page.goto('/')
     await page.waitForLoadState('networkidle').catch(() => {})

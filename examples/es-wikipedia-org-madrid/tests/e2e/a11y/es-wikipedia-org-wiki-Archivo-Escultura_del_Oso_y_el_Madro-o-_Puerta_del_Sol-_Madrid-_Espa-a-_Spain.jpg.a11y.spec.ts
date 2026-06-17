@@ -21,7 +21,7 @@ import { test, expect } from '@playwright/test'
 import { AxeBuilder } from '@axe-core/playwright'
 
 test.describe.configure({ mode: 'parallel' })
-test.describe('EsWikipediaOrg — accessibility @ https://es.wikipedia.org/wiki/Archivo:Escultura_del_Oso_y_el_Madro%C3%B1o,_Puerta_del_Sol,_Madrid,_Espa%C3%B1a,_Spain.jpg', () => {
+test.describe('EsWikipedia — accessibility @ https://es.wikipedia.org/wiki/Archivo:Escultura_del_Oso_y_el_Madro%C3%B1o,_Puerta_del_Sol,_Madrid,_Espa%C3%B1a,_Spain.jpg', () => {
   test('@kind:a11y @smoke no serious or critical axe violations', async ({ page }) => {
     await page.goto('/wiki/Archivo:Escultura_del_Oso_y_el_Madroño,_Puerta_del_Sol,_Madrid,_España,_Spain.jpg')
     const results = await new AxeBuilder({ page })

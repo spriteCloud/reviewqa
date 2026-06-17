@@ -11,7 +11,7 @@
 #   npx playwright test --grep @journey:read
 #   npx playwright test --grep @smoke
 
-Feature: WwwSpritecloudCom — read journey
+Feature: Spritecloud — read journey
   As a visitor of https://www.spritecloud.com
   I want to complete the read flow
   So that the page delivers on its user goal

@@ -21,7 +21,7 @@ const VIEWPORTS = [
 ] as const
 
 test.describe.configure({ mode: 'parallel' })
-test.describe('GohugoIo — visual regression @ https://gohugo.io/templates/new-templatesystem-overview', () => {
+test.describe('Gohugo — visual regression @ https://gohugo.io/templates/new-templatesystem-overview', () => {
   for (const vp of VIEWPORTS) {
     test(`@kind:visual @smoke page matches baseline (${vp.name})`, async ({ page }) => {
       await page.setViewportSize({ width: vp.width, height: vp.height })
@@ -29,7 +29,7 @@ test.describe('GohugoIo — visual regression @ https://gohugo.io/templates/new-
       await page.waitForLoadState('networkidle').catch(() => {})
       // maxDiffPixelRatio: 0.01 — tolerate up to 1% pixel drift to
       // absorb anti-aliasing differences across CI / local renders.
-      await expect(page).toHaveScreenshot(`gohugoio-${vp.name}.png`, {
+      await expect(page).toHaveScreenshot(`gohugo-${vp.name}.png`, {
         fullPage: true,
         maxDiffPixelRatio: 0.01,
         animations: 'disabled',

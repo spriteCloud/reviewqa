@@ -12,7 +12,7 @@
 import { test, expect } from '@playwright/test'
 
 test.describe.configure({ mode: 'parallel' })
-test.describe('WwwSpritecloudCom — history depth @ https://www.spritecloud.com/style-guide', () => {
+test.describe('Spritecloud — history depth @ https://www.spritecloud.com/style-guide', () => {
   test('@kind:history-depth @smoke back twice then forward keeps the page interactive', async ({ page }) => {
     const errors: string[] = []
     page.on('pageerror', e => errors.push(e.message))

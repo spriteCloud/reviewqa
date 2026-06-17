@@ -16,7 +16,7 @@
 import { test, expect } from '@playwright/test'
 
 test.describe.configure({ mode: 'parallel' })
-test.describe('EsWikipediaOrg — keyboard navigation @ https://es.wikipedia.org/wiki/Espa%C3%B1a', () => {
+test.describe('EsWikipedia — keyboard navigation @ https://es.wikipedia.org/wiki/Espa%C3%B1a', () => {
   test('@kind:keyboard @smoke tab through the first 10 focusables', async ({ page }) => {
     await page.goto('/wiki/España')
 

@@ -16,7 +16,7 @@
 import { test, expect } from '@playwright/test'
 
 test.describe.configure({ mode: 'parallel' })
-test.describe('EsWikipediaOrg — API contract @ https://es.wikipedia.org/w/index.php', () => {
+test.describe('EsWikipedia — API contract @ https://es.wikipedia.org/w/index.php', () => {
 
   test('@kind:api @smoke happy: realistic body returns 2xx', async ({ request }) => {
     const response = await request.post('https://es.wikipedia.org/w/index.php', {

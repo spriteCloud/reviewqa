@@ -16,7 +16,7 @@
 import { test, expect } from '@playwright/test'
 
 test.describe.configure({ mode: 'parallel' })
-test.describe('EsWikipediaOrg — keyboard navigation @ https://es.wikipedia.org/wiki/Archivo:Escultura_del_Oso_y_el_Madro%C3%B1o,_Puerta_del_Sol,_Madrid,_Espa%C3%B1a,_Spain.jpg', () => {
+test.describe('EsWikipedia — keyboard navigation @ https://es.wikipedia.org/wiki/Archivo:Escultura_del_Oso_y_el_Madro%C3%B1o,_Puerta_del_Sol,_Madrid,_Espa%C3%B1a,_Spain.jpg', () => {
   test('@kind:keyboard @smoke tab through the first 10 focusables', async ({ page }) => {
     await page.goto('/wiki/Archivo:Escultura_del_Oso_y_el_Madroño,_Puerta_del_Sol,_Madrid,_España,_Spain.jpg')
 

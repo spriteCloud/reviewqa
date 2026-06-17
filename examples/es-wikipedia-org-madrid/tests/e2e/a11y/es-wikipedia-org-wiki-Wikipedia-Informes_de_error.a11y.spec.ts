@@ -21,7 +21,7 @@ import { test, expect } from '@playwright/test'
 import { AxeBuilder } from '@axe-core/playwright'
 
 test.describe.configure({ mode: 'parallel' })
-test.describe('EsWikipediaOrg — accessibility @ https://es.wikipedia.org/wiki/Wikipedia:Informes_de_error', () => {
+test.describe('EsWikipedia — accessibility @ https://es.wikipedia.org/wiki/Wikipedia:Informes_de_error', () => {
   test('@kind:a11y @smoke no serious or critical axe violations', async ({ page }) => {
     await page.goto('/wiki/Wikipedia:Informes_de_error')
     const results = await new AxeBuilder({ page })

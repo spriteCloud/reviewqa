@@ -21,7 +21,7 @@ import { test, expect } from '@playwright/test'
 import { AxeBuilder } from '@axe-core/playwright'
 
 test.describe.configure({ mode: 'parallel' })
-test.describe('EsWikipediaOrg — accessibility @ https://es.wikipedia.org/wiki/Especial:CambiosEnEnlazadas/Madrid', () => {
+test.describe('EsWikipedia — accessibility @ https://es.wikipedia.org/wiki/Especial:CambiosEnEnlazadas/Madrid', () => {
   test('@kind:a11y @smoke no serious or critical axe violations', async ({ page }) => {
     await page.goto('/wiki/Especial:CambiosEnEnlazadas/Madrid')
     const results = await new AxeBuilder({ page })

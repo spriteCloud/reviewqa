@@ -11,7 +11,7 @@
 import { test, expect } from '@playwright/test'
 
 test.describe.configure({ mode: 'parallel' })
-test.describe('GohugoIo — observability headers @ https://gohugo.io', () => {
+test.describe('Gohugo — observability headers @ https://gohugo.io', () => {
   test('@kind:observability @smoke origin emits at least one observability header', async ({ request }) => {
     const response = await request.get('https://gohugo.io')
     const headers = response.headers()

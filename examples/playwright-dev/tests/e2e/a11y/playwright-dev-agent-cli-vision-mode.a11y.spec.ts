@@ -21,7 +21,7 @@ import { test, expect } from '@playwright/test'
 import { AxeBuilder } from '@axe-core/playwright'
 
 test.describe.configure({ mode: 'parallel' })
-test.describe('PlaywrightDev — accessibility @ https://playwright.dev/agent-cli/vision-mode', () => {
+test.describe('Playwright — accessibility @ https://playwright.dev/agent-cli/vision-mode', () => {
   test('@kind:a11y @smoke no serious or critical axe violations', async ({ page }) => {
     await page.goto('/agent-cli/vision-mode')
     const results = await new AxeBuilder({ page })

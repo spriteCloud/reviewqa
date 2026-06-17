@@ -16,7 +16,7 @@
 import { test, expect } from './_fixtures'
 
 test.describe.configure({ mode: 'parallel' })
-test.describe('WwwSpritecloudCom — fuzz / negative input', () => {
+test.describe('Spritecloud — fuzz / negative input', () => {
   test.beforeEach(async ({ page }) => {
     await page.goto('/')
   })

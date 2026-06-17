@@ -12,7 +12,7 @@
 import { test, expect } from '@playwright/test'
 
 test.describe.configure({ mode: 'parallel' })
-test.describe('GohugoIo — a11y prefs @ https://gohugo.io/templates/new-templatesystem-overview', () => {
+test.describe('Gohugo — a11y prefs @ https://gohugo.io/templates/new-templatesystem-overview', () => {
   test('@kind:a11y-prefs @reduced-motion renders with prefers-reduced-motion', async ({ browser }) => {
     const context = await browser.newContext({ reducedMotion: 'reduce' })
     const page = await context.newPage()

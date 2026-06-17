@@ -11,7 +11,7 @@
 import { test, expect } from '@playwright/test'
 
 test.describe.configure({ mode: 'parallel' })
-test.describe('GohugoIo — PWA manifest @ https://gohugo.io/commands', () => {
+test.describe('Gohugo — PWA manifest @ https://gohugo.io/commands', () => {
   test('@kind:pwa @smoke manifest is reachable and well-formed', async ({ page, request }) => {
     await page.goto('/commands')
     const href = await page.locator('link[rel="manifest"]').first().getAttribute('href')

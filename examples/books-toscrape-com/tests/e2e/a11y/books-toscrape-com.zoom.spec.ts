@@ -12,7 +12,7 @@
 import { test, expect } from '@playwright/test'
 
 test.describe.configure({ mode: 'parallel' })
-test.describe('BooksToscrapeCom — zoom @ https://books.toscrape.com', () => {
+test.describe('BooksToscrape — zoom @ https://books.toscrape.com', () => {
   for (const zoom of [2.0, 4.0] as const) {
     test(`@kind:zoom @smoke @zoom:${zoom * 100}% h1 stays visible`, async ({ page }) => {
       await page.goto('/')

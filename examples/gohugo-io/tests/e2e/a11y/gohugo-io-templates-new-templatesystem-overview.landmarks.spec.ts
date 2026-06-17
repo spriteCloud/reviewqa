@@ -16,7 +16,7 @@
 import { test, expect } from '@playwright/test'
 
 test.describe.configure({ mode: 'parallel' })
-test.describe('GohugoIo — a11y landmarks @ https://gohugo.io/templates/new-templatesystem-overview', () => {
+test.describe('Gohugo — a11y landmarks @ https://gohugo.io/templates/new-templatesystem-overview', () => {
   test('@kind:a11y-landmarks @smoke single main + h1 + nav', async ({ page }) => {
     await page.goto('/templates/new-templatesystem-overview')
 

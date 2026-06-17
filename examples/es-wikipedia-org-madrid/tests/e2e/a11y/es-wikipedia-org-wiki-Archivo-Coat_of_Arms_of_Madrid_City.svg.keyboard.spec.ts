@@ -16,7 +16,7 @@
 import { test, expect } from '@playwright/test'
 
 test.describe.configure({ mode: 'parallel' })
-test.describe('EsWikipediaOrg — keyboard navigation @ https://es.wikipedia.org/wiki/Archivo:Coat_of_Arms_of_Madrid_City.svg', () => {
+test.describe('EsWikipedia — keyboard navigation @ https://es.wikipedia.org/wiki/Archivo:Coat_of_Arms_of_Madrid_City.svg', () => {
   test('@kind:keyboard @smoke tab through the first 10 focusables', async ({ page }) => {
     await page.goto('/wiki/Archivo:Coat_of_Arms_of_Madrid_City.svg')
 

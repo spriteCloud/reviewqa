@@ -16,7 +16,7 @@
  */
 import { test, expect } from '@playwright/test'
 
-test.describe('EsWikipediaOrg — integration: cache scaffold (skipped)', () => {
+test.describe('EsWikipedia — integration: cache scaffold (skipped)', () => {
   test.skip('@kind:integration-cache @wireable @set-get round-trip persists and reads back', async ({ request }) => {
     // When wired:
     //   1. SET key=k val=v in cache

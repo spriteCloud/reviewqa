@@ -16,7 +16,7 @@
 import { test, expect } from '@playwright/test'
 
 test.describe.configure({ mode: 'parallel' })
-test.describe('EsWikipediaOrg — a11y landmarks @ https://es.wikipedia.org/wiki/Capital_%28pol%C3%ADtica%29', () => {
+test.describe('EsWikipedia — a11y landmarks @ https://es.wikipedia.org/wiki/Capital_%28pol%C3%ADtica%29', () => {
   test('@kind:a11y-landmarks @smoke single main + h1 + nav', async ({ page }) => {
     await page.goto('/wiki/Capital_(política)')
 

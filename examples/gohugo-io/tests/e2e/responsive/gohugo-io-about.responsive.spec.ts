@@ -17,7 +17,7 @@ const VIEWPORTS = [
 ] as const
 
 test.describe.configure({ mode: 'parallel' })
-test.describe('GohugoIo — responsive @ https://gohugo.io/about', () => {
+test.describe('Gohugo — responsive @ https://gohugo.io/about', () => {
   for (const vp of VIEWPORTS) {
     test(`@kind:responsive @smoke renders at ${vp.name} (${vp.width}x${vp.height})`, async ({ page }) => {
       await page.setViewportSize({ width: vp.width, height: vp.height })

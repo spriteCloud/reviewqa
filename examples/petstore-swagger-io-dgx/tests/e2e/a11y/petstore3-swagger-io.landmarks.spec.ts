@@ -16,7 +16,7 @@
 import { test, expect } from '@playwright/test'
 
 test.describe.configure({ mode: 'parallel' })
-test.describe('Petstore3SwaggerIo — a11y landmarks @ https://petstore3.swagger.io', () => {
+test.describe('Petstore3Swagger — a11y landmarks @ https://petstore3.swagger.io', () => {
   test('@kind:a11y-landmarks @smoke single main + h1 + nav', async ({ page }) => {
     await page.goto('/')
 

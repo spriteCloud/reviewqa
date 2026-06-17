@@ -273,7 +273,7 @@ func TestHappyFlowTemplate_TestFailWhenDataWaitSubmit(t *testing.T) {
 	// Extractor stamps anchor.CSS = "data-wait"; template should emit
 	// test.fail() instead of plain test() for the journey.
 	sym := ast.Symbol{
-		Kind: ast.KindComponent, Name: "WwwSpritecloudCom",
+		Kind: ast.KindComponent, Name: "Spritecloud",
 		File: "https://x.test/", Language: "ts",
 		HasForm: true,
 		Inputs:  []ast.FormInput{{Name: "email", Type: "email", Tag: "input", Required: true}},

@@ -15,7 +15,7 @@
 import { test, expect } from '@playwright/test'
 
 test.describe.configure({ mode: 'parallel' })
-test.describe('WwwSpritecloudCom — security headers @ https://www.spritecloud.com', () => {
+test.describe('Spritecloud — security headers @ https://www.spritecloud.com', () => {
   test('@kind:security @smoke baseline security headers present', async ({ request }) => {
     const response = await request.get('https://www.spritecloud.com')
     expect(response.status(), 'origin should respond').toBeLessThan(500)

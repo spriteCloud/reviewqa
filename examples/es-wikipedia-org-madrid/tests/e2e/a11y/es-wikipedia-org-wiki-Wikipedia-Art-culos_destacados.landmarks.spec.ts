@@ -16,7 +16,7 @@
 import { test, expect } from '@playwright/test'
 
 test.describe.configure({ mode: 'parallel' })
-test.describe('EsWikipediaOrg — a11y landmarks @ https://es.wikipedia.org/wiki/Wikipedia:Art%C3%ADculos_destacados', () => {
+test.describe('EsWikipedia — a11y landmarks @ https://es.wikipedia.org/wiki/Wikipedia:Art%C3%ADculos_destacados', () => {
   test('@kind:a11y-landmarks @smoke single main + h1 + nav', async ({ page }) => {
     await page.goto('/wiki/Wikipedia:Artículos_destacados')
 

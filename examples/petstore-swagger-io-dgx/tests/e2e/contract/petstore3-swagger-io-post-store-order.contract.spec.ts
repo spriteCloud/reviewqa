@@ -44,7 +44,7 @@ async function call(request: any, method: string, opts: any = {}) {
 }
 
 test.describe.configure({ mode: 'parallel' })
-test.describe('Petstore3SwaggerIo — contract @ https://petstore3.swagger.io/store/order', () => {
+test.describe('Petstore3Swagger — contract @ https://petstore3.swagger.io/store/order', () => {
   test('@kind:contract @smoke response status is one of the declared codes', async ({ request }) => {
     const response = await call(request, METHOD)
     const status = response.status()

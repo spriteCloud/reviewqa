@@ -11,12 +11,13 @@
 #   npx playwright test --grep @journey:browse
 #   npx playwright test --grep @smoke
 
-Feature: WwwSpritecloudCom — browse journey
+Feature: Spritecloud — browse journey
   As a visitor of https://www.spritecloud.com
   I want to complete the browse flow
   So that the page delivers on its user goal
 
-  @journey:browse @priority:standard @smoke
+@journey:browse @priority:standard @smoke
+@ai-refined
   Scenario: browse journey reaches its terminal page
     Given I open the landing page
     And the page title contains "spriteCloud - Test your software, not your reputation!"
@@ -26,7 +27,7 @@ Feature: WwwSpritecloudCom — browse journey
     When I click the link to "/about-us"
     Then I see the heading "Testing is in our DNA."
     And the page title contains "About Us"
-
+    Then the URL contains "/about-us"
   @journey:browse @priority:standard @kind:resume
   Scenario: browse — deep-link to the terminal page renders correctly
     Given I open the page "/about-us"

@@ -11,7 +11,7 @@
 import { test, expect } from '@playwright/test'
 
 test.describe.configure({ mode: 'parallel' })
-test.describe('EsWikipediaOrg — observability headers @ https://es.wikipedia.org', () => {
+test.describe('EsWikipedia — observability headers @ https://es.wikipedia.org', () => {
   test('@kind:observability @smoke origin emits at least one observability header', async ({ request }) => {
     const response = await request.get('https://es.wikipedia.org')
     const headers = response.headers()

@@ -12,7 +12,7 @@
 import { test, expect } from '@playwright/test'
 
 test.describe.configure({ mode: 'parallel' })
-test.describe('EsWikipediaOrg — clipboard @ https://es.wikipedia.org/wiki/Especial:CambiosRecientes', () => {
+test.describe('EsWikipedia — clipboard @ https://es.wikipedia.org/wiki/Especial:CambiosRecientes', () => {
   test('@kind:clipboard @xss formatted-text paste is sanitized', async ({ page, context }) => {
     await context.grantPermissions(['clipboard-read', 'clipboard-write']).catch(() => {})
     await page.goto('/wiki/Especial:CambiosRecientes')

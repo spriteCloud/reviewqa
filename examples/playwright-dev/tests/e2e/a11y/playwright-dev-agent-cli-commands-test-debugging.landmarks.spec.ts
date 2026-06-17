@@ -16,7 +16,7 @@
 import { test, expect } from '@playwright/test'
 
 test.describe.configure({ mode: 'parallel' })
-test.describe('PlaywrightDev — a11y landmarks @ https://playwright.dev/agent-cli/commands/test-debugging', () => {
+test.describe('Playwright — a11y landmarks @ https://playwright.dev/agent-cli/commands/test-debugging', () => {
   test('@kind:a11y-landmarks @smoke single main + h1 + nav', async ({ page }) => {
     await page.goto('/agent-cli/commands/test-debugging')
 

@@ -16,7 +16,7 @@
 import { test, expect } from '@playwright/test'
 
 test.describe.configure({ mode: 'parallel' })
-test.describe('BooksToscrapeCom — keyboard navigation @ https://books.toscrape.com/catalogue/category/books/music_14/index.html', () => {
+test.describe('BooksToscrape — keyboard navigation @ https://books.toscrape.com/catalogue/category/books/music_14/index.html', () => {
   test('@kind:keyboard @smoke tab through the first 10 focusables', async ({ page }) => {
     await page.goto('/catalogue/category/books/music_14/index.html')
 

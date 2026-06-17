@@ -7,6 +7,26 @@ shipped the depth-parity arc (Contract, Integration, Mobile, A11y trio).
 v0.61–v0.62 are the live-execution + composer-validation arc — first
 real-site run + composer destination-DOM enforcement.
 
+## v0.75.1 — UI polish: pill placement + brand-only feature names
+
+Two narrow-scope fixes on top of v0.75:
+
+- **Scenario card layout at narrow widths.** The "last passed/
+  failed/not run" pill used to float inline next to the scenario
+  name. When the name wrapped over multiple lines the pill landed
+  in awkward whitespace beside the action buttons. The pill now
+  stacks below the name on its own row — clean alignment whether
+  the title takes 1 or 4 lines.
+- **Drop `www.` and TLDs from generated symbol names.** Feature
+  titles, test.describe groups and contract suites read as the
+  brand only: `www.spritecloud.com` → `Spritecloud` (was
+  `WwwSpritecloudCom`), `playwright.dev` → `Playwright`,
+  `petstore3.swagger.io` → `Petstore3Swagger`. Uses the
+  publicsuffix list so `.co.uk`, `.github.io`, etc. strip
+  correctly. All example fixtures regenerated.
+
+No template, run, or chat behaviour changes.
+
 ## v0.75 — per-step results + Last-execution pills + Stakeholder Summary polish
 
 Three asks from the user after the v0.74 Run fix worked:

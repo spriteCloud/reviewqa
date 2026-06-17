@@ -12,7 +12,7 @@
 import { test, expect } from '@playwright/test'
 
 test.describe.configure({ mode: 'parallel' })
-test.describe('BooksToscrapeCom — a11y prefs @ https://books.toscrape.com/catalogue/category/books_1/index.html', () => {
+test.describe('BooksToscrape — a11y prefs @ https://books.toscrape.com/catalogue/category/books_1/index.html', () => {
   test('@kind:a11y-prefs @reduced-motion renders with prefers-reduced-motion', async ({ browser }) => {
     const context = await browser.newContext({ reducedMotion: 'reduce' })
     const page = await context.newPage()

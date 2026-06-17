@@ -21,7 +21,7 @@ const VIEWPORTS = [
 ] as const
 
 test.describe.configure({ mode: 'parallel' })
-test.describe('Petstore3SwaggerIo — visual regression @ https://petstore3.swagger.io', () => {
+test.describe('Petstore3Swagger — visual regression @ https://petstore3.swagger.io', () => {
   for (const vp of VIEWPORTS) {
     test(`@kind:visual @smoke page matches baseline (${vp.name})`, async ({ page }) => {
       await page.setViewportSize({ width: vp.width, height: vp.height })

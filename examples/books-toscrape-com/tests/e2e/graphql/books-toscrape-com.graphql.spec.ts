@@ -37,7 +37,7 @@ async function endpointExists(request: any): Promise<boolean> {
 }
 
 test.describe.configure({ mode: 'parallel' })
-test.describe('BooksToscrapeCom — GraphQL discovery @ https://books.toscrape.com', () => {
+test.describe('BooksToscrape — GraphQL discovery @ https://books.toscrape.com', () => {
   test('@kind:graphql-stub @smoke introspection succeeds OR endpoint is absent', async ({ request }) => {
     const r = await request.post(ENDPOINT, {
       data: INTROSPECTION,

@@ -21,7 +21,7 @@ import { test, expect } from '@playwright/test'
 import { AxeBuilder } from '@axe-core/playwright'
 
 test.describe.configure({ mode: 'parallel' })
-test.describe('EsWikipediaOrg — accessibility @ https://es.wikipedia.org/wiki/Municipio_de_Espa%C3%B1a', () => {
+test.describe('EsWikipedia — accessibility @ https://es.wikipedia.org/wiki/Municipio_de_Espa%C3%B1a', () => {
   test('@kind:a11y @smoke no serious or critical axe violations', async ({ page }) => {
     await page.goto('/wiki/Municipio_de_España')
     const results = await new AxeBuilder({ page })

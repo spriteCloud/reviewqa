@@ -21,7 +21,7 @@ const VIEWPORTS = [
 ] as const
 
 test.describe.configure({ mode: 'parallel' })
-test.describe('PlaywrightDev — visual regression @ https://playwright.dev/community/learn-videos', () => {
+test.describe('Playwright — visual regression @ https://playwright.dev/community/learn-videos', () => {
   for (const vp of VIEWPORTS) {
     test(`@kind:visual @smoke page matches baseline (${vp.name})`, async ({ page }) => {
       await page.setViewportSize({ width: vp.width, height: vp.height })
@@ -29,7 +29,7 @@ test.describe('PlaywrightDev — visual regression @ https://playwright.dev/comm
       await page.waitForLoadState('networkidle').catch(() => {})
       // maxDiffPixelRatio: 0.01 — tolerate up to 1% pixel drift to
       // absorb anti-aliasing differences across CI / local renders.
-      await expect(page).toHaveScreenshot(`playwrightdev-${vp.name}.png`, {
+      await expect(page).toHaveScreenshot(`playwright-${vp.name}.png`, {
         fullPage: true,
         maxDiffPixelRatio: 0.01,
         animations: 'disabled',

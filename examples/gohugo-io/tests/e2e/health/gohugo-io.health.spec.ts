@@ -13,7 +13,7 @@ import { test, expect } from '@playwright/test'
 const HEALTH_PATHS = ['/health', '/healthz', '/ready', '/readyz', '/status', '/livez']
 
 test.describe.configure({ mode: 'parallel' })
-test.describe('GohugoIo — health probes @ https://gohugo.io', () => {
+test.describe('Gohugo — health probes @ https://gohugo.io', () => {
   test('@kind:health @smoke at least one well-known health endpoint responds', async ({ request }) => {
     const results: Array<{ path: string; status: number }> = []
     for (const path of HEALTH_PATHS) {

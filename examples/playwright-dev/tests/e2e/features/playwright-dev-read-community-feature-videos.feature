@@ -11,7 +11,7 @@
 #   npx playwright test --grep @journey:read
 #   npx playwright test --grep @smoke
 
-Feature: PlaywrightDev — read journey
+Feature: Playwright — read journey
   As a visitor of https://playwright.dev
   I want to complete the read flow
   So that the page delivers on its user goal

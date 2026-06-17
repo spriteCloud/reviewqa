@@ -12,7 +12,7 @@
 import { test, expect } from '@playwright/test'
 
 test.describe.configure({ mode: 'parallel' })
-test.describe('WwwSpritecloudCom — clipboard @ https://www.spritecloud.com', () => {
+test.describe('Spritecloud — clipboard @ https://www.spritecloud.com', () => {
   test('@kind:clipboard @xss formatted-text paste is sanitized', async ({ page, context }) => {
     await context.grantPermissions(['clipboard-read', 'clipboard-write']).catch(() => {})
     await page.goto('/')

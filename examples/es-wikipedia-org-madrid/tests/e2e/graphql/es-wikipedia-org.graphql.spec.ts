@@ -37,7 +37,7 @@ async function endpointExists(request: any): Promise<boolean> {
 }
 
 test.describe.configure({ mode: 'parallel' })
-test.describe('EsWikipediaOrg — GraphQL discovery @ https://es.wikipedia.org', () => {
+test.describe('EsWikipedia — GraphQL discovery @ https://es.wikipedia.org', () => {
   test('@kind:graphql-stub @smoke introspection succeeds OR endpoint is absent', async ({ request }) => {
     const r = await request.post(ENDPOINT, {
       data: INTROSPECTION,

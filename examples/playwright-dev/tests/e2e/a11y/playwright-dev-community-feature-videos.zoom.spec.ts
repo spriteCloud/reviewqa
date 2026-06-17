@@ -12,7 +12,7 @@
 import { test, expect } from '@playwright/test'
 
 test.describe.configure({ mode: 'parallel' })
-test.describe('PlaywrightDev — zoom @ https://playwright.dev/community/feature-videos', () => {
+test.describe('Playwright — zoom @ https://playwright.dev/community/feature-videos', () => {
   for (const zoom of [2.0, 4.0] as const) {
     test(`@kind:zoom @smoke @zoom:${zoom * 100}% h1 stays visible`, async ({ page }) => {
       await page.goto('/community/feature-videos')

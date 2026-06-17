@@ -18,7 +18,7 @@ import { test, expect } from '@playwright/test'
 const STATES = ['default', 'hover', 'focus'] as const
 
 test.describe.configure({ mode: 'parallel' })
-test.describe('EsWikipediaOrg — interaction-state visual @ https://es.wikipedia.org/wiki/Wikipedia:Portada', () => {
+test.describe('EsWikipedia — interaction-state visual @ https://es.wikipedia.org/wiki/Wikipedia:Portada', () => {
   test('@kind:visual-state @smoke primary CTA across states', async ({ page }) => {
     await page.goto('/wiki/Wikipedia:Portada')
     await page.waitForLoadState('networkidle').catch(() => {})
@@ -40,7 +40,7 @@ test.describe('EsWikipediaOrg — interaction-state visual @ https://es.wikipedi
           // default state — no interaction
           break
       }
-      await expect(target).toHaveScreenshot(`eswikipediaorg-cta-${state}.png`, {
+      await expect(target).toHaveScreenshot(`eswikipedia-cta-${state}.png`, {
         maxDiffPixelRatio: 0.02,
         animations: 'disabled',
       })

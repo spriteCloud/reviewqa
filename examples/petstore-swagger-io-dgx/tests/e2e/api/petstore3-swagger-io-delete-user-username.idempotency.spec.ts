@@ -12,7 +12,7 @@
 import { test, expect } from '@playwright/test'
 
 test.describe.configure({ mode: 'parallel' })
-test.describe('Petstore3SwaggerIo — idempotency @ https://petstore3.swagger.io/user/{username}', () => {
+test.describe('Petstore3Swagger — idempotency @ https://petstore3.swagger.io/user/{username}', () => {
   test('@kind:api-idempotency @smoke same DELETE twice → second call still succeeds', async ({ request }) => {
     const body = {
       '200': '200-value',

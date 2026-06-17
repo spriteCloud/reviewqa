@@ -11,7 +11,7 @@
 #   npx playwright test --grep @journey:convert
 #   npx playwright test --grep @smoke
 
-Feature: WwwSpritecloudCom — convert journey
+Feature: Spritecloud — convert journey
   As a visitor of https://www.spritecloud.com
   I want to complete the convert flow
   So that the page delivers on its user goal

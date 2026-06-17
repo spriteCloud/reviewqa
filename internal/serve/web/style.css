@@ -917,14 +917,16 @@ code, pre { font-family: 'Fira Code', ui-monospace, monospace; }
   pointer-events: none;
 }
 
-/* LAST-RUN PILL — sits next to scenario name in the card. */
+/* LAST-RUN PILL — sits below the scenario name (never beside it).
+ * Beside-the-name floated awkwardly at narrow widths because the
+ * title wrapped over 2-4 lines while the pill stayed inline. */
 .scenario-name-wrap {
   flex: 1;
   min-width: 0;
   display: flex;
-  align-items: center;
-  gap: 12px;
-  flex-wrap: wrap;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 8px;
 }
 .last-run-pill {
   display: inline-flex;
@@ -938,6 +940,7 @@ code, pre { font-family: 'Fira Code', ui-monospace, monospace; }
   border-radius: 999px;
   border: 1px solid transparent;
   white-space: nowrap;
+  flex-shrink: 0;
 }
 .last-run-pass { color: #15803D; background: #DCFCE7; border-color: rgba(21, 128, 61, 0.25); }
 .last-run-fail { color: #B91C1C; background: #FEE2E2; border-color: rgba(185, 28, 28, 0.25); }

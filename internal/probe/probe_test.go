@@ -82,8 +82,8 @@ func TestBuildItem(t *testing.T) {
 	if !item.Symbol.HasForm {
 		t.Error("HasForm should be true")
 	}
-	if item.Symbol.Name != "WwwSpritecloudCom" {
-		t.Errorf("Name = %q, want WwwSpritecloudCom", item.Symbol.Name)
+	if item.Symbol.Name != "Spritecloud" {
+		t.Errorf("Name = %q, want Spritecloud", item.Symbol.Name)
 	}
 }
 

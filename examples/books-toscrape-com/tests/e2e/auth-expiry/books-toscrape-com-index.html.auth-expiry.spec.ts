@@ -11,7 +11,7 @@
 import { test, expect } from '@playwright/test'
 
 test.describe.configure({ mode: 'parallel' })
-test.describe('BooksToscrapeCom — auth expiry @ https://books.toscrape.com/index.html', () => {
+test.describe('BooksToscrape — auth expiry @ https://books.toscrape.com/index.html', () => {
   test('@kind:auth-expiry @smoke clearing cookies mid-journey surfaces a sign-in prompt', async ({ page, context }) => {
     await page.goto('/index.html')
     // Simulate the user's session expiring server-side.

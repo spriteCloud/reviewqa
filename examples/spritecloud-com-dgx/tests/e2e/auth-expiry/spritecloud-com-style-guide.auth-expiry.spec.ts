@@ -11,7 +11,7 @@
 import { test, expect } from '@playwright/test'
 
 test.describe.configure({ mode: 'parallel' })
-test.describe('WwwSpritecloudCom — auth expiry @ https://www.spritecloud.com/style-guide', () => {
+test.describe('Spritecloud — auth expiry @ https://www.spritecloud.com/style-guide', () => {
   test('@kind:auth-expiry @smoke clearing cookies mid-journey surfaces a sign-in prompt', async ({ page, context }) => {
     await page.goto('/style-guide')
     // Simulate the user's session expiring server-side.

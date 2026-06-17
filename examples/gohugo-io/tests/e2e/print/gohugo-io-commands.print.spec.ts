@@ -11,7 +11,7 @@
 import { test, expect } from '@playwright/test'
 
 test.describe.configure({ mode: 'parallel' })
-test.describe('GohugoIo — print @ https://gohugo.io/commands', () => {
+test.describe('Gohugo — print @ https://gohugo.io/commands', () => {
   test('@kind:print @smoke renders under media: print', async ({ page }) => {
     await page.goto('/commands')
     await page.emulateMedia({ media: 'print' })

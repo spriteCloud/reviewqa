@@ -12,7 +12,7 @@ import { test, expect } from '@playwright/test'
 const SLO_MS = Number(process.env.PERF_SLO_MS ?? 3000)
 
 test.describe.configure({ mode: 'parallel' })
-test.describe('BooksToscrapeCom — performance @ https://books.toscrape.com/catalogue/category/books/mystery_3/index.html', () => {
+test.describe('BooksToscrape — performance @ https://books.toscrape.com/catalogue/category/books/mystery_3/index.html', () => {
   test(`@kind:perf @smoke loads under ${SLO_MS}ms`, async ({ page }) => {
     const start = Date.now()
     await page.goto('/catalogue/category/books/mystery_3/index.html', { waitUntil: 'load' })

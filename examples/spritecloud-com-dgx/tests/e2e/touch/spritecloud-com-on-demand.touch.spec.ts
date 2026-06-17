@@ -18,7 +18,7 @@ import { test, expect, devices } from '@playwright/test'
 test.use({ ...devices['iPhone 13'] })
 
 test.describe.configure({ mode: 'parallel' })
-test.describe('WwwSpritecloudCom — touch gestures @ https://www.spritecloud.com/on-demand', () => {
+test.describe('Spritecloud — touch gestures @ https://www.spritecloud.com/on-demand', () => {
   test('@kind:touch @smoke long-press on the primary CTA does not double-fire', async ({ page }) => {
     await page.goto('/on-demand')
     const cta = page.getByRole('button').first().or(page.getByRole('link').first())

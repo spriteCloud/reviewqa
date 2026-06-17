@@ -11,7 +11,7 @@
 #   npx playwright test --grep @journey:browse
 #   npx playwright test --grep @smoke
 
-Feature: BooksToscrapeCom — browse journey
+Feature: BooksToscrape — browse journey
   As a visitor of https://books.toscrape.com
   I want to complete the browse flow
   So that the page delivers on its user goal

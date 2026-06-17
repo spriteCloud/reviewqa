@@ -12,7 +12,7 @@
 import { test, expect } from '@playwright/test'
 
 test.describe.configure({ mode: 'parallel' })
-test.describe('WwwSpritecloudCom — zoom @ https://www.spritecloud.com/guides', () => {
+test.describe('Spritecloud — zoom @ https://www.spritecloud.com/guides', () => {
   for (const zoom of [2.0, 4.0] as const) {
     test(`@kind:zoom @smoke @zoom:${zoom * 100}% h1 stays visible`, async ({ page }) => {
       await page.goto('/guides')

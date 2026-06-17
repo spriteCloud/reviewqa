@@ -16,7 +16,7 @@
 import { test, expect } from '@playwright/test'
 
 test.describe.configure({ mode: 'parallel' })
-test.describe('BooksToscrapeCom — a11y landmarks @ https://books.toscrape.com/catalogue/category/books/new-adult_20/index.html', () => {
+test.describe('BooksToscrape — a11y landmarks @ https://books.toscrape.com/catalogue/category/books/new-adult_20/index.html', () => {
   test('@kind:a11y-landmarks @smoke single main + h1 + nav', async ({ page }) => {
     await page.goto('/catalogue/category/books/new-adult_20/index.html')
 

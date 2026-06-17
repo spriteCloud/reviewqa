@@ -11,7 +11,7 @@
 #   npx playwright test --grep @journey:explore
 #   npx playwright test --grep @smoke
 
-Feature: WwwSpritecloudCom — explore journey
+Feature: Spritecloud — explore journey
   As a visitor of https://www.spritecloud.com
   I want to complete the explore flow
   So that the page delivers on its user goal

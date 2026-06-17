@@ -16,7 +16,7 @@
 import { test, expect } from '@playwright/test'
 
 test.describe.configure({ mode: 'parallel' })
-test.describe('WwwSpritecloudCom — API contract @ https://www.spritecloud.com', () => {
+test.describe('Spritecloud — API contract @ https://www.spritecloud.com', () => {
 
   test('@kind:api @smoke happy: realistic body returns 2xx', async ({ request }) => {
     const response = await request.get('https://www.spritecloud.com', {

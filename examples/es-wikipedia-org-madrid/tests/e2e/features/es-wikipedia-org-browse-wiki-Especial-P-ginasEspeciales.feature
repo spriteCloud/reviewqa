@@ -11,7 +11,7 @@
 #   npx playwright test --grep @journey:browse
 #   npx playwright test --grep @smoke
 
-Feature: EsWikipediaOrg — browse journey
+Feature: EsWikipedia — browse journey
   As a visitor of https://es.wikipedia.org/wiki/Madrid
   I want to complete the browse flow
   So that the page delivers on its user goal

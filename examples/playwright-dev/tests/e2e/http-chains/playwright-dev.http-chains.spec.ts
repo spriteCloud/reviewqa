@@ -11,7 +11,7 @@
 import { test, expect } from '@playwright/test'
 
 test.describe.configure({ mode: 'parallel' })
-test.describe('PlaywrightDev — http chains @ https://playwright.dev', () => {
+test.describe('Playwright — http chains @ https://playwright.dev', () => {
   test('@kind:http-chain @redirect-chain follows multi-hop redirects', async ({ request }) => {
     // 301 + 302 + 200 — the common cdn → canonical → asset chain.
     const resp = await request.get('/', { maxRedirects: 10 })

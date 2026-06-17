@@ -16,7 +16,7 @@
 import { test, expect } from '@playwright/test'
 
 test.describe.configure({ mode: 'parallel' })
-test.describe('EsWikipediaOrg — keyboard navigation @ https://es.wikipedia.org/wiki/Archivo:Museo_del_Prado_2016_(25185969599).jpg', () => {
+test.describe('EsWikipedia — keyboard navigation @ https://es.wikipedia.org/wiki/Archivo:Museo_del_Prado_2016_(25185969599).jpg', () => {
   test('@kind:keyboard @smoke tab through the first 10 focusables', async ({ page }) => {
     await page.goto('/wiki/Archivo:Museo_del_Prado_2016_(25185969599).jpg')
 

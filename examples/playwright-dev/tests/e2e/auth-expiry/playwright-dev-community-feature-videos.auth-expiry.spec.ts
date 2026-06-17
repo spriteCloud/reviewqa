@@ -11,7 +11,7 @@
 import { test, expect } from '@playwright/test'
 
 test.describe.configure({ mode: 'parallel' })
-test.describe('PlaywrightDev — auth expiry @ https://playwright.dev/community/feature-videos', () => {
+test.describe('Playwright — auth expiry @ https://playwright.dev/community/feature-videos', () => {
   test('@kind:auth-expiry @smoke clearing cookies mid-journey surfaces a sign-in prompt', async ({ page, context }) => {
     await page.goto('/community/feature-videos')
     // Simulate the user's session expiring server-side.

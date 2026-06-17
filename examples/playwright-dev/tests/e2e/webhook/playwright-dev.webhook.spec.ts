@@ -53,7 +53,7 @@ async function postSigned(request: any, body: string, signature: string, extra: 
 const skipReason = 'set REVIEWQA_WEBHOOK_ENDPOINT + REVIEWQA_WEBHOOK_SECRET to activate signature verification'
 
 test.describe.configure({ mode: 'parallel' })
-test.describe('PlaywrightDev — webhook signing @ https://playwright.dev', () => {
+test.describe('Playwright — webhook signing @ https://playwright.dev', () => {
   test('@kind:webhook-stub @smoke signed POST is accepted; unsigned is rejected', async ({ request }) => {
     if (!ENDPOINT || !SECRET) { test.skip(true, skipReason); return }
     const body = JSON.stringify({ ping: 'reviewqa' })
