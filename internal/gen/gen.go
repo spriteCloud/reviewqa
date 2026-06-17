@@ -275,6 +275,12 @@ func templateLocation(t plan.Template) (string, string) {
 		return "ts", "rn_happyflow.tmpl"
 	case plan.TmplFlutterHappyFlow:
 		return "ts", "flutter_happyflow.tmpl"
+	case plan.TmplDbtSchema:
+		return "py", "dbt_schema.tmpl"
+	case plan.TmplPanderaConformance:
+		return "py", "pandera_conformance.tmpl"
+	case plan.TmplGreatExpectations:
+		return "py", "great_expectations.tmpl"
 	case plan.TmplPytestUnit:
 		return "py", "pytest_unit.tmpl"
 	case plan.TmplPytestAPI:
@@ -592,6 +598,16 @@ var funcs = template.FuncMap{
 	// a single input. The API negative-payload test fills the longest
 	// text-shaped field with 50k chars; other fields keep their normal
 	// values so the body is still structurally valid.
+	"isIDColumn": func(name string) bool {
+		n := strings.ToLower(name)
+		return n == "id" || strings.HasSuffix(n, "_id")
+	},
+	"isRequiredField": func(p ast.Param) bool {
+		// dbt schema heuristic: any column not nullable is required.
+		// Without metadata we default to true for the v0.29 scaffold;
+		// consumers tighten by hand.
+		return true
+	},
 	"isOversizable": func(i ast.FormInput) bool {
 		switch i.Type {
 		case "textarea", "text", "email", "url", "tel":

@@ -78,6 +78,9 @@ const (
 	TmplPlaywrightDeepLink          Template = "pw_deeplink"
 	TmplRNHappyFlow                 Template = "rn_happyflow"
 	TmplFlutterHappyFlow            Template = "flutter_happyflow"
+	TmplDbtSchema                   Template = "dbt_schema"
+	TmplPanderaConformance          Template = "pandera_conformance"
+	TmplGreatExpectations           Template = "great_expectations"
 	TmplRaw                 Template = "raw" // sentinel: emit Item.RawContent verbatim
 	TmplPytestUnit          Template = "pytest_unit"
 	TmplPytestAPI           Template = "pytest_api"
