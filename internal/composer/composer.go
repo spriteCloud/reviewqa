@@ -72,7 +72,13 @@ const systemPrompt = `You are a senior QA engineer composing additional Gherkin 
 
 You will receive a probe summary of a single user journey. The journey starts at a landing page and may chain through additional destination pages — each destination is listed with its own title and h1 so you can assert against the page the navigation actually lands on, not the landing.
 
-Compose UP TO 3 additional Scenarios beyond the deterministic happy path. Prefer scenarios that chain across the listed destination pages (eg. submit → land on thank-you → reload), or that explore boundary / failure variants the deterministic templates do not already cover. Do NOT propose scenarios that only assert the landing page's heading — those are already emitted deterministically.
+Compose UP TO 5 additional Scenarios beyond the deterministic happy path. Prefer scenarios that:
+- Chain across the listed destination pages (eg. submit → land on thank-you → reload)
+- Exercise race conditions (eg. "I submit the form twice in rapid succession" → "the form is not double-submitted")
+- Test reload mid-flow (eg. fill the form → reload → assert state)
+- Explore boundary / failure variants the deterministic templates do not already cover
+
+Do NOT propose scenarios that only assert the landing page's heading — those are already emitted deterministically.
 
 Constraints:
 - Each step.text MUST be a verbatim match (after placeholder substitution) of one of the registered patterns below.
@@ -110,6 +116,12 @@ When I press the "<key>" key
 When I wait for <ms> milliseconds
 Then the response status is <code>
 Then I scroll into view of the "<text>" element
+When I go back in the browser history
+Given I am signed in as "<user>"
+Given I am not signed in
+When I submit the form twice in rapid succession
+Then the form is not double-submitted
+When I reload the page
 `
 
 // Propose asks the LLM for up to n additional scenarios for the
@@ -335,6 +347,11 @@ var registeredPatterns = []*regexp.Regexp{
 	regexp.MustCompile(`^I go back in the browser history$`),
 	regexp.MustCompile(`^I am signed in as "[^"]+"$`),
 	regexp.MustCompile(`^I am not signed in$`),
+	// v0.41c — race, reload, double-submit vocabulary. Each has a
+	// matching step definition in pw_steps_bdd.tmpl.
+	regexp.MustCompile(`^I submit the form twice in rapid succession$`),
+	regexp.MustCompile(`^the form is not double-submitted$`),
+	regexp.MustCompile(`^I reload the page$`),
 }
 
 func matchesRegisteredPattern(text string) bool {
