@@ -267,6 +267,14 @@ func templateLocation(t plan.Template) (string, string) {
 		return "ts", "integration_containers.tmpl"
 	case plan.TmplIntegrationCompose:
 		return "ts", "integration_compose.tmpl"
+	case plan.TmplPlaywrightMobile:
+		return "ts", "pw_mobile.tmpl"
+	case plan.TmplPlaywrightDeepLink:
+		return "ts", "pw_deeplink.tmpl"
+	case plan.TmplRNHappyFlow:
+		return "ts", "rn_happyflow.tmpl"
+	case plan.TmplFlutterHappyFlow:
+		return "ts", "flutter_happyflow.tmpl"
 	case plan.TmplPytestUnit:
 		return "py", "pytest_unit.tmpl"
 	case plan.TmplPytestAPI:

@@ -74,6 +74,10 @@ const (
 	TmplIntegrationAuth             Template = "integration_auth"
 	TmplIntegrationContainers       Template = "integration_containers"
 	TmplIntegrationCompose          Template = "integration_compose"
+	TmplPlaywrightMobile            Template = "pw_mobile"
+	TmplPlaywrightDeepLink          Template = "pw_deeplink"
+	TmplRNHappyFlow                 Template = "rn_happyflow"
+	TmplFlutterHappyFlow            Template = "flutter_happyflow"
 	TmplRaw                 Template = "raw" // sentinel: emit Item.RawContent verbatim
 	TmplPytestUnit          Template = "pytest_unit"
 	TmplPytestAPI           Template = "pytest_api"
