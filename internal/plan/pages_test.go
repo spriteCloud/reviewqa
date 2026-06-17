@@ -5,9 +5,10 @@ import (
 	"path/filepath"
 	"testing"
 
-	_ "github.com/reviewqa/reviewqa/internal/ast/ts"
 	"github.com/reviewqa/reviewqa/internal/ast"
+	_ "github.com/reviewqa/reviewqa/internal/ast/ts"
 	"github.com/reviewqa/reviewqa/internal/diff"
+	"reflect"
 )
 
 func write(t *testing.T, dir, rel, body string) string {
@@ -92,11 +93,11 @@ func TestChainMultiStep_DropsExternalLinks(t *testing.T) {
 
 func TestPageRootDetectionAcrossFrameworks(t *testing.T) {
 	cases := []struct {
-		name      string
-		pagePath  string
-		body      string
-		wantURL   string
-		wantStem  string
+		name     string
+		pagePath string
+		body     string
+		wantURL  string
+		wantStem string
 	}{
 		{
 			name:     "next-pages",
@@ -243,4 +244,19 @@ func TestPageURLsEnvOverride(t *testing.T) {
 	if !found {
 		t.Errorf("env override not honoured; items = %+v", items)
 	}
+}
+func TestExtractHTMLForms(t *testing.T) {
+	t.Run("happy path", func(t *testing.T) {
+		got := ExtractHTMLForms("", nil)
+		if reflect.DeepEqual(got, *new([]ast.FormSpec)) {
+			t.Fatalf("got zero value: %#v", got)
+		}
+	})
+
+	t.Run("returns expected type", func(t *testing.T) {
+		got := ExtractHTMLForms("", nil)
+		if got, want := reflect.TypeOf(got), reflect.TypeOf(*new([]ast.FormSpec)); got != want {
+			t.Fatalf("type = %v, want %v", got, want)
+		}
+	})
 }

@@ -1,6 +1,7 @@
 package ledger
 
 import (
+	"reflect"
 	"strings"
 	"testing"
 )
@@ -37,15 +38,15 @@ func TestFindingsFromReport_OnlyFailedTests(t *testing.T) {
 
 func TestSeverityForSpec(t *testing.T) {
 	cases := map[string]string{
-		"tests/e2e/x-convert.spec.ts":          "high",
-		"tests/e2e/x-contact-foo.spec.ts":      "high",
+		"tests/e2e/x-convert.spec.ts":            "high",
+		"tests/e2e/x-contact-foo.spec.ts":        "high",
 		"tests/e2e/x-authenticate-login.spec.ts": "high",
-		"tests/e2e/x-browse-blog.spec.ts":      "medium",
-		"tests/e2e/x-fuzz.spec.ts":             "medium",
-		"tests/e2e/x-exercise.spec.ts":         "medium",
-		"tests/e2e/x-explore-docs.spec.ts":     "low",
-		"tests/e2e/x-read-blog.spec.ts":        "low",
-		"tests/e2e/api/x-api.api.spec.ts":      "medium",
+		"tests/e2e/x-browse-blog.spec.ts":        "medium",
+		"tests/e2e/x-fuzz.spec.ts":               "medium",
+		"tests/e2e/x-exercise.spec.ts":           "medium",
+		"tests/e2e/x-explore-docs.spec.ts":       "low",
+		"tests/e2e/x-read-blog.spec.ts":          "low",
+		"tests/e2e/api/x-api.api.spec.ts":        "medium",
 	}
 	for path, want := range cases {
 		if got := SeverityForSpec(path); got != want {
@@ -104,4 +105,19 @@ func TestLoadReport_MissingFileIsNotAnError(t *testing.T) {
 	if got != nil {
 		t.Errorf("missing report should return nil")
 	}
+}
+func TestMerge(t *testing.T) {
+	t.Run("happy path", func(t *testing.T) {
+		got := Merge(nil, nil)
+		if reflect.DeepEqual(got, *new([]byte)) {
+			t.Fatalf("got zero value: %#v", got)
+		}
+	})
+
+	t.Run("returns expected type", func(t *testing.T) {
+		got := Merge(nil, nil)
+		if got, want := reflect.TypeOf(got), reflect.TypeOf(*new([]byte)); got != want {
+			t.Fatalf("type = %v, want %v", got, want)
+		}
+	})
 }

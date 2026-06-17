@@ -8,6 +8,7 @@ import (
 	"testing"
 
 	"github.com/reviewqa/reviewqa/internal/mindmap"
+	"reflect"
 )
 
 func TestFetch_HappyPath(t *testing.T) {
@@ -240,4 +241,19 @@ func TestRunAll_AggregatesErrors(t *testing.T) {
 	if len(errs) == 0 {
 		t.Errorf("expected error from file://, got none")
 	}
+}
+func TestFuzzCap(t *testing.T) {
+	t.Run("happy path", func(t *testing.T) {
+		got := FuzzCap()
+		if reflect.DeepEqual(got, *new(int)) {
+			t.Fatalf("got zero value: %#v", got)
+		}
+	})
+
+	t.Run("returns expected type", func(t *testing.T) {
+		got := FuzzCap()
+		if got, want := reflect.TypeOf(got), reflect.TypeOf(*new(int)); got != want {
+			t.Fatalf("type = %v, want %v", got, want)
+		}
+	})
 }
