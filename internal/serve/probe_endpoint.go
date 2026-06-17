@@ -10,8 +10,11 @@ import (
 	"os"
 	"os/exec"
 	"path/filepath"
+	"strconv"
 	"strings"
 	"time"
+
+	"github.com/reviewqa/reviewqa/internal/probe"
 )
 
 // ProbeRequest is the JSON body accepted by POST /api/probe.
@@ -54,7 +57,7 @@ func ProbeStream(ctx context.Context, w http.ResponseWriter, workdir string, req
 		}
 	}
 
-	cwd := probeCwd(workdir)
+	cwd := pickProbeDestination(workdir, u)
 
 	// --local: write rendered files into the workdir, do NOT try to
 	// open a GitHub PR. The serve UI is a local control room, not a
@@ -110,10 +113,11 @@ func ProbeStream(ctx context.Context, w http.ResponseWriter, workdir string, req
 	return exitCode, nil
 }
 
-// probeCwd returns the directory the probe subprocess should run in.
-// When workdir ends in `tests/e2e` (the normal serve layout) we step
-// up two parents so probe re-emits into the same project root.
-// Otherwise the workdir itself is used.
+// probeCwd returns the directory the probe subprocess should run in
+// for an *in-place* re-probe (no URL switch). When workdir ends in
+// `tests/e2e` (the normal serve layout) we step up two parents so
+// probe re-emits into the same project root. Otherwise the workdir
+// itself is used.
 func probeCwd(workdir string) string {
 	abs := filepath.Clean(workdir)
 	parent := filepath.Dir(abs)
@@ -121,6 +125,51 @@ func probeCwd(workdir string) string {
 		return filepath.Dir(parent)
 	}
 	return abs
+}
+
+// pickProbeDestination chooses where the probe subprocess should
+// write. If the URL's brand matches the current workdir's name, we
+// re-probe in place (probeCwd). Otherwise we land in a new sibling
+// dir named after `BrandFromOrigin(url)`, suffixing `-1`, `-2`, etc.
+// if a non-reviewqa dir already squats the slot.
+//
+// Created dirs are mkdir'd here so the probe subprocess has a cwd to
+// run in. The frontend reads the destination from the SSE `start`
+// event so it can /api/switch-project to the new dir on `done`.
+func pickProbeDestination(workdir string, u *url.URL) string {
+	current := probeCwd(workdir)
+	brand := probe.BrandFromHost(u.Host)
+	if brand == "" {
+		return current
+	}
+	// If the current project's name matches the brand, re-probe in place.
+	if strings.EqualFold(filepath.Base(current), brand) ||
+		strings.HasPrefix(strings.ToLower(filepath.Base(current)), brand) {
+		return current
+	}
+	parent := filepath.Dir(current)
+	candidate := filepath.Join(parent, brand)
+	for i := 1; i < 100; i++ {
+		info, err := os.Stat(candidate)
+		if err != nil {
+			// Doesn't exist — create it and use it.
+			if mkerr := os.MkdirAll(candidate, 0o755); mkerr == nil {
+				return candidate
+			}
+			return current
+		}
+		if !info.IsDir() {
+			candidate = filepath.Join(parent, brand+"-"+strconv.Itoa(i))
+			continue
+		}
+		// Exists as a dir. If it already looks like a reviewqa /
+		// Playwright project we re-probe in place; otherwise suffix.
+		if looksLikeReviewqaProject(candidate) {
+			return candidate
+		}
+		candidate = filepath.Join(parent, brand+"-"+strconv.Itoa(i))
+	}
+	return current
 }
 
 // handleProbe is the http handler. Registered by Run as

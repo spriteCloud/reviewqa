@@ -7,6 +7,32 @@ shipped the depth-parity arc (Contract, Integration, Mobile, A11y trio).
 v0.61–v0.62 are the live-execution + composer-validation arc — first
 real-site run + composer destination-DOM enforcement.
 
+## v0.81 — Probe creates a new sibling project
+
+The HOME Probe form used to write generated files into the
+*current* workdir — probing a brand-new URL while serving the
+spritecloud example dumped petstore3 files into spritecloud (we
+saw the contamination in this session). v0.81 fixes that.
+
+- New `pickProbeDestination(workdir, url)` in
+  `internal/serve/probe_endpoint.go`:
+  - If `BrandFromHost(url)` matches the current workdir's name →
+    re-probe in place (existing behaviour).
+  - Otherwise create a sibling dir named after the brand
+    (`petstore3.swagger`, `playwright`, …) under the current
+    workdir's parent.
+  - Collision-safe: if the slot is squatted by a non-reviewqa
+    dir, suffix `-1`, `-2`, … until we find an empty slot or an
+    existing reviewqa project for the same brand (in which case
+    we re-probe it in place).
+- Frontend: SSE `start` event reports the destination workdir;
+  on `done` with `passed: true` the UI auto-POSTs
+  `/api/switch-project` to land in the new project. Sidebar
+  refreshes, toast confirms.
+
+4 new tests cover re-probe-in-place, fresh-brand, squatter
+collision, and existing-sibling re-probe. 578 → 582 passing.
+
 ## v0.80 — Onboard non-reviewqa projects + vanilla Playwright
 
 ### Onboard any Playwright project

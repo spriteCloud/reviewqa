@@ -867,6 +867,7 @@ async function renderHome () {
   const $verdict = el('div', { class: 'home-probe-verdict' })
 
   let activeStream = null
+  let probeDestWorkdir = ''
 
   async function startProbe () {
     const url = ($urlInput.value || '').trim()
@@ -919,17 +920,30 @@ async function renderHome () {
           lastEvent = evt
           if (evt === 'start') {
             $terminal.textContent += `$ ${payload.command}\n`
+            // v0.81: the backend may have picked a NEW sibling dir
+            // (auto-named after the URL's brand). Remember it so we
+            // can switch into the new project once the run finishes.
+            probeDestWorkdir = payload.workdir || ''
           } else if (evt === 'line') {
             $terminal.textContent += payload.text + '\n'
             $terminal.scrollTop = $terminal.scrollHeight
           } else if (evt === 'done') {
             const ok = !!payload.passed
             $verdict.textContent = ok
-              ? `Probe succeeded (exit ${payload.exitCode}) — refreshing project…`
+              ? `Probe succeeded (exit ${payload.exitCode})`
               : `Probe failed (exit ${payload.exitCode})${payload.error ? ' — ' + payload.error : ''}`
             $verdict.className = 'home-probe-verdict ' + (ok ? 'pass' : 'fail')
             toast(ok ? 'Done' : 'Probe failed', ok ? 'ok' : 'fail')
-            if (ok) await reloadProject()
+            if (ok) {
+              const currentWorkdir = (window.__project && window.__project.workdir) || ''
+              // If the probe landed in a different workdir, auto-switch
+              // into it. Otherwise reload-in-place.
+              if (probeDestWorkdir && probeDestWorkdir !== currentWorkdir) {
+                await switchTo(probeDestWorkdir)
+              } else {
+                await reloadProject()
+              }
+            }
           }
         }
       }
