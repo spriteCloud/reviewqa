@@ -62,3 +62,29 @@ func TestRunAll_EmitsIntegrationStubPerOrigin(t *testing.T) {
 		t.Errorf("expected exactly 1 integration-stub spec per origin; got %d", count)
 	}
 }
+
+// v0.57 — four new per-kind integration stubs emit unconditionally
+// per origin alongside the catch-all integration_api_stub from v0.43.
+func TestRunAll_EmitsAllPerKindIntegrationStubs_v057(t *testing.T) {
+	t.Setenv("REVIEWQA_PROBE_ALLOW_LOOPBACK", "1")
+	srv := v043TestServer(t)
+	defer srv.Close()
+
+	items, _ := RunAll(context.Background(), []string{srv.URL + "/"})
+	counts := map[plan.Template]int{
+		plan.TmplPlaywrightIntegrationDBStub:    0,
+		plan.TmplPlaywrightIntegrationCacheStub: 0,
+		plan.TmplPlaywrightIntegrationObsStub:   0,
+		plan.TmplPlaywrightIntegrationAuthStub:  0,
+	}
+	for _, it := range items {
+		if _, tracked := counts[it.Template]; tracked {
+			counts[it.Template]++
+		}
+	}
+	for tmpl, got := range counts {
+		if got != 1 {
+			t.Errorf("expected exactly 1 %s per origin; got %d", tmpl, got)
+		}
+	}
+}
