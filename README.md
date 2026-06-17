@@ -25,10 +25,12 @@ runnable Playwright + Gherkin project. Re-emit on every release via
 
 ## Tailor the generated suite locally
 
-`reviewqa serve` opens a local browser UI for browsing the Features,
-Scenarios, and stakeholder docs of an existing project. Read-only in
-v0.65; editing, locator suggestion, and AI-composed step bindings ship
-in follow-up releases.
+`reviewqa serve` opens a local browser UI for browsing AND editing the
+Features, Scenarios, and stakeholder docs of an existing project. As of
+v0.66 you can delete, edit, and append Scenarios from the UI; each edit
+is backed up under `tests/e2e/.reviewqa-history/`. Locator suggestion
+from the live DOM and AI-composed step bindings ship in follow-up
+releases.
 
 ```bash
 reviewqa serve --workdir ./my-generated-suite
@@ -244,4 +246,4 @@ By submitting a pull request you agree to the
 [Contributor License Agreement](./CLA.md). The `cla-assistant` check on PRs
 will prompt you to sign if you haven't.
 
-For the release-by-release history (v0.19 → v0.65), see [`CHANGELOG.md`](./CHANGELOG.md).
+For the release-by-release history (v0.19 → v0.66), see [`CHANGELOG.md`](./CHANGELOG.md).
