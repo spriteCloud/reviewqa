@@ -202,6 +202,10 @@ func (extractor) Extract(file string, content []byte) ([]ast.Symbol, []ast.Locat
 		inputs := extractFormInputs(file, content)
 		annotateComponents(syms, anchors, inputs, content)
 	}
+	// v0.26 diff-mode aspect symbols — DTO interfaces, classes with
+	// constructors, and state stores. Routed to aspect templates via
+	// plan.fanOutAspects.
+	syms = append(syms, extractV026Symbols(file, content)...)
 	return syms, anchors
 }
 

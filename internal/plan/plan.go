@@ -254,31 +254,46 @@ func Build(files []diff.File, layout Layout) []Item {
 	return items
 }
 
-// fanOutAspects emits the v0.24 aspect items for a Symbol — property,
-// validator, scheduled job / event handler / email — when the
-// extractor's diff-mode signals are set. Each becomes a sibling test
-// file under tests/<aspect>/<stem>.<aspect>.test.<ext>.
+// fanOutAspects emits the diff-mode aspect items for a Symbol —
+// property, validator, scheduled job / event handler / email, plus
+// the v0.26 additions: serialization round-trip for DTOs, constructor
+// tests for classes, store tests for Redux/Pinia/Zustand/Vuex stores.
+// Each becomes a sibling test file under tests/<aspect>/<stem>.<aspect>.test.<ext>.
 func fanOutAspects(s ast.Symbol, l Layout) []Item {
 	var out []Item
 	stem := stemOf(s.File)
 	if s.IsPure && (s.Kind == ast.KindFunction || s.Kind == ast.KindMethod) {
 		out = append(out, aspectItem(s, TmplJestProperty,
-			"tests/property/"+stem+".property.test.ts"))
+			"tests/property/"+stem+"-"+strings.ToLower(s.Name)+".property.test.ts"))
 	}
 	if s.IsValidator {
 		out = append(out, aspectItem(s, TmplJestValidatorPos,
-			"tests/validator/"+stem+".validator.test.ts"))
+			"tests/validator/"+stem+"-"+strings.ToLower(s.Name)+".validator.test.ts"))
+	}
+	if s.IsDTO {
+		out = append(out, aspectItem(s, TmplJestSerialization,
+			"tests/serialization/"+stem+"-"+strings.ToLower(s.Name)+".serialization.test.ts"))
+	}
+	if s.StoreKind != "" && len(s.StoreActions) > 0 {
+		out = append(out, aspectItem(s, TmplJestStore,
+			"tests/store/"+stem+"-"+strings.ToLower(s.Name)+".store.test.ts"))
+	}
+	// Class with a constructor → constructor test. Detected via
+	// FrameworkHint="class" stamped by the v0.26 extractor.
+	if s.FrameworkHint == "class" && len(s.Params) > 0 {
+		out = append(out, aspectItem(s, TmplJestConstructor,
+			"tests/constructor/"+stem+"-"+strings.ToLower(s.Name)+".constructor.test.ts"))
 	}
 	switch s.JobKind {
 	case "cron":
 		out = append(out, aspectItem(s, TmplScheduledJob,
-			"tests/jobs/"+stem+".cron.test.ts"))
+			"tests/jobs/"+stem+"-"+strings.ToLower(s.Name)+".cron.test.ts"))
 	case "event":
 		out = append(out, aspectItem(s, TmplEventHandler,
-			"tests/events/"+stem+".event.test.ts"))
+			"tests/events/"+stem+"-"+strings.ToLower(s.Name)+".event.test.ts"))
 	case "email":
 		out = append(out, aspectItem(s, TmplEmailTemplate,
-			"tests/email/"+stem+".email.test.ts"))
+			"tests/email/"+stem+"-"+strings.ToLower(s.Name)+".email.test.ts"))
 	}
 	return out
 }
