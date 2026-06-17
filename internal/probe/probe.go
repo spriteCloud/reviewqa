@@ -373,6 +373,12 @@ func probeOneOrigin(ctx context.Context, u string, coverage CoverageMode, filter
 	fuzzItems := emitFuzzItems(m, u, coverage.FuzzCap())
 	catalogue := buildCatalogue(u, m, journeyItems, fuzzItems)
 	catalogue.CoverageMode = string(coverage)
+	// v0.38: journey items reference the suite-level catalogue so the
+	// pw_feature.tmpl can gate stateful / cross-journey families on
+	// "does this suite have an auth or convert journey?"
+	for i := range journeyItems {
+		journeyItems[i].Catalogue = catalogue
+	}
 
 	var items []plan.Item
 	items = append(items, companionItems(u, m, catalogue)...)

@@ -17,7 +17,7 @@ Feature: WwwSpritecloudCom — read journey
   So that the page delivers on its user goal
 
   @journey:read @priority:nice-to-have @smoke
-  Scenario: Visit the terminal page directly and verify correct rendering
+  Scenario: read journey reaches its terminal page
     Given I open the landing page
     And the page title contains "spriteCloud - Test your software, not your reputation!"
     And the main heading reads "Test your software, not your reputation."
@@ -26,32 +26,43 @@ Feature: WwwSpritecloudCom — read journey
     And the page title contains "Book - Performance Test"
 
   @journey:read @priority:nice-to-have @kind:resume
-  Scenario: Directly open the terminal page URL and confirm it loads properly
+  Scenario: read — deep-link to the terminal page renders correctly
     Given I open the page "/book-performance-test"
     Then I see the heading "Performance Test"
 
   @journey:read @priority:nice-to-have @kind:back-button
-  Scenario: Navigate to the terminal page, then use browser back to confirm return to landing
+  Scenario: read — back button after navigation returns to landing
     Given I open the landing page
     When I click the link to "/book-performance-test"
     When I go back in the browser history
     Then the main heading reads "Test your software, not your reputation."
+
+  @journey:read @priority:nice-to-have @kind:cross-journey
+  Scenario: read — switching to landing and back leaves no broken state
+    Given I open the landing page
+    When I navigate directly to "/"
+    And I go back in the browser history
+    Then no error message is shown in the form region
 
   # ───────────────────────────────────────────────────────────────
   # LLM-composed scenarios (model: qwen3-coder-next:latest)
   # Filter out with `--grep-invert @llm-composed` for stricter CI runs.
   # ───────────────────────────────────────────────────────────────
 
-  @journey:read @priority:nice-to-have @llm-composed @kind:edge @model:qwen3-coder-next-latest
-  Scenario: Scroll to the test automation section and verify it contains at least one item
+  @journey:read @priority:nice-to-have @llm-composed @kind:variant @model:qwen3-coder-next-latest
+  Scenario: visit case studies page
     Given I am on the landing page
-    When I scroll to the bottom of the page
-    Then the page has at least 1 items
+    When I click the link to "/case-studies"
+    Then the page title contains "Case Studies"
+
+  @journey:read @priority:nice-to-have @llm-composed @kind:variant @model:qwen3-coder-next-latest
+  Scenario: navigate to blog via guides link
+    Given I open the landing page
+    When I click the link to "/guides"
+    Then the main heading reads "Guides"
 
   @journey:read @priority:nice-to-have @llm-composed @kind:edge @model:qwen3-coder-next-latest
-  Scenario: Open and close the navigation menu without errors
+  Scenario: access contact page from footer
     Given I am on the landing page
-    When I open the menu
-    Then no error message is shown in the form region
-    When I close the menu
-    Then I remain on the same page
+    When I click the link to "/contact"
+    Then the page title contains "Contact"

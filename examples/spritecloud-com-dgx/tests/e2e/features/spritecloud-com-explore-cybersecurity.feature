@@ -17,7 +17,7 @@ Feature: WwwSpritecloudCom — explore journey
   So that the page delivers on its user goal
 
   @journey:explore @priority:nice-to-have @smoke
-  Scenario: The explore journey successfully reaches its final page
+  Scenario: Explore flow reaches target page
     Given I open the landing page
     And the page title contains "spriteCloud - Test your software, not your reputation!"
     And the main heading reads "Test your software, not your reputation."
@@ -26,31 +26,43 @@ Feature: WwwSpritecloudCom — explore journey
     And the page title contains "spriteCloud - Penetration Testing"
 
   @journey:explore @priority:nice-to-have @kind:resume
-  Scenario: Deep-linking directly to the cybersecurity page displays it correctly
+  Scenario: Deep-linking to cybersecurity page works
     Given I open the page "/cybersecurity"
     Then I see the heading "Fully Tailored Cybersecurity."
 
   @journey:explore @priority:nice-to-have @kind:back-button
-  Scenario: Using the browser back button after navigation returns to the landing page
+  Scenario: Browser back button returns to homepage
     Given I open the landing page
     When I click the link to "/cybersecurity"
     When I go back in the browser history
     Then the main heading reads "Test your software, not your reputation."
+
+  @journey:explore @priority:nice-to-have @kind:cross-journey
+  Scenario: Navigating to homepage and back works without errors
+    Given I open the landing page
+    When I navigate directly to "/"
+    And I go back in the browser history
+    Then no error message is shown in the form region
 
   # ───────────────────────────────────────────────────────────────
   # LLM-composed scenarios (model: qwen3-coder-next:latest)
   # Filter out with `--grep-invert @llm-composed` for stricter CI runs.
   # ───────────────────────────────────────────────────────────────
 
-  @journey:explore @priority:nice-to-have @llm-composed @kind:variant @model:qwen3-coder-next-latest
-  Scenario: Navigating to the Test Automation page works as expected
-    Given I am on the landing page
-    When I click the link to "/test-automation"
-    Then the URL contains "/test-automation"
+  @journey:explore @priority:nice-to-have @llm-composed @kind:happy @model:qwen3-coder-next-latest
+  Scenario: Landing page loads with correct title and heading
+    Given I open the landing page
+    Then the page title contains "spriteCloud"
     Then the main heading reads "Test your software, not your reputation."
 
   @journey:explore @priority:nice-to-have @llm-composed @kind:variant @model:qwen3-coder-next-latest
-  Scenario: Visiting the Case Studies page directly loads content correctly
-    Given I open the page "/case-studies"
-    Then the URL contains "/case-studies"
-    Then the page has at least 1 items
+  Scenario: Top navigation to test automation page works
+    Given I am on the landing page
+    When I click the link to "/test-automation"
+    Then the URL contains "/test-automation"
+
+  @journey:explore @priority:nice-to-have @llm-composed @kind:edge @model:qwen3-coder-next-latest
+  Scenario: Footer appears at page bottom
+    Given I am on the landing page
+    When I scroll to the bottom of the page
+    Then I see the heading "spriteCloud"

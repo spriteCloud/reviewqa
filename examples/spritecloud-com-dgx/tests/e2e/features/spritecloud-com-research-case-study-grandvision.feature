@@ -26,12 +26,12 @@ Feature: WwwSpritecloudCom — research journey
     And the page title contains "Case Study - GrandVision"
 
   @journey:research @priority:standard @kind:resume
-  Scenario: research — deep-link to the final page renders correctly
+  Scenario: research — deep-linking to the final page renders correctly
     Given I open the page "/case-study-grandvision"
     Then I see the heading "GrandVision"
 
   @journey:research @priority:standard @kind:back-button
-  Scenario: research — back button after navigation returns to landing page
+  Scenario: research — using the back button after navigation returns to the landing page
     Given I open the landing page
     When I click the link to "/case-study-grandvision"
     When I go back in the browser history
@@ -42,22 +42,10 @@ Feature: WwwSpritecloudCom — research journey
   # Filter out with `--grep-invert @llm-composed` for stricter CI runs.
   # ───────────────────────────────────────────────────────────────
 
-  @journey:research @priority:standard @llm-composed @kind:variant @model:qwen3-coder-next-latest
-  Scenario: Verify contact link navigation works
-    Given I am on the landing page
-    When I click the link to "/contact"
-    Then the URL contains "/contact"
-    Then the page title contains "Contact"
-
   @journey:research @priority:standard @llm-composed @kind:edge @model:qwen3-coder-next-latest
-  Scenario: Check guides navigation from footer works
-    Given I open the landing page
-    When I click the link to "/guides"
-    Then the URL contains "/guides"
-    Then I see the heading "Guides"
-
-  @journey:research @priority:standard @llm-composed @kind:edge @model:qwen3-coder-next-latest
-  Scenario: Scroll to view case studies section
+  Scenario: User opens and closes the navigation menu
     Given I am on the landing page
-    When I scroll to the bottom of the page
-    Then I scroll into view of the "Case Studies" element
+    When I open the menu
+    Then no error message is shown in the form region
+    When I close the menu
+    Then I remain on the same page

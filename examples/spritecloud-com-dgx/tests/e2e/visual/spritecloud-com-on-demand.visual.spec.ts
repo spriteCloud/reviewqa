@@ -21,9 +21,9 @@ const VIEWPORTS = [
 ] as const
 
 test.describe.configure({ mode: 'parallel' })
-test.describe('WwwSpritecloud.com/on-demand — visual regression test', () => {
+test.describe('www.spritecloud.com/on-demand visual regression test', () => {
   for (const vp of VIEWPORTS) {
-    test(`page matches baseline screenshot (${vp.name})`, async ({ page }) => {
+    test(`@kind:visual @smoke page matches baseline (${vp.name})`, async ({ page }) => {
       await page.setViewportSize({ width: vp.width, height: vp.height })
       await page.goto('/on-demand')
       await page.waitForLoadState('networkidle').catch(() => {})

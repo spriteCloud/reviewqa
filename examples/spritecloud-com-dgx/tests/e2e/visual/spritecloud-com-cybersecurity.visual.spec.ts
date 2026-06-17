@@ -21,9 +21,9 @@ const VIEWPORTS = [
 ] as const
 
 test.describe.configure({ mode: 'parallel' })
-test.describe('WwwSpritecloudCom — visual regression on cybersecurity page', () => {
+test.describe('WwwSpritecloudCom — visual regression for https://www.spritecloud.com/cybersecurity', () => {
   for (const vp of VIEWPORTS) {
-    test(`@kind:visual @smoke: page screenshot matches baseline (${vp.name})`, async ({ page }) => {
+    test(`@kind:visual @smoke: page matches baseline (${vp.name})`, async ({ page }) => {
       await page.setViewportSize({ width: vp.width, height: vp.height })
       await page.goto('/cybersecurity')
       await page.waitForLoadState('networkidle').catch(() => {})

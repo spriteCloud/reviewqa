@@ -17,7 +17,7 @@ Feature: WwwSpritecloudCom — read journey
   So that the page delivers on its user goal
 
   @journey:read @priority:nice-to-have @smoke
-  Scenario: read journey reaches its destination page
+  Scenario: read journey reaches the final page
     Given I open the landing page
     And the page title contains "spriteCloud - Test your software, not your reputation!"
     And the main heading reads "Test your software, not your reputation."
@@ -26,13 +26,41 @@ Feature: WwwSpritecloudCom — read journey
     And the page title contains "Style Guide - Healix Webflow website HTML template"
 
   @journey:read @priority:nice-to-have @kind:resume
-  Scenario: read — deep-link to the destination page renders correctly
+  Scenario: deep-link to the final page renders correctly
     Given I open the page "/style-guide"
     Then I see the heading "Aa"
 
   @journey:read @priority:nice-to-have @kind:back-button
-  Scenario: read — back button returns to landing page after navigation
+  Scenario: back button after navigation returns to the landing page
     Given I open the landing page
     When I click the link to "/style-guide"
     When I go back in the browser history
     Then the main heading reads "Test your software, not your reputation."
+
+  @journey:read @priority:nice-to-have @kind:cross-journey
+  Scenario: switching to landing and back leaves no broken state
+    Given I open the landing page
+    When I navigate directly to "/"
+    And I go back in the browser history
+    Then no error message is shown in the form region
+
+  # ───────────────────────────────────────────────────────────────
+  # LLM-composed scenarios (model: qwen3-coder-next:latest)
+  # Filter out with `--grep-invert @llm-composed` for stricter CI runs.
+  # ───────────────────────────────────────────────────────────────
+
+  @journey:read @priority:nice-to-have @llm-composed @kind:variant @model:qwen3-coder-next-latest
+  Scenario: verify H1 heading on the landing page
+    Given I open the landing page
+    Then the main heading reads "Test your software, not your reputation."
+
+  @journey:read @priority:nice-to-have @llm-composed @kind:variant @model:qwen3-coder-next-latest
+  Scenario: verify at least 6 service category links are present
+    Given I open the landing page
+    Then the page has at least 6 items
+
+  @journey:read @priority:nice-to-have @llm-composed @kind:edge @model:qwen3-coder-next-latest
+  Scenario: scroll to the bottom and confirm footer elements are present
+    Given I open the landing page
+    When I scroll to the bottom of the page
+    Then I scroll into view of the "spriteCloud - Test your software, not your reputation." element

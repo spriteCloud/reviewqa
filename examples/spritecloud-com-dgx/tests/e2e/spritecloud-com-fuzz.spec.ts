@@ -16,22 +16,24 @@
 import { test, expect } from './_fixtures'
 
 test.describe.configure({ mode: 'parallel' })
-test.describe('WwwSpritecloudCom — fuzz testing: negative/edge-case input handling', () => {
+test.describe('WwwSpritecloudCom — fuzz testing with negative/edge-case inputs', () => {
   test.beforeEach(async ({ page }) => {
     await page.goto('/')
   })
 
-  test('@fuzz @negative email input field handles edge-case payloads', async ({ page }) => {
+  test('@fuzz @negative email field accepts edge-case inputs without crashing', async ({ page }) => {
     const field = page.getByPlaceholder('Your email address').first()
-    // Field accepts empty value (validation happens on submit only).
+    // Empty value: should be accepted by the field itself (validation
+    // surfaces only on submit).
     await field.fill('')
     await expect(field).toHaveValue('')
-    // Field handles very long input (5000 chars) gracefully — no crash or hang.
+    // Very long input (5000 chars): field should not crash or hang.
     const long = 'x'.repeat(5000)
     await field.fill(long)
     const persisted = await field.inputValue()
     expect(persisted.length).toBeGreaterThan(0)
-    // Field safely handles HTML Injection attempt — no script execution.
+    // Special-character payload: HTML-injection shape. Must not execute
+    // (handled by the pageErrors fixture in _fixtures.ts).
     await field.fill('\'><script>alert(1)</script>')
     await expect(field).toBeAttached()
   })
