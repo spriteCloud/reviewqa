@@ -7,6 +7,41 @@ shipped the depth-parity arc (Contract, Integration, Mobile, A11y trio).
 v0.61–v0.62 are the live-execution + composer-validation arc — first
 real-site run + composer destination-DOM enforcement.
 
+## v0.65 — reviewqa serve (Phase A: read-only project viewer)
+
+New `reviewqa serve` subcommand. Opens a localhost HTTP server (default
+`127.0.0.1:8765`) that loads an existing reviewqa-generated project and
+renders a read-only browser UI for its Features, Scenarios, and
+stakeholder docs. Auto-opens the user's default browser (skip with
+`--no-browser`).
+
+This is **Phase A** of the local-UI roadmap. Read-only — no mutations.
+Phase B (Scenario CRUD), Phase C (locator suggestion from live DOM),
+and Phase D (AI-composed step bindings from hand-written Gherkin) ship
+as follow-up PRs.
+
+- New package `internal/serve/` with hand-rolled Gherkin parser (no
+  cucumber-go dependency), TypeScript step-defs regex parser, and an
+  HTTP handler exposing `GET /api/project`, `GET /api/feature`,
+  `GET /api/steps`, `GET /api/doc`. Localhost-only by request-origin
+  enforcement; `--addr` overridable but the default is loopback.
+- New `cmd/reviewqa/serve.go` wires the subcommand with `--workdir`,
+  `--addr`, `--no-browser` flags.
+- Frontend lives under `internal/serve/web/` and is embedded via
+  `//go:embed`. Plain HTML + CSS + JS — no build step. CSS variables
+  mirror the public site (copper / deep-water / ink + Sora / Inter /
+  Fira Code) so the local UI looks native next to the marketing pages.
+- Path-traversal defenses on `GET /api/feature` and `GET /api/doc`
+  (rooted at workdir, `../` escape rejected with 400).
+- 14 new tests in `internal/serve/` (Gherkin parser × 5, step-defs
+  parser × 2, HTTP handler × 5, including path-traversal rejection).
+- `cmd/reviewqa/main.go` version constant bumped 0.64 → 0.65.
+
+Usage:
+```bash
+reviewqa serve --workdir ./examples/playwright-dev
+```
+
 ## v0.64 — re-emit examples + drop version-caveat prose + AI badge
 
 User feedback after v0.63: the "Output from the v0.59 binary — templates

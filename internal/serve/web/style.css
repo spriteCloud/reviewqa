@@ -1,0 +1,220 @@
+/* reviewqa serve — local viewer style. Brand variables copied from
+   web/index.html so the local UI looks native next to the public site.
+   Future website refreshes that change the palette should mirror the
+   change here. */
+
+:root {
+  --deep-water:  #1B365D;
+  --clear-blue:  #4B8BBE;
+  --copper:      #C0805A;
+  --copper-soft: rgba(192, 128, 90, 0.10);
+  --ink:         #0F1117;
+  --charcoal:    #1A1D26;
+  --graphite:    #2D3748;
+  --warm-white:  #FAFAF7;
+  --mist:        #8899AA;
+  --border-warm: #E8E6E1;
+  --white:       #FFFFFF;
+}
+
+* { box-sizing: border-box; }
+
+html, body {
+  margin: 0;
+  padding: 0;
+  height: 100%;
+  background: var(--warm-white);
+  color: var(--graphite);
+  font: 14px/1.55 'Inter', system-ui, -apple-system, sans-serif;
+  -webkit-font-smoothing: antialiased;
+}
+
+h1, h2, h3 { font-family: 'Sora', system-ui, sans-serif; color: var(--deep-water); margin: 0 0 12px; }
+code, pre { font-family: 'Fira Code', ui-monospace, monospace; font-size: 13px; }
+a { color: var(--clear-blue); text-decoration: none; }
+a:hover { text-decoration: underline; }
+
+.topbar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 12px 24px;
+  background: var(--ink);
+  color: var(--warm-white);
+  border-bottom: 1px solid #000;
+}
+.brand { display: flex; align-items: center; gap: 10px; font-size: 13px; }
+.brand-mark {
+  font-family: 'Sora', sans-serif;
+  font-weight: 700;
+  letter-spacing: 0.02em;
+  color: var(--warm-white);
+}
+.brand-by { color: var(--mist); }
+.brand-divider { color: var(--mist); }
+.brand-project { color: var(--copper); font-family: 'Fira Code', monospace; font-size: 12px; }
+.brand-badge {
+  font-family: 'Fira Code', monospace;
+  font-size: 10px;
+  text-transform: uppercase;
+  letter-spacing: 0.12em;
+  color: var(--copper);
+  border: 1px solid var(--copper);
+  padding: 4px 10px;
+  border-radius: 999px;
+}
+
+.layout {
+  display: grid;
+  grid-template-columns: 280px 1fr;
+  height: calc(100vh - 49px);
+}
+
+.sidebar {
+  border-right: 1px solid var(--border-warm);
+  background: var(--white);
+  padding: 18px 16px;
+  overflow-y: auto;
+}
+.sidebar-heading {
+  font-family: 'Fira Code', monospace;
+  font-size: 10px;
+  text-transform: uppercase;
+  letter-spacing: 0.14em;
+  color: var(--copper);
+  margin: 18px 0 8px;
+}
+.sidebar-heading:first-child { margin-top: 0; }
+
+.feature-list, .doc-list { list-style: none; margin: 0; padding: 0; }
+.feature-list li, .doc-list li {
+  padding: 8px 10px;
+  border-radius: 6px;
+  cursor: pointer;
+  font-size: 13px;
+  color: var(--deep-water);
+  line-height: 1.35;
+}
+.feature-list li:hover, .doc-list li:hover { background: var(--copper-soft); }
+.feature-list li.active, .doc-list li.active { background: var(--copper-soft); color: var(--copper); font-weight: 500; }
+.feature-list li .meta {
+  display: block;
+  font-family: 'Fira Code', monospace;
+  font-size: 10px;
+  color: var(--mist);
+  margin-top: 2px;
+}
+.feature-list li.empty, .doc-list li.empty { color: var(--mist); font-style: italic; cursor: default; }
+.feature-list li.empty:hover, .doc-list li.empty:hover { background: transparent; }
+
+.content {
+  padding: 24px 32px;
+  overflow-y: auto;
+}
+.placeholder { color: var(--mist); max-width: 540px; }
+.placeholder h1 { color: var(--deep-water); }
+
+.feature-header { margin-bottom: 24px; padding-bottom: 16px; border-bottom: 1px solid var(--border-warm); }
+.feature-header h1 { font-size: 24px; margin-bottom: 6px; }
+.feature-header .path {
+  font-family: 'Fira Code', monospace;
+  font-size: 11px;
+  color: var(--mist);
+  margin-bottom: 10px;
+}
+.feature-header .narrative {
+  color: var(--graphite);
+  white-space: pre-wrap;
+  font-size: 13px;
+  margin-top: 8px;
+}
+
+.tag-row { display: flex; flex-wrap: wrap; gap: 6px; margin: 6px 0 0; }
+.tag {
+  font-family: 'Fira Code', monospace;
+  font-size: 11px;
+  color: var(--copper);
+  background: var(--copper-soft);
+  padding: 2px 8px;
+  border-radius: 999px;
+}
+
+.scenario {
+  background: var(--white);
+  border: 1px solid var(--border-warm);
+  border-radius: 8px;
+  padding: 16px 20px;
+  margin-bottom: 14px;
+}
+.scenario .scenario-name {
+  font-family: 'Sora', sans-serif;
+  font-weight: 600;
+  color: var(--deep-water);
+  font-size: 15px;
+  margin-bottom: 8px;
+}
+.scenario .steps { margin: 0; padding: 0; list-style: none; }
+.scenario .steps li {
+  display: flex;
+  gap: 10px;
+  padding: 4px 0;
+  font-size: 13px;
+  line-height: 1.55;
+}
+.kw {
+  font-family: 'Fira Code', monospace;
+  font-size: 11px;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  flex: 0 0 56px;
+  text-align: right;
+  padding-top: 2px;
+}
+.kw-Given, .kw-When, .kw-Then { color: var(--deep-water); font-weight: 600; }
+.kw-And, .kw-But { color: var(--mist); font-weight: 500; }
+.text { color: var(--graphite); }
+.text .placeholder-arg { color: var(--copper); font-weight: 500; }
+
+.raw-block {
+  background: var(--charcoal);
+  color: var(--warm-white);
+  border-radius: 8px;
+  padding: 16px 18px;
+  font-family: 'Fira Code', monospace;
+  font-size: 12px;
+  line-height: 1.55;
+  white-space: pre;
+  overflow-x: auto;
+}
+
+.doc-content { max-width: 820px; }
+.doc-content h1, .doc-content h2, .doc-content h3 { margin-top: 24px; }
+.doc-content table { border-collapse: collapse; width: 100%; margin: 12px 0; font-size: 13px; }
+.doc-content th, .doc-content td { border: 1px solid var(--border-warm); padding: 6px 10px; text-align: left; vertical-align: top; }
+.doc-content th { background: var(--copper-soft); color: var(--copper); font-family: 'Fira Code', monospace; font-size: 11px; text-transform: uppercase; }
+.doc-content code { background: var(--copper-soft); padding: 1px 5px; border-radius: 4px; color: var(--deep-water); }
+
+.tab-row { display: flex; gap: 8px; margin-bottom: 16px; }
+.tab {
+  font-family: 'Fira Code', monospace;
+  font-size: 11px;
+  text-transform: uppercase;
+  letter-spacing: 0.10em;
+  padding: 6px 12px;
+  border: 1px solid var(--border-warm);
+  border-radius: 999px;
+  color: var(--mist);
+  cursor: pointer;
+  background: var(--white);
+}
+.tab:hover { color: var(--copper); border-color: var(--copper); }
+.tab.active { color: var(--copper); border-color: var(--copper); background: var(--copper-soft); }
+
+.error {
+  border-left: 3px solid #c0392b;
+  background: rgba(192, 57, 43, 0.06);
+  padding: 12px 16px;
+  border-radius: 6px;
+  color: #c0392b;
+  font-size: 13px;
+}
