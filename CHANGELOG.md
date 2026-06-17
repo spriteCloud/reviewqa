@@ -7,6 +7,58 @@ shipped the depth-parity arc (Contract, Integration, Mobile, A11y trio).
 v0.61–v0.62 are the live-execution + composer-validation arc — first
 real-site run + composer destination-DOM enforcement.
 
+## v0.70 — per-Scenario chat for non-technical maintenance
+
+A non-technical reviewer can now talk to the configured LLM about a
+SPECIFIC Scenario — "change the form to contact, not login"; "add a
+step asserting the success toast appears"; "the page now redirects
+to /thanks, update the assertion" — and Apply the assistant's
+proposed update with one click. The conversation persists across
+page reloads in `localStorage`, keyed by feature path + Scenario name.
+
+Backend
+- `internal/serve/chat.go` — new `Chat(ctx, ChatInput)` orchestrates
+  the LLM round-trip. System prompt instructs the model to act as a
+  Scenario maintenance helper, output a 1-3 sentence conversational
+  reply, and emit the full updated block after a `---SCENARIO---`
+  sentinel ONLY when an edit is implied.
+- `parseChatResponse` splits the reply, strips backtick fences,
+  reuses `extractScenarioBlock` to clean any LLM chatter, and
+  validates the proposed block via `validateScenarioBlock`. Invalid
+  proposals surface as `{valid: false, notes: "..."}` so the UI can
+  render the block read-only and the user can edit-then-Apply.
+- Stateless backend — the client owns the conversation history.
+  Bounded to ~20 turns server-side to keep token use sane.
+- Best-effort DOM grounding: when `url` is set, `FetchAndParseDOM`
+  feeds landmarks into the prompt so the LLM can reference real
+  headings, links, and form fields.
+- New endpoints: `POST /api/scenario-chat` and `GET /api/llm-status`
+  (the UI uses the latter to decide whether to enable the Chat
+  button at page load).
+
+Frontend
+- 💬 Chat button on every Scenario card. Disabled with tooltip when
+  REVIEWQA_LLM is unset.
+- Right-side drawer (440px) instead of a modal so the Scenario card
+  remains visible while chatting. Slide-in animation.
+- Bubble UI: copper user bubbles right, white assistant bubbles left.
+  Thinking spinner while the LLM responds.
+- When the assistant returns a `proposed` block, a copper-bordered
+  card appears below the last bubble with the proposed Gherkin
+  preview + an Apply button (calls the existing v0.66 PATCH
+  endpoint) + a Dismiss button.
+- Cmd/Ctrl-Enter sends; Clear button purges history; Close just
+  shuts the drawer (history is kept).
+
+Tests: 5 new in `internal/serve/chat_test.go` (response-only,
+proposed-block extraction, backtick-fence stripping, empty-input
+rejection, history inclusion). Suite 544 / 544 green.
+
+Live-verified against the spritecloud-com-dgx example with REVIEWQA_LLM
+pointed at the DGX (`qwen3-coder-next:latest`): asking "add a step to
+assert the page title also contains Contact" round-trips a valid
+updated Scenario in 8-12s.
+
 ## v0.69 — reviewqa serve UI branding parity
 
 User feedback after the v0.65–v0.68 serve arc: the local UI shipped
