@@ -81,7 +81,7 @@ function renderFeature (feature, gherkin) {
       el('div', { class: 'scenario-head' },
         el('div', { class: 'scenario-name' }, sc.name || '(unnamed)'),
         el('div', { class: 'scenario-actions' },
-          el('button', { class: 'btn-ghost', onclick: () => openEditor(feature.path, sc.name, block) }, 'Edit'),
+          el('button', { class: 'btn-ghost', onclick: () => openEditor(feature.path, sc.name, block, feature) }, 'Edit'),
           el('button', { class: 'btn-ghost danger', onclick: () => deleteScenario(feature.path, sc.name) }, 'Delete'),
         ),
       ),
@@ -99,7 +99,7 @@ function renderFeature (feature, gherkin) {
     $content.appendChild(node)
   }
 
-  const addBtn = el('button', { class: 'btn-add', onclick: () => openEditor(feature.path, null, defaultNewScenario()) }, '+ New Scenario')
+  const addBtn = el('button', { class: 'btn-add', onclick: () => openEditor(feature.path, null, defaultNewScenario(), feature) }, '+ New Scenario')
   $content.appendChild(addBtn)
 }
 
@@ -132,11 +132,37 @@ function defaultNewScenario () {
   ].join('\n')
 }
 
-function openEditor (featurePath, currentName, initialGherkin) {
+function openEditor (featurePath, currentName, initialGherkin, featureCtx) {
   const overlay = el('div', { class: 'modal-overlay' })
   const validateMsg = el('div', { class: 'validate-msg' })
   const textarea = el('textarea', { class: 'editor', spellcheck: 'false' })
   textarea.value = initialGherkin
+  const composeUrl = el('input', { class: 'locator-url', placeholder: 'Destination URL — required for AI compose' })
+  if (featureCtx && featureCtx.narrative) {
+    const m = featureCtx.narrative.match(/https?:\/\/\S+/)
+    if (m) composeUrl.value = m[0].replace(/[)\.,;]$/, '')
+  }
+  const composeStatus = el('span', { class: 'meta' })
+
+  async function doCompose () {
+    const url = composeUrl.value.trim()
+    if (!url) {
+      composeStatus.textContent = 'pick a destination URL first'
+      return
+    }
+    composeStatus.textContent = 'composing…'
+    try {
+      const res = await fetchJSON('/api/compose-steps', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ gherkin: textarea.value, url }),
+      })
+      textarea.value = res.gherkin
+      composeStatus.textContent = res.model ? `composed via ${res.model}` : (res.notes || 'composed (deterministic)')
+    } catch (e) {
+      composeStatus.textContent = 'compose failed: ' + e.message
+    }
+  }
 
   async function doValidate () {
     try {
@@ -179,6 +205,12 @@ function openEditor (featurePath, currentName, initialGherkin) {
   const modal = el('div', { class: 'modal' },
     el('h2', {}, currentName ? `Edit "${currentName}"` : 'New Scenario'),
     textarea,
+    el('div', { class: 'compose-row' },
+      el('div', { class: 'compose-row-label' }, '🤖 AI compose'),
+      composeUrl,
+      el('button', { class: 'btn-ghost', onclick: doCompose }, 'Compose'),
+      composeStatus,
+    ),
     validateMsg,
     el('div', { class: 'modal-actions' },
       el('button', { class: 'btn-ghost', onclick: () => overlay.remove() }, 'Cancel'),

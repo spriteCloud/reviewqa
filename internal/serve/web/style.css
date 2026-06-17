@@ -377,3 +377,28 @@ a:hover { text-decoration: underline; }
 }
 .copied { color: #2e7d32; font-family: 'Fira Code', monospace; font-size: 11px; }
 .meta { color: var(--mist); font-size: 12px; font-family: 'Fira Code', monospace; }
+
+.compose-row {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 8px 10px;
+  background: var(--copper-soft);
+  border-radius: 6px;
+  border: 1px solid var(--border-warm);
+}
+.compose-row .locator-url {
+  flex: 1;
+  font-family: 'Fira Code', monospace;
+  font-size: 12px;
+  padding: 6px 10px;
+  border: 1px solid var(--border-warm);
+  border-radius: 6px;
+  background: var(--white);
+}
+.compose-row-label {
+  font-family: 'Fira Code', monospace;
+  font-size: 11px;
+  color: var(--copper);
+  white-space: nowrap;
+}
