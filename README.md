@@ -18,12 +18,10 @@ broken locators when they drift.
 
 ## See it on real sites
 
-Live output from the **v0.59 binary** is committed under [`examples/`](./examples/) —
-the deterministic templates and the LLM composer remain current through
-**v0.62** (v0.61 fixed four templates after the first live run against
-spritecloud.com; v0.62 added composer destination-DOM validation; both
-apply to any new emission). Six reference probes covering a spread of
-site shapes; each is a complete, runnable Playwright + Gherkin project.
+Live output from the **v0.64 binary** is committed under [`examples/`](./examples/).
+Six reference probes covering a spread of site shapes; each is a complete,
+runnable Playwright + Gherkin project. Re-emit on every release via
+[`scripts/refresh-examples.sh`](./scripts/refresh-examples.sh).
 
 | Example | Site | Files | Pages w/ a11y | Notes |
 |---|---|---:|---:|---|
@@ -31,11 +29,11 @@ site shapes; each is a complete, runnable Playwright + Gherkin project.
 | [`gohugo-io/`](./examples/gohugo-io/) | <https://gohugo.io> | **196** | 30 | OSS marketing + content |
 | [`books-toscrape-com/`](./examples/books-toscrape-com/) | <https://books.toscrape.com> | **186** | 30 | E-commerce list-and-detail |
 | [`es-wikipedia-org-madrid/`](./examples/es-wikipedia-org-madrid/) | <https://es.wikipedia.org/wiki/Madrid> | **201** | 30 | Non-English content page |
-| [`spritecloud-com-dgx/`](./examples/spritecloud-com-dgx/) | <https://www.spritecloud.com> | **197** | 30 | Marketing + lead-gen, **LLM composer ON** (DGX `qwen3-coder-next`) |
+| [`spritecloud-com-dgx/`](./examples/spritecloud-com-dgx/) | <https://www.spritecloud.com> | **197** | 30 | Marketing + lead-gen, **LLM composer ON** |
 | [`petstore-swagger-io-dgx/`](./examples/petstore-swagger-io-dgx/) | <https://petstore3.swagger.io> | **46** | 1 | API service exposing OpenAPI 3 — **lights up Contract layer with 12 specs × 9 tests each** |
 
-Every example exercises the v0.41+ template families: a11y trio
-(uncapped since v0.59, current in v0.62) + responsive + perf + visual + visual-states + security + health +
+Every example exercises the full template family: a11y trio
+(uncapped) + responsive + perf + visual + visual-states + security + health +
 observability + i18n + mobile (4 devices × 2 orientations) + network +
 storage + zoom + prefs + print + history-depth + touch + auth-expiry +
 integration stubs (api / db / cache / obs / auth) + graphql/webhook stubs.
@@ -85,10 +83,10 @@ source code.
 | 1 | Unit | PR diff adds a function/method | 1+ per symbol |
 | 2 | Component | PR diff touches a Kind=Component symbol | 3–5 |
 | 3 | API | HTML form OR OpenAPI endpoint | **10 per form** (1 happy + 9 negatives) |
-| 4 | Contract | OpenAPI/GraphQL/Webhook discovered OR always-attempt stubs | **9 per endpoint** (since v0.55) |
+| 4 | Contract | OpenAPI/GraphQL/Webhook discovered OR always-attempt stubs | **9 per endpoint** |
 | 5 | Integration | Always-on scaffold (5 stubs × 3 blocks) + real Testcontainers via `reviewqa.yml` | 15 per origin |
 | 6 | Backend | PR diff touches gRPC source | 1+ per method |
-| 7 | UI | Every probed page (a11y trio is uncapped since v0.59) | a11y/landmarks/keyboard 5 each per page; rest ~1–3 |
+| 7 | UI | Every probed page (a11y trio is uncapped) | a11y/landmarks/keyboard 5 each per page; rest ~1–3 |
 | 8 | Mobile | Every probed page (capped) | **8 per page** (4 devices × 2 orientations) |
 | 9 | Data | PR diff touches dbt / pandera / Great-Expectations | 1+ per schema |
 | 10 | Non-functional | Every probed page (mix of capped and uncapped) | ~17 templates, 1–3 tests each |
@@ -116,7 +114,7 @@ The full set; every var is read from the environment AND most have a CLI flag.
 | Var | Default | Purpose |
 |---|---|---|
 | `REVIEWQA_LLM` | (empty) | OpenAI-compatible endpoint. When set, the composer adds up to 5 `@llm-composed` Scenarios per journey. **Strictly local-only** — never set in public CI. |
-| `REVIEWQA_MODEL` | `gpt-4o-mini` | Model id. Auto-set to `qwen3-coder-next:latest` when `--llm` points at the DGX. |
+| `REVIEWQA_MODEL` | `gpt-4o-mini` | Model id. Auto-set to `qwen3-coder-next:latest` when `--llm` points at an Ollama-shaped endpoint. |
 | `REVIEWQA_LLM_LADDER` | (empty) | Comma-separated model fallbacks. |
 | `REVIEWQA_LLM_TIMEOUT` | `60s` *(since v0.48)* | Per-call timeout. Bump on slower local LLMs. |
 | `REVIEWQA_LLM_TOKEN_CAP` | `600` | Max output tokens per LLM call. |
@@ -234,4 +232,4 @@ By submitting a pull request you agree to the
 [Contributor License Agreement](./CLA.md). The `cla-assistant` check on PRs
 will prompt you to sign if you haven't.
 
-For the release-by-release history (v0.19 → v0.62), see [`CHANGELOG.md`](./CHANGELOG.md).
+For the release-by-release history (v0.19 → v0.64), see [`CHANGELOG.md`](./CHANGELOG.md).

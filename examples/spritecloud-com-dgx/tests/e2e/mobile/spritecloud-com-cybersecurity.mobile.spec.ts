@@ -7,6 +7,12 @@
  * orientation flip on each, giving 8 tests per page (4 devices ×
  * 2 scenarios).
  *
+ * v0.61 — fixed: pre-v0.61 used `test.use({...devices[name]})` inside
+ * `test.describe()`, which Playwright rejects ("forces a new worker").
+ * The fix uses `browser.newContext({...devices[name]})` inside each
+ * test so the device profile is applied per-test rather than per-
+ * describe-group. Same coverage, no `test.use()` violation.
+ *
  * The device list is conservative: the four shapes that catch ~95%
  * of real-world mobile regressions (small iPhone, mid Android phone,
  * tablet portrait, large-screen Android). Add more by extending
@@ -26,6 +32,7 @@ for (const deviceName of DEVICES) {
     const page = await ctx.newPage()
     await page.goto('/cybersecurity')
     await expect(page.locator('h1, [role="heading"][aria-level="1"]').first()).toBeVisible()
+    // Touch tap on the primary CTA, when present.
     const cta = page.getByRole('link').first()
     if (await cta.count() > 0) {
       await cta.tap().catch(() => {})
@@ -36,6 +43,8 @@ for (const deviceName of DEVICES) {
   test(`@kind:mobile @orientation @device:${deviceName} landscape rotation keeps the page interactive`, async ({ browser }) => {
     const profile = devices[deviceName]
     if (!profile.viewport) test.skip()
+    // Rebuild a context with the viewport height/width swapped. Same
+    // engine, UA, DPR — only the screen aspect changes.
     const ctx = await browser.newContext({
       ...profile,
       viewport: { width: profile.viewport!.height, height: profile.viewport!.width },
@@ -46,3 +55,4 @@ for (const deviceName of DEVICES) {
     await ctx.close()
   })
 }
+

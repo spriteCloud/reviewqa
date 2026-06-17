@@ -7,6 +7,36 @@ shipped the depth-parity arc (Contract, Integration, Mobile, A11y trio).
 v0.61–v0.62 are the live-execution + composer-validation arc — first
 real-site run + composer destination-DOM enforcement.
 
+## v0.64 — re-emit examples + drop version-caveat prose + AI badge
+
+User feedback after v0.63: the "Output from the v0.59 binary — templates
+remain current through v0.62" gymnastics was the wrong convention. The
+website must show CURRENT output, not a multi-release explanation. The
+"DGX" badge is vendor-specific; users may point `REVIEWQA_LLM` at any
+OpenAI-compatible endpoint. And the depth-parity / live-execution /
+composer-DOM narration in docs.html belongs in this changelog, not in
+the docs page.
+
+- All six committed examples re-emitted against the v0.64 binary.
+  Counts unchanged (183 / 196 / 186 / 201 / 197 / 46) — v0.61's four
+  template fixes apply automatically; v0.62's composer DOM validation
+  filters out the F-1 mismatches the previous emission carried.
+- New `scripts/refresh-examples.sh` codifies the build + probe + split
+  flow with the awk split-pattern baked in. Run before tagging every
+  release. CI-safe for the 4 deterministic examples; the 2 AI-on ones
+  need a local `REVIEWQA_LLM` endpoint.
+- web/index.html + web/docs.html + README.md + examples/README.md
+  prose simplified everywhere to "v0.64 binary" — no more multi-release
+  caveats, no more "introduced in vX.Y, current in vZ.W" labels.
+- "DGX" badge → "AI" badge on the spritecloud + petstore cards. The
+  directory names `examples/*-dgx/` stay (stable URLs) but every other
+  surface (prose, docs section title, env var docs, env-var examples)
+  is vendor-agnostic.
+- Three feature callouts removed from web/docs.html: "Depth parity
+  (v0.55–v0.57)", "Live execution validated (v0.61)", "Composer
+  destination-DOM validation (v0.62)". Their content lives here.
+- `cmd/reviewqa/main.go` version constant bumped 0.63 → 0.64.
+
 ## v0.63 — repo-wide consistency sweep + force gh-pages redeploy
 
 Live https://spritecloud.github.io/reviewqa/ was showing **v0.23-era**

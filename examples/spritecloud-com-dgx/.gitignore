@@ -1,5 +1,0 @@
-node_modules/
-test-results/
-playwright-report/
-.features-gen/
-tests/e2e/__screenshots__/

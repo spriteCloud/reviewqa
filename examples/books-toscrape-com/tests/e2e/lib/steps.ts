@@ -57,16 +57,49 @@ async function fillForm(page: Page, values: FormValues): Promise<void> {
 }
 
 /**
- * Click the form's submit button. Looks for the role-based locator
- * first, falls back to `button[type=submit]` / `input[type=submit]`.
+ * Click the form's submit button. v0.61 — scoped + enabled-aware.
+ *
+ * Pre-v0.61 picked the first submit-like button anywhere on the page.
+ * On real sites the first such button is often the newsletter
+ * "Subscribe" — disabled until you fill the email field, so the click
+ * would hang for 30s until timeout.
+ *
+ * New algorithm:
+ *   1. Prefer a button inside a <form> that has visible text inputs.
+ *   2. Otherwise scan the whole page.
+ *   3. In each scope, iterate role/text matches and pick the first
+ *      that's both visible AND enabled.
+ *   4. Last resort: press Enter (most forms submit on Enter).
  */
 async function submit(page: Page): Promise<void> {
-  const byRole = page.getByRole('button', { name: /submit|send|sign in|sign up|subscribe|continue/i })
-  if (await byRole.first().count() > 0) {
-    await byRole.first().click()
-    return
+  const filledForm = page.locator('form').filter({
+    has: page.locator('input[type="email"], input[type="text"], input[type="tel"], input[type="url"], textarea'),
+  })
+  const candidateRoots: Locator[] = (await filledForm.count()) > 0
+    ? [filledForm.first(), page.locator('body')]
+    : [page.locator('body')]
+
+  for (const root of candidateRoots) {
+    const byRole = root.getByRole('button', { name: /submit|send|sign in|sign up|subscribe|continue/i })
+    const total = Math.min(await byRole.count(), 5)
+    for (let i = 0; i < total; i++) {
+      const btn = byRole.nth(i)
+      if ((await btn.isVisible().catch(() => false)) && (await btn.isEnabled().catch(() => false))) {
+        await btn.click({ timeout: 5000 })
+        return
+      }
+    }
+    const generic = root.locator('button[type="submit"], input[type="submit"]')
+    const gtotal = Math.min(await generic.count(), 5)
+    for (let i = 0; i < gtotal; i++) {
+      const btn = generic.nth(i)
+      if ((await btn.isVisible().catch(() => false)) && (await btn.isEnabled().catch(() => false))) {
+        await btn.click({ timeout: 5000 })
+        return
+      }
+    }
   }
-  await page.locator('button[type="submit"], input[type="submit"]').first().click()
+  await page.keyboard.press('Enter').catch(() => {})
 }
 
 /** Click a nav link by visible text or href fragment. */

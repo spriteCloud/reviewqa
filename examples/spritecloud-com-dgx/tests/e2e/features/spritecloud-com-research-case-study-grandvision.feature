@@ -43,33 +43,9 @@ Feature: WwwSpritecloudCom — research journey
   # ───────────────────────────────────────────────────────────────
 
   @journey:research @priority:standard @llm-composed @kind:edge @model:qwen3-coder-next-latest
-  Scenario: Navigate to case study, reload mid-flow
-    Given I open the landing page
-    When I click the link to "/case-studies"
-    When I reload the page
-    Then the page title contains "Case Studies"
-    Then I see the heading "Case Studies"
-
-  @journey:research @priority:standard @llm-composed @kind:edge @model:qwen3-coder-next-latest
-  Scenario: Submit a contact form without required fields
-    Given I open the landing page
-    When I click the link to "/contact"
-    When I submit the form without filling any required field
-    Then no error message is shown in the form region
-
-  @journey:research @priority:standard @llm-composed @kind:edge @model:qwen3-coder-next-latest
-  Scenario: Attempt double submission of contact form
+  Scenario: Form submitted without email
     Given I am on the landing page
-    When I click the link to "/contact"
-    When I submit the form twice in rapid succession
-    Then the form is not double-submitted
-
-  @journey:research @priority:standard @llm-composed @kind:variant @model:qwen3-coder-next-latest
-  Scenario: Fill contact form, submit, then reload
-    Given I open the landing page
-    When I click the link to "/contact"
-    When I enter "test@example.com" into the "Email" field
-    When I submit the form
-    When I reload the page
+    When I submit the form without filling any required field
     Then no success message is shown
+    Then I remain on the same page
 
