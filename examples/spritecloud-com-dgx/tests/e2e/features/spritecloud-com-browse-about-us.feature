@@ -16,7 +16,7 @@ Feature: WwwSpritecloudCom — browse journey
   I want to complete the browse flow
   So that the page delivers on its user goal
 
-  @journey:browse @priority:standard @smoke
+@journey:browse @priority:standard @smoke
   Scenario: browse journey reaches its terminal page
     Given I open the landing page
     And the page title contains "spriteCloud - Test your software, not your reputation!"
@@ -26,7 +26,7 @@ Feature: WwwSpritecloudCom — browse journey
     When I click the link to "/about-us"
     Then I see the heading "Testing is in our DNA."
     And the page title contains "About Us"
-
+    And the URL contains "/about-us"
   @journey:browse @priority:standard @kind:resume
   Scenario: browse — deep-link to the terminal page renders correctly
     Given I open the page "/about-us"

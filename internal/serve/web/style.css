@@ -803,6 +803,91 @@ code, pre { font-family: 'Fira Code', ui-monospace, monospace; }
   pointer-events: none;
 }
 
+/* RUN DRAWER — bottom panel for ▶ Run scenario output. */
+.run-drawer {
+  position: fixed;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  height: min(60vh, 480px);
+  background: var(--white);
+  border-top: 1px solid var(--border-warm);
+  box-shadow: 0 -16px 48px rgba(15, 17, 23, 0.12);
+  display: flex;
+  flex-direction: column;
+  z-index: 90;
+  animation: slideInUp .18s ease;
+}
+@keyframes slideInUp { from { transform: translateY(20px); opacity: 0; } to { transform: translateY(0); opacity: 1; } }
+
+.run-head {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 14px;
+  padding: 16px 24px 12px;
+  border-bottom: 1px solid var(--border-warm);
+}
+.run-head .label { margin-bottom: 6px; display: inline-block; }
+.run-head-actions { display: flex; align-items: center; gap: 8px; flex-shrink: 0; }
+
+.run-status {
+  font-family: 'Fira Code', monospace;
+  font-size: 11px;
+  font-weight: 600;
+  letter-spacing: 0.10em;
+  text-transform: uppercase;
+  padding: 5px 12px;
+  border-radius: 999px;
+}
+.run-status.running { color: var(--copper); border: 1px solid var(--copper); background: var(--copper-soft); }
+.run-status.passed { color: #15803D; border: 1px solid #15803D; background: #DCFCE7; }
+.run-status.failed { color: #B91C1C; border: 1px solid #B91C1C; background: #FEE2E2; }
+
+.run-progress {
+  height: 2px;
+  background: var(--border-warm);
+  overflow: hidden;
+}
+.run-progress-fill {
+  height: 100%;
+  width: 30%;
+  background: var(--copper);
+  animation: progressSlide 1.4s linear infinite;
+}
+.run-progress.done .run-progress-fill { animation: none; width: 100%; opacity: 0.3; }
+@keyframes progressSlide {
+  0% { transform: translateX(-100%); }
+  100% { transform: translateX(400%); }
+}
+
+.run-terminal {
+  flex: 1;
+  overflow-y: auto;
+  padding: 14px 24px;
+  background: var(--charcoal);
+  color: rgba(255,255,255,0.92);
+  font-family: 'Fira Code', monospace;
+  font-size: 12px;
+  line-height: 1.6;
+}
+.run-line { padding: 1px 0; white-space: pre-wrap; word-wrap: break-word; }
+.run-line-cmd { color: var(--copper); }
+.run-line-pass { color: #4ADE80; }
+.run-line-fail { color: #FB7185; }
+.run-line-err { color: #FB7185; }
+.run-line-meta { color: var(--mist); font-style: italic; }
+
+.run-summary {
+  padding: 10px 24px 14px;
+  background: var(--white);
+  border-top: 1px solid var(--border-warm);
+}
+
+.run-btn { padding: 6px 12px; font-size: 12px; }
+.run-btn.disabled { background: var(--mist); border-color: var(--mist); box-shadow: none; transform: none; }
+.run-btn:hover:not(.disabled) { box-shadow: 0 6px 16px rgba(192, 128, 90, 0.28); }
+
 /* RESPONSIVE — collapse the sidebar on narrow viewports. */
 @media (max-width: 900px) {
   .layout { grid-template-columns: 1fr; }

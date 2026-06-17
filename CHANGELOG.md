@@ -7,6 +7,55 @@ shipped the depth-parity arc (Contract, Integration, Mobile, A11y trio).
 v0.61–v0.62 are the live-execution + composer-validation arc — first
 real-site run + composer destination-DOM enforcement.
 
+## v0.72 — ▶ Run scenario from the UI
+
+Each Scenario card gets a **▶ Run** button that shells out to
+`npx playwright test --grep "<scenario name>"` in the workdir,
+streams stdout via Server-Sent Events, and renders a live terminal
+panel docked to the bottom of the page.
+
+Backend:
+- `internal/serve/run.go` — `Preflight(workdir)` stats
+  `node_modules/.bin/playwright`. Surfaced through new
+  `GET /api/run-preflight` so the UI can gate the button at load.
+- `RunScenarioStream` spawns the command with `--reporter=line`,
+  pipes stdout, and writes `event: start` / `event: line` /
+  `event: done` SSE chunks. Final `done` carries `exitCode` and
+  `passed`.
+- Single-flight per workdir — `acquireRun`/`releaseRun` keyed by
+  the absolute path so concurrent runs against the same suite are
+  refused with 400.
+- Browser disconnect cancels the underlying exec (request context
+  propagates via `exec.CommandContext`).
+- `POST /api/run-scenario` body `{feature, scenario}`. When
+  preflight fails the response is a 400 with the install hint.
+- `ParseRunSummary` tested separately — extracts passed / failed /
+  skipped counts from the line reporter's summary lines.
+
+Frontend:
+- ▶ Run button (copper primary, smaller padding) next to Chat /
+  Edit / Delete. Disabled with install-hint tooltip when preflight
+  fails.
+- Bottom drawer slides up with a charcoal terminal panel rendering
+  the SSE stream live. Indeterminate copper progress bar at the
+  top while running, freezes when done. Status pill
+  (running / passed / failed) and a Stop button at the right.
+- Output lines color-coded: copper for the command line, green for
+  `✓`-prefixed pass lines, red for `✘` / `FAIL` lines.
+
+Tests: 5 new in `internal/serve/run_test.go` (preflight ready /
+not-ready, summary parsing for all-pass / mixed / empty,
+single-flight lock). Suite 553 / 553 green.
+
+Usage:
+```bash
+# In your generated suite (one-time setup)
+cd ./my-generated-suite
+npm install && npx playwright install
+
+# Back in reviewqa serve, hit ▶ Run on any Scenario.
+```
+
 ## v0.71 — chat-flow hardening + always-on suggest + step validity
 
 Surfaced two real problems from a v0.70 chat round-trip in the

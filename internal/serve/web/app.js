@@ -10,6 +10,8 @@ let activeFeature = null
 let activeDoc = null
 let viewMode = 'pretty'
 let llmStatus = { enabled: false, model: '', endpoint: '' }
+let runStatus = { ready: false, message: '' }
+let runDrawerOpen = false
 
 async function fetchJSON (url, opts = {}) {
   const r = await fetch(url, { headers: { 'Accept': 'application/json' }, ...opts })
@@ -82,6 +84,11 @@ function renderFeature (feature, gherkin) {
       el('div', { class: 'scenario-head' },
         el('div', { class: 'scenario-name' }, sc.name || '(unnamed)'),
         el('div', { class: 'scenario-actions' },
+          el('button', {
+            class: 'btn-primary run-btn' + (runStatus.ready ? '' : ' disabled'),
+            title: runStatus.ready ? 'Run this Scenario through Playwright' : runStatus.message,
+            onclick: () => runStatus.ready && openRunDrawer(feature, sc),
+          }, '▶ Run'),
           el('button', {
             class: 'btn-ghost' + (llmStatus.enabled ? '' : ' disabled'),
             title: llmStatus.enabled ? 'Chat with the LLM about this scenario' : 'Set REVIEWQA_LLM to enable',
@@ -301,6 +308,126 @@ function openLocatorSuggest (feature, scenario, step) {
   overlay.addEventListener('click', e => { if (e.target === overlay) overlay.remove() })
   document.body.appendChild(overlay)
   if (urlInput.value) doSuggest()
+}
+
+function openRunDrawer (feature, scenario) {
+  if (runDrawerOpen) {
+    alert('A run drawer is already open. Close it before starting another.')
+    return
+  }
+  runDrawerOpen = true
+
+  const drawer = el('section', { class: 'run-drawer' })
+  const statusPill = el('span', { class: 'run-status running' }, 'running')
+  const progressBar = el('div', { class: 'run-progress' }, el('div', { class: 'run-progress-fill' }))
+  const terminal = el('div', { class: 'run-terminal' })
+  const summary = el('div', { class: 'run-summary meta' }, '')
+
+  const lines = []
+  const ctrl = new AbortController()
+  let exitCode = null
+
+  function closeDrawer () {
+    runDrawerOpen = false
+    ctrl.abort()
+    drawer.remove()
+  }
+
+  function appendLine (text, kind) {
+    const node = el('div', { class: 'run-line' + (kind ? ' run-line-' + kind : '') }, text)
+    terminal.appendChild(node)
+    terminal.scrollTop = terminal.scrollHeight
+    lines.push(text)
+  }
+
+  drawer.appendChild(el('div', { class: 'run-head' },
+    el('div', {},
+      el('div', { class: 'label' }, 'Playwright run · ' + feature.path.split('/').pop()),
+      el('div', { class: 'chat-scenario-name' }, scenario.name || '(unnamed)'),
+    ),
+    el('div', { class: 'run-head-actions' },
+      statusPill,
+      el('button', { class: 'btn-ghost', onclick: () => { ctrl.abort(); statusPill.textContent = 'stopped'; statusPill.className = 'run-status failed' } }, 'Stop'),
+      el('button', { class: 'btn-ghost', onclick: closeDrawer }, 'Close'),
+    ),
+  ))
+  drawer.appendChild(progressBar)
+  drawer.appendChild(terminal)
+  drawer.appendChild(summary)
+  document.body.appendChild(drawer)
+
+  appendLine('$ npx playwright test --grep "' + scenario.name + '"', 'cmd')
+
+  fetch('/api/run-scenario', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json', 'Accept': 'text/event-stream' },
+    body: JSON.stringify({ feature: feature.path, scenario: scenario.name }),
+    signal: ctrl.signal,
+  }).then(async response => {
+    if (!response.ok) {
+      const text = await response.text()
+      appendLine('error: ' + text, 'err')
+      statusPill.textContent = 'failed'
+      statusPill.className = 'run-status failed'
+      progressBar.classList.add('done')
+      return
+    }
+    const reader = response.body.getReader()
+    const decoder = new TextDecoder()
+    let buffer = ''
+    while (true) {
+      const { value, done } = await reader.read()
+      if (done) break
+      buffer += decoder.decode(value, { stream: true })
+      let nl
+      while ((nl = buffer.indexOf('\n\n')) !== -1) {
+        const chunk = buffer.slice(0, nl)
+        buffer = buffer.slice(nl + 2)
+        handleSSE(chunk)
+      }
+    }
+    if (exitCode === null) {
+      statusPill.textContent = 'failed'
+      statusPill.className = 'run-status failed'
+    }
+    progressBar.classList.add('done')
+  }).catch(err => {
+    if (err.name !== 'AbortError') {
+      appendLine('stream error: ' + err.message, 'err')
+      statusPill.textContent = 'failed'
+      statusPill.className = 'run-status failed'
+      progressBar.classList.add('done')
+    }
+  })
+
+  function handleSSE (chunk) {
+    let event = 'message'
+    let data = ''
+    for (const line of chunk.split('\n')) {
+      if (line.startsWith('event:')) event = line.slice(6).trim()
+      if (line.startsWith('data:')) data += line.slice(5).trim()
+    }
+    if (!data) return
+    let payload
+    try { payload = JSON.parse(data) } catch (_) { return }
+    if (event === 'start') {
+      appendLine('# started ' + payload.at, 'meta')
+    } else if (event === 'line') {
+      const t = payload.text || ''
+      let kind = ''
+      if (/✓/.test(t)) kind = 'pass'
+      else if (/✘|FAIL/.test(t)) kind = 'fail'
+      else if (/✕|×/.test(t)) kind = 'fail'
+      appendLine(t, kind)
+    } else if (event === 'done') {
+      exitCode = payload.exitCode
+      const passed = payload.passed
+      statusPill.textContent = passed ? 'passed' : 'failed'
+      statusPill.className = 'run-status ' + (passed ? 'passed' : 'failed')
+      summary.textContent = 'Exit code ' + exitCode + ' · ' + payload.at
+      progressBar.classList.add('done')
+    }
+  }
 }
 
 function chatStorageKey (featurePath, scenarioName) {
@@ -533,6 +660,7 @@ function refreshSidebarSelection () {
 async function init () {
   try {
     llmStatus = await fetchJSON('/api/llm-status').catch(() => llmStatus)
+    runStatus = await fetchJSON('/api/run-preflight').catch(() => runStatus)
   } catch (_) { /* non-fatal */ }
   try {
     const project = await fetchJSON('/api/project')
