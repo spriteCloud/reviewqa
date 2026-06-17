@@ -24,8 +24,9 @@
     "test:install-browser": "playwright install chromium firefox webkit"
   },
   "devDependencies": {
-    "@axe-core/playwright": "^4.10.0",
     "@playwright/test": "^1.49.0",
-    "playwright-bdd": "^9.1.0"
+    "playwright-bdd": "^9.0.0",
+    "@axe-core/playwright": "^4.10.0"
   }
 }
+

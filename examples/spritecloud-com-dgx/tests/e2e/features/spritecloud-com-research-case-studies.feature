@@ -41,10 +41,26 @@ Feature: WwwSpritecloudCom — research journey
   # ───────────────────────────────────────────────────────────────
 
   @journey:research @priority:standard @llm-composed @kind:edge @model:qwen3-coder-next-latest
-  Scenario: Navigate to case studies and reload
-    Given I open the landing page
-    When I click the link to "/case-studies"
+  Scenario: Reload mid-form leaves no double submission
+    Given I open the page "/case-studies"
     Then the page title contains "Case Studies"
     When I reload the page
     Then the page title contains "Case Studies"
+    Then no success message is shown
+
+  @journey:research @priority:standard @llm-composed @kind:variant @model:qwen3-coder-next-latest
+  Scenario: Submit twice rapidly blocks duplication
+    Given I am on the landing page
+    When I click the link to "/case-studies"
+    Then the page title contains "Case Studies"
+    Then no error message is shown in the form region
+    When I submit the form twice in rapid succession
+    Then the form is not double-submitted
+
+  @journey:research @priority:standard @llm-composed @model:qwen3-coder-next-latest
+  Scenario: Navigate directly to case studies loads correct page
+    Given I am not signed in
+    When I navigate directly to "/case-studies"
+    Then the page title contains "Case Studies"
+    Then the URL contains "/case-studies"
 

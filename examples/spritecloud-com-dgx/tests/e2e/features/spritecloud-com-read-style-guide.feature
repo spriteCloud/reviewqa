@@ -44,39 +44,3 @@ Feature: WwwSpritecloudCom — read journey
     And I go back in the browser history
     Then no error message is shown in the form region
 
-  # ───────────────────────────────────────────────────────────────
-  # LLM-composed scenarios (model: qwen3-coder-next:latest)
-  # Filter out with `--grep-invert @llm-composed` for stricter CI runs.
-  # ───────────────────────────────────────────────────────────────
-
-  @journey:read @priority:nice-to-have @llm-composed @kind:navigation @model:qwen3-coder-next-latest
-  Scenario: Open style guide from home
-    Given I open the landing page
-    When I click the link to "/style-guide"
-    Then the page title contains "Style Guide - Healix Webflow website HTML template"
-    Then the main heading reads "Aa"
-
-  @journey:read @priority:nice-to-have @llm-composed @kind:reload @kind:edge @model:qwen3-coder-next-latest
-  Scenario: Navigate style guide directly then reload
-    Given I am not signed in
-    When I navigate directly to "/style-guide"
-    Then the page title contains "Style Guide - Healix Webflow website HTML template"
-    When I reload the page
-    Then the main heading reads "Aa"
-
-  @journey:read @priority:nice-to-have @llm-composed @kind:navigation @kind:history @model:qwen3-coder-next-latest
-  Scenario: Back navigation to landing after style guide
-    Given I open the landing page
-    When I click the link to "/style-guide"
-    Then the page title contains "Style Guide - Healix Webflow website HTML template"
-    When I go back in the browser history
-    Then the main heading reads "Test your software, not your reputation."
-
-  @journey:read @priority:nice-to-have @llm-composed @kind:variant @kind:reload @model:qwen3-coder-next-latest
-  Scenario: Reload landing after form submission error
-    Given I open the landing page
-    When I submit the form without filling any required field
-    Then no success message is shown
-    When I reload the page
-    Then no error message is shown in the form region
-

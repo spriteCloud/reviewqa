@@ -12,8 +12,8 @@
 import { test, expect } from '@playwright/test'
 
 test.describe.configure({ mode: 'parallel' })
-test.describe('PlaywrightDev — a11y prefs @ https://playwright.dev/community/conference-videos', () => {
-  test('@kind:a11y-prefs @reduced-motion renders with prefers-reduced-motion', async ({ browser }) => {
+test.describe('PlaywrightDev Accessibility Preferences — https://playwright.dev/community/conference-videos', () => {
+  test('Renders content with reduced motion preference enabled', async ({ browser }) => {
     const context = await browser.newContext({ reducedMotion: 'reduce' })
     const page = await context.newPage()
     await page.goto('/community/conference-videos')
@@ -29,7 +29,7 @@ test.describe('PlaywrightDev — a11y prefs @ https://playwright.dev/community/c
     await context.close()
   })
 
-  test('@kind:a11y-prefs @forced-colors renders under forced-colors', async ({ browser }) => {
+  test('Renders content with forced-colors mode enabled', async ({ browser }) => {
     const context = await browser.newContext({ forcedColors: 'active' })
     const page = await context.newPage()
     await page.goto('/community/conference-videos')
@@ -37,7 +37,7 @@ test.describe('PlaywrightDev — a11y prefs @ https://playwright.dev/community/c
     await context.close()
   })
 
-  test('@kind:a11y-prefs @contrast renders with prefers-contrast: more', async ({ browser }) => {
+  test('Renders content with enhanced contrast preference enabled', async ({ browser }) => {
     const context = await browser.newContext({ contrast: 'more' })
     const page = await context.newPage()
     await page.goto('/community/conference-videos')

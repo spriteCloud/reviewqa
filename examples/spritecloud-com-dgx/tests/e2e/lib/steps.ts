@@ -63,6 +63,13 @@ async function fillForm(page: Page, values: FormValues): Promise<void> {
  * On real sites the first such button is often the newsletter
  * "Subscribe" — disabled until you fill the email field, so the click
  * would hang for 30s until timeout.
+ *
+ * New algorithm:
+ *   1. Prefer a button inside a <form> that has visible text inputs.
+ *   2. Otherwise scan the whole page.
+ *   3. In each scope, iterate role/text matches and pick the first
+ *      that's both visible AND enabled.
+ *   4. Last resort: press Enter (most forms submit on Enter).
  */
 async function submit(page: Page): Promise<void> {
   const filledForm = page.locator('form').filter({
