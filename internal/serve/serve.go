@@ -130,7 +130,86 @@ func Handler(workdir string) http.Handler {
 		writeJSON(w, map[string]string{"path": rel, "body": string(b)})
 	})
 
+	mux.HandleFunc("/api/scenario", func(w http.ResponseWriter, r *http.Request) {
+		rel := r.URL.Query().Get("feature")
+		name := r.URL.Query().Get("name")
+		path, ok := safeJoin(workdir, rel)
+		if !ok {
+			http.Error(w, "invalid feature path", http.StatusBadRequest)
+			return
+		}
+		history := historyRootFor(workdir)
+		switch r.Method {
+		case http.MethodDelete:
+			if name == "" {
+				http.Error(w, "missing name", http.StatusBadRequest)
+				return
+			}
+			n, err := DeleteScenario(path, name, history)
+			if err != nil {
+				http.Error(w, err.Error(), http.StatusBadRequest)
+				return
+			}
+			writeJSON(w, map[string]any{"deleted": n})
+		case http.MethodPatch:
+			if name == "" {
+				http.Error(w, "missing name", http.StatusBadRequest)
+				return
+			}
+			body, err := readJSONBody(r)
+			if err != nil {
+				http.Error(w, err.Error(), http.StatusBadRequest)
+				return
+			}
+			newName, err := ReplaceScenario(path, name, body.Gherkin, history)
+			if err != nil {
+				http.Error(w, err.Error(), http.StatusBadRequest)
+				return
+			}
+			writeJSON(w, map[string]any{"name": newName})
+		case http.MethodPost:
+			body, err := readJSONBody(r)
+			if err != nil {
+				http.Error(w, err.Error(), http.StatusBadRequest)
+				return
+			}
+			newName, err := AppendScenario(path, body.Gherkin, history)
+			if err != nil {
+				http.Error(w, err.Error(), http.StatusBadRequest)
+				return
+			}
+			writeJSON(w, map[string]any{"name": newName})
+		default:
+			http.Error(w, "method not allowed", http.StatusMethodNotAllowed)
+		}
+	})
+
+	mux.HandleFunc("/api/validate-scenario", func(w http.ResponseWriter, r *http.Request) {
+		body, err := readJSONBody(r)
+		if err != nil {
+			http.Error(w, err.Error(), http.StatusBadRequest)
+			return
+		}
+		if err := validateScenarioBlock(body.Gherkin); err != nil {
+			writeJSON(w, map[string]any{"valid": false, "error": err.Error()})
+			return
+		}
+		writeJSON(w, map[string]any{"valid": true})
+	})
+
 	return localOnly(mux)
+}
+
+type scenarioRequest struct {
+	Gherkin string `json:"gherkin"`
+}
+
+func readJSONBody(r *http.Request) (scenarioRequest, error) {
+	var body scenarioRequest
+	if err := json.NewDecoder(r.Body).Decode(&body); err != nil {
+		return body, fmt.Errorf("body: %w", err)
+	}
+	return body, nil
 }
 
 // localOnly rejects requests that don't come from a loopback address.

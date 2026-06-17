@@ -509,8 +509,10 @@
   reviewqa probe --url <span class="v">https://www.spritecloud.com</span> --coverage=standard</pre>
 
       <h3>Tailor an existing generated suite (v0.65+)</h3>
-<pre class="snippet"><span class="c"># Opens http://127.0.0.1:8765 with a brand-styled read-only viewer:</span>
+<pre class="snippet"><span class="c"># Opens http://127.0.0.1:8765 with a brand-styled viewer + editor:</span>
 <span class="c"># Features, Scenarios, registered step patterns, stakeholder docs.</span>
+<span class="c"># v0.66 — Edit / Delete / + New Scenario buttons; each edit backed up</span>
+<span class="c"># under tests/e2e/.reviewqa-history/ for undo.</span>
 reviewqa serve --workdir <span class="v">./my-generated-suite</span></pre>
 
       <h3>Probe an API-only target (lights up the Contract layer)</h3>

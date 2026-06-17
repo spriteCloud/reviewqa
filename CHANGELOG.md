@@ -7,6 +7,42 @@ shipped the depth-parity arc (Contract, Integration, Mobile, A11y trio).
 v0.61–v0.62 are the live-execution + composer-validation arc — first
 real-site run + composer destination-DOM enforcement.
 
+## v0.66 — reviewqa serve Phase B: Scenario CRUD
+
+Mutation endpoints on top of v0.65's read-only viewer. Users can now
+delete, edit, and append Scenarios from the browser UI. Each write is
+preceded by a backup into `tests/e2e/.reviewqa-history/<ts>/` so an
+accidental delete is recoverable.
+
+- `DELETE /api/scenario?feature=<rel>&name=<scenario-name>` — splice
+  the named Scenario out of the file (including its preceding @tag
+  block). Returns `{"deleted":1}`.
+- `PATCH /api/scenario?feature=<rel>&name=<scenario-name>` body
+  `{"gherkin":"..."}` — replace the block. Server validates the new
+  block parses as exactly one Scenario with ≥1 step; rejects with
+  400 otherwise. Supports rename — the new Scenario name is returned.
+- `POST /api/scenario?feature=<rel>` body `{"gherkin":"..."}` —
+  append at EOF with a single blank line separator.
+- `POST /api/validate-scenario` body `{"gherkin":"..."}` — pre-check
+  without writing; returns `{"valid":true}` or `{"valid":false,
+  "error":"..."}`. UI uses this for the modal's Validate button.
+
+File I/O via atomic tmpfile + rename in the same directory. Pre-edit
+backups land at `tests/e2e/.reviewqa-history/<UTC timestamp>/` so the
+user can `cp` files back if the new Scenario was wrong.
+
+Frontend additions to `internal/serve/web/`:
+- Each Scenario gets Edit + Delete buttons.
+- `+ New Scenario` button at the foot of each feature.
+- Edit modal: textarea with raw Gherkin, Validate / Save / Cancel.
+  Validate uses the new endpoint so the user sees the parser's
+  exact rejection reason before committing.
+- All mutations re-fetch + re-render automatically.
+
+Tests: 10 new in `internal/serve/edit_test.go` (range finding,
+delete, replace, append, invalid-block rejection, multi-scenario
+rejection, plus HTTP-handler coverage for each verb). 524 / 524 green.
+
 ## v0.65 — reviewqa serve (Phase A: read-only project viewer)
 
 New `reviewqa serve` subcommand. Opens a localhost HTTP server (default
