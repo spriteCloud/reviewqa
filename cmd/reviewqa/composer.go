@@ -78,7 +78,11 @@ func composeScenarios(ctx context.Context, cfg config.Config, items []plan.Item)
 			continue
 		}
 		j := buildJourneyForComposer(items[i])
-		extras, winningModel, err := composer.ProposeWithLadderAndCache(ctx, ladder, j, 3, feedback, cache)
+		// v0.41c: bumped from 3→5 to take advantage of the richer
+		// multi-step prompt populated by v0.41a. The composer can now
+		// reason about destination pages so there's more legitimate
+		// surface to compose against.
+		extras, winningModel, err := composer.ProposeWithLadderAndCache(ctx, ladder, j, 5, feedback, cache)
 		if err != nil {
 			rlog.Warn("composer: skipped journey", "kind", j.Kind, "err", err)
 			continue
