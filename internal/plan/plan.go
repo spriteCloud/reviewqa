@@ -103,6 +103,30 @@ type Item struct {
 	// hand-editable companion files (findings.md ledger) so prior rows
 	// survive subsequent probe runs.
 	IfMissingOnly bool
+	// ExtraScenarios carries LLM-composed Gherkin scenarios that
+	// pw_feature.tmpl renders below the deterministic ones. Each item
+	// also carries the model id used so the rendered file announces
+	// its provenance. Empty in the default (LLM-off) path.
+	ExtraScenarios []ExtraScenario
+	// LLMModel is the model identifier embedded as a comment above the
+	// composed scenarios block. Empty when ExtraScenarios is empty.
+	LLMModel string
+}
+
+// ExtraScenario mirrors composer.ExtraScenario in the plan layer so
+// the gen package doesn't have to import composer (which would
+// create a layering cycle since composer needs to import plan in some
+// future architectures). One step = one Gherkin step line.
+type ExtraScenario struct {
+	Name  string
+	Tags  []string
+	Steps []ExtraScenarioStep
+}
+
+// ExtraScenarioStep is one step of an ExtraScenario.
+type ExtraScenarioStep struct {
+	Keyword string
+	Text    string
 }
 
 // Catalogue is the suite-level data passed to the test-catalogue and

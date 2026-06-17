@@ -968,12 +968,17 @@ type renderData struct {
 	Catalogue *plan.Catalogue
 	// Form is the FormSpec the API-contract template renders against.
 	Form *ast.FormSpec
+	// v0.25: LLM-composed scenarios for the feature template.
+	ExtraScenarios []plan.ExtraScenario
+	LLMModel       string
 }
 
 func buildData(it plan.Item, workDir string) renderData {
 	d := renderData{Symbol: it.Symbol}
 	d.Catalogue = it.Catalogue
 	d.Form = it.Form
+	d.ExtraScenarios = it.ExtraScenarios
+	d.LLMModel = it.LLMModel
 	d.Symbols = it.Symbols
 	if len(d.Symbols) == 0 {
 		d.Symbols = []ast.Symbol{it.Symbol}

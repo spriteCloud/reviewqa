@@ -350,105 +350,105 @@ func runAllImpl(ctx context.Context, urls []string, filter JourneyFilter, covera
 		if u == "" {
 			continue
 		}
-		var m *mindmap.Map
-		var crawlErrs []error
-		opts := coverage.crawlOpts()
-		if useBrowser {
-			m, crawlErrs = runBrowserCrawl(ctx, u)
-			if m == nil || len(m.Pages) == 0 {
-				// Fall back to static crawl on any failure (missing node,
-				// missing playwright, browser probe error). Static still
-				// produces SOMETHING for every reachable site.
-				for _, e := range crawlErrs {
-					log.Warn("browser probe failed; falling back to static", "err", e)
-				}
-				crawlErrs = nil
-				m, crawlErrs = mindmap.Crawl(ctx, u, fetcher, opts)
-			}
-		} else {
-			m, crawlErrs = mindmap.Crawl(ctx, u, fetcher, opts)
-		}
-		errs = append(errs, crawlErrs...)
-		if m == nil || len(m.Pages) == 0 {
-			continue
-		}
-		journeys := mindmap.IdentifyJourneys(m, coverage.JourneysPerKind())
-		if filter != nil && !filter.IsEmpty() {
-			narrowed := filter.Apply(journeys)
-			if len(narrowed) == 0 {
-				log.Warn("prompt filter dropped every journey; falling back to unfiltered probe", "url", u)
-			} else {
-				log.Info("prompt filter applied", "journeys_before", len(journeys), "journeys_after", len(narrowed))
-				journeys = narrowed
-			}
-		}
-		if len(journeys) == 0 {
-			continue
-		}
-		// Companion items: a shared fixtures module, a playwright.config.ts,
-		// and a tests/e2e/README.md. Emitted once per probed origin so all
-		// per-journey specs in the same suite share a common test setup
-		// instead of duplicating the page-error tracking in every file.
-		//
-		// v0.21: journeys are now emitted as .feature files only —
-		// playwright-bdd compiles them to runnable specs at config-load
-		// time via the step definitions in tests/e2e/steps/. The legacy
-		// .spec.ts happy-flow emission is gone.
-		journeyItems := make([]plan.Item, 0, len(journeys))
-		for _, j := range journeys {
-			item := itemFromJourney(j, u)
-			// Promote to a feature file: the symbol carries the same data,
-			// only the template + outpath change.
-			item.Template = plan.TmplPlaywrightFeature
-			item.OutPath = featurePathFor(item.OutPath)
-			journeyItems = append(journeyItems, item)
-		}
-		fuzzCap := coverage.FuzzCap()
-		fuzzItems := make([]plan.Item, 0, fuzzCap)
-		fuzzEmitted := 0
-		for _, url := range m.Order {
-			if fuzzEmitted >= fuzzCap {
-				break
-			}
-			page := m.Pages[url]
-			if !pageNeedsFuzz(page) {
-				continue
-			}
-			fuzzItems = append(fuzzItems, fuzzItemForPage(page, u))
-			fuzzEmitted++
-		}
-		// Catalogue + summary are companion items but need aggregated data
-		// from the journey list, so build them AFTER the journey items.
-		catalogue := buildCatalogue(u, m, journeyItems, fuzzItems)
-		catalogue.CoverageMode = string(coverage)
-		items = append(items, companionItems(u, m, catalogue)...)
-		// Journey items are already .feature shape (set above). No sibling
-		// .spec.ts to emit — playwright-bdd compiles features into runnable
-		// specs via the step definitions companion.
-		items = append(items, journeyItems...)
-		items = append(items, fuzzItems...)
-		// API-contract specs: one per (page, form) pair where the form's
-		// action resolves to a same-origin URL. Bounded at 8 per probe so
-		// triage stays tractable on form-heavy sites.
-		items = append(items, apiSpecItems(u, m)...)
-		// v0.22 quality-taxonomy companions — one spec per layer per
-		// origin / page. Caps mirror the fuzz cap so probes stay cheap.
-		items = append(items, qualityCompanions(u, m, coverage)...)
-		// OpenAPI / Swagger contract specs — only emitted when the
-		// origin actually exposes a schema document.
-		items = append(items, openAPIContractItems(ctx, u)...)
-		// GraphQL contract specs — only when /graphql responds to
-		// introspection. Capped at 16 operations per probe.
-		items = append(items, graphQLContractItems(ctx, u)...)
-		// Webhook specs — emitted when OpenAPI paths match /webhooks/*
-		// or known providers' well-known endpoints respond.
-		items = append(items, webhookContractItems(ctx, u)...)
-		// Browser-mode DOM snapshots: emit one tests/e2e/_dom/<slug>.html
-		// per crawled page that carries captured HTML. Static crawl pages
-		// don't populate DOMHTML, so this is a no-op outside browser mode.
-		items = append(items, domSnapshotItems(u, m)...)
+		urlItems, urlErrs := probeOneOrigin(ctx, u, coverage, filter, fetcher, useBrowser)
+		errs = append(errs, urlErrs...)
+		items = append(items, urlItems...)
 	}
 	return items, errs
+}
+
+// probeOneOrigin is the per-URL fan-out, split out of runAllImpl to
+// keep cyclomatic complexity in check. Orchestrates crawl → journey
+// identification → filter → fan-out across the spec families.
+func probeOneOrigin(ctx context.Context, u string, coverage CoverageMode, filter JourneyFilter, fetcher mindmap.Fetcher, useBrowser bool) ([]plan.Item, []error) {
+	m, crawlErrs := crawlOriginWithFallback(ctx, u, fetcher, coverage.crawlOpts(), useBrowser)
+	if m == nil || len(m.Pages) == 0 {
+		return nil, crawlErrs
+	}
+	journeys := identifyAndFilterJourneys(m, coverage, filter, u)
+	if len(journeys) == 0 {
+		return nil, crawlErrs
+	}
+	journeyItems := promoteJourneysToFeatures(journeys, u)
+	fuzzItems := emitFuzzItems(m, u, coverage.FuzzCap())
+	catalogue := buildCatalogue(u, m, journeyItems, fuzzItems)
+	catalogue.CoverageMode = string(coverage)
+
+	var items []plan.Item
+	items = append(items, companionItems(u, m, catalogue)...)
+	items = append(items, journeyItems...)
+	items = append(items, fuzzItems...)
+	items = append(items, apiSpecItems(u, m)...)
+	items = append(items, qualityCompanions(u, m, coverage)...)
+	items = append(items, openAPIContractItems(ctx, u)...)
+	items = append(items, graphQLContractItems(ctx, u)...)
+	items = append(items, webhookContractItems(ctx, u)...)
+	items = append(items, domSnapshotItems(u, m)...)
+	return items, crawlErrs
+}
+
+// crawlOriginWithFallback runs the browser crawl when requested and
+// falls back to the static crawl on any failure. Pure plumbing — no
+// item emission.
+func crawlOriginWithFallback(ctx context.Context, u string, fetcher mindmap.Fetcher, opts mindmap.Options, useBrowser bool) (*mindmap.Map, []error) {
+	if !useBrowser {
+		return mindmap.Crawl(ctx, u, fetcher, opts)
+	}
+	m, errs := runBrowserCrawl(ctx, u)
+	if m != nil && len(m.Pages) > 0 {
+		return m, errs
+	}
+	for _, e := range errs {
+		log.Warn("browser probe failed; falling back to static", "err", e)
+	}
+	return mindmap.Crawl(ctx, u, fetcher, opts)
+}
+
+// identifyAndFilterJourneys is the journey-discovery + prompt-filter
+// step, lifted out of the main loop for testability.
+func identifyAndFilterJourneys(m *mindmap.Map, coverage CoverageMode, filter JourneyFilter, u string) []mindmap.Journey {
+	journeys := mindmap.IdentifyJourneys(m, coverage.JourneysPerKind())
+	if filter == nil || filter.IsEmpty() {
+		return journeys
+	}
+	narrowed := filter.Apply(journeys)
+	if len(narrowed) == 0 {
+		log.Warn("prompt filter dropped every journey; falling back to unfiltered probe", "url", u)
+		return journeys
+	}
+	log.Info("prompt filter applied", "journeys_before", len(journeys), "journeys_after", len(narrowed))
+	return narrowed
+}
+
+// promoteJourneysToFeatures wraps each mindmap.Journey in a plan.Item
+// whose Template is the .feature shape. v0.21 inversion: no .spec.ts
+// sibling — playwright-bdd compiles features into runnable specs.
+func promoteJourneysToFeatures(journeys []mindmap.Journey, u string) []plan.Item {
+	out := make([]plan.Item, 0, len(journeys))
+	for _, j := range journeys {
+		item := itemFromJourney(j, u)
+		item.Template = plan.TmplPlaywrightFeature
+		item.OutPath = featurePathFor(item.OutPath)
+		out = append(out, item)
+	}
+	return out
+}
+
+// emitFuzzItems emits up to cap fuzz spec items, one per page that
+// satisfies pageNeedsFuzz.
+func emitFuzzItems(m *mindmap.Map, u string, cap int) []plan.Item {
+	out := make([]plan.Item, 0, cap)
+	for _, url := range m.Order {
+		if len(out) >= cap {
+			break
+		}
+		page := m.Pages[url]
+		if !pageNeedsFuzz(page) {
+			continue
+		}
+		out = append(out, fuzzItemForPage(page, u))
+	}
+	return out
 }
 
 // qualityCompanions emits the v0.22 quality-layer spec items — a11y,

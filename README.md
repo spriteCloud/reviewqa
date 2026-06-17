@@ -34,6 +34,37 @@ when the site advertises a schema, webhook endpoint, or hreflang
 siblings. `tests/grpc/` emits in diff mode when a PR touches a
 `.proto` file.
 
+## v0.25 — LLM-driven scenario composer (opt-in, local-only)
+
+Templates are deterministic Go text/templates by default — the same
+inputs produce identical output. v0.25 adds an OPTIONAL second layer
+that asks an LLM to propose additional Gherkin Scenarios beyond the
+deterministic ones for each journey.
+
+```bash
+# enable the composer against a local Ollama (or any OpenAI-compatible
+# endpoint). The DGX at 100.82.34.115:11434 is on Netbird and not
+# reachable from public CI — set this ONLY when probing locally.
+reviewqa probe --url https://x.test --llm http://100.82.34.115:11434
+# or via env:
+REVIEWQA_LLM=http://100.82.34.115:11434 reviewqa probe ...
+# override the model (defaults to qwen3-coder-next:latest when --llm is set):
+REVIEWQA_MODEL=qwen3-quail:latest reviewqa probe --url ... --llm ...
+```
+
+The composer is strictly opt-in and runs at generation time only. The
+emitted `.feature` files are plain Gherkin text — they execute on any
+CI without an LLM dependency. Generated scenarios are tagged
+`@llm-composed` so stricter runs can exclude them:
+
+```bash
+npx playwright test --grep-invert @llm-composed
+```
+
+The model is constrained to use ONLY the Given/When/Then patterns
+already registered in `reviewqa.steps.ts` — Scenarios referencing
+unknown patterns are dropped before they reach the `.feature` file.
+
 ## v0.24 — diff-mode + OpenAPI-conditional fan-outs
 
 The taxonomy is now closed on the deterministically-reachable side. Every

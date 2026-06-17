@@ -159,9 +159,23 @@ func newProbeCmd() *cobra.Command {
 	var urls []string
 	var dryRun bool
 	var coverage string
+	var llm string
 	cmd := &cobra.Command{
 		Use:   "probe",
 		Short: "Fetch live URL(s), generate a Playwright happy-flow per URL, open a PR.",
+		Long: `Probe a live URL and generate a full Playwright + Gherkin suite.
+
+LLM scenario composer (OPTIONAL):
+  --llm <url>   Enable the scenario composer against an OpenAI-compatible
+                endpoint (e.g. http://100.82.34.115:11434 for a local
+                Ollama). Adds up to 3 extra @llm-composed Scenarios per
+                journey. STRICTLY local-only — the DGX is on Netbird and
+                unreachable from public CI; the generated .feature files
+                still run anywhere because they're plain Gherkin.
+
+  REVIEWQA_LLM env var is the equivalent of --llm.
+  REVIEWQA_MODEL overrides the model id (default: qwen3-coder-next:latest
+                 when --llm is set).`,
 		RunE: func(cmd *cobra.Command, _ []string) error {
 			cfg := config.FromEnv()
 			if len(urls) == 0 {
@@ -173,13 +187,40 @@ func newProbeCmd() *cobra.Command {
 				return fmt.Errorf("probe: no urls provided (pass --url or set REVIEWQA_TARGET_URLS)")
 			}
 			cfg.DryRun = dryRun
+			applyLLMOverride(&cfg, llm)
 			return runProbe(cmd.Context(), cfg, urls, probe.ParseCoverage(coverage))
 		},
 	}
 	cmd.Flags().StringSliceVar(&urls, "url", nil, "URL to probe (repeatable; may also be set via REVIEWQA_TARGET_URLS env)")
 	cmd.Flags().BoolVar(&dryRun, "dry-run", false, "Print rendered spec(s) instead of opening a PR")
 	cmd.Flags().StringVar(&coverage, "coverage", coverageDefault(), "Coverage mode: breadth | standard | depth (env: REVIEWQA_COVERAGE)")
+	cmd.Flags().StringVar(&llm, "llm", llmDefault(), "LLM scenario composer endpoint (e.g. http://100.82.34.115:11434). Local-only; never set in CI. (env: REVIEWQA_LLM)")
 	return cmd
+}
+
+// applyLLMOverride enables the composer when --llm is provided. Sets
+// OpenAIBaseURL + Model + API key on cfg so the existing llm.New uses
+// the local endpoint with the qwen-coder-next default model.
+func applyLLMOverride(cfg *config.Config, llmURL string) {
+	llmURL = strings.TrimSpace(llmURL)
+	if llmURL == "" {
+		return
+	}
+	cfg.OpenAIBaseURL = strings.TrimRight(llmURL, "/") + "/v1"
+	if cfg.Model == "" || cfg.Model == "gpt-4o-mini" {
+		cfg.Model = "qwen3-coder-next:latest"
+	}
+	if cfg.OpenAIAPIKey == "" {
+		// Ollama doesn't require a key but the existing llm client
+		// gates on key presence; populate with a sentinel.
+		cfg.OpenAIAPIKey = "ollama"
+	}
+	rlog.Info("llm composer enabled (local-only)", "endpoint", cfg.OpenAIBaseURL, "model", cfg.Model)
+}
+
+// llmDefault reads $REVIEWQA_LLM, defaulting to empty.
+func llmDefault() string {
+	return strings.TrimSpace(os.Getenv("REVIEWQA_LLM"))
 }
 
 func newPromptCmd() *cobra.Command {
@@ -187,6 +228,7 @@ func newPromptCmd() *cobra.Command {
 	var dryRun bool
 	var evidence bool
 	var coverage string
+	var llm string
 	cmd := &cobra.Command{
 		Use:   "prompt [text]",
 		Short: "Generate Playwright tests for a focused area expressed as a natural-language prompt.",
@@ -220,6 +262,7 @@ Examples:
 				return fmt.Errorf("prompt: no urls provided (pass --url or set REVIEWQA_TARGET_URLS)")
 			}
 			cfg.DryRun = dryRun
+			applyLLMOverride(&cfg, llm)
 			filter := prompt.Parse(text)
 			rlog.Info("prompt parsed", "summary", filter.Describe())
 			cov := probe.ParseCoverage(coverage)
@@ -233,6 +276,7 @@ Examples:
 	cmd.Flags().BoolVar(&dryRun, "dry-run", false, "Print rendered spec(s) instead of opening a PR")
 	cmd.Flags().BoolVar(&evidence, "evidence", false, "Write specs to disk, run them, and bundle playwright-report/+test-results/ into a ZIP")
 	cmd.Flags().StringVar(&coverage, "coverage", coverageDefault(), "Coverage mode: breadth | standard | depth (env: REVIEWQA_COVERAGE)")
+	cmd.Flags().StringVar(&llm, "llm", llmDefault(), "LLM scenario composer endpoint (local-only; never set in CI). (env: REVIEWQA_LLM)")
 	return cmd
 }
 
@@ -421,6 +465,9 @@ func finishProbe(ctx context.Context, cfg config.Config, urls []string, items []
 		rlog.Info("probe: no items produced")
 		return nil
 	}
+	// v0.25: LLM scenario composer — strictly opt-in via --llm.
+	// Mutates feature items in-place to attach ExtraScenarios.
+	items = composeScenarios(ctx, cfg, items)
 	rendered, err := gen.Render(items, cfg.WorkDir)
 	if err != nil {
 		return fmt.Errorf("probe render: %w", err)

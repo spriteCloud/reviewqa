@@ -77,6 +77,51 @@ func (c *Client) Humanize(ctx context.Context, lang, symbolName string, content 
 	return humanized
 }
 
+// Chat is a public wrapper around the chat-completions call. The
+// scenario composer (internal/composer) uses it directly with its own
+// system prompt rather than going through Humanize. Returns the
+// model's raw response text, or an error when the request fails / the
+// client is disabled.
+func (c *Client) Chat(ctx context.Context, systemMsg, userMsg string) (string, error) {
+	if !c.Enabled() {
+		return "", errors.New("llm: client disabled (no OPENAI_API_KEY or no model)")
+	}
+	body, _ := json.Marshal(chatReq{
+		Model:     c.cfg.Model,
+		MaxTokens: c.cfg.LLMTokenCap,
+		Messages: []message{
+			{Role: "system", Content: systemMsg},
+			{Role: "user", Content: userMsg},
+		},
+	})
+	url := strings.TrimRight(c.cfg.OpenAIBaseURL, "/") + "/chat/completions"
+	req, err := http.NewRequestWithContext(ctx, http.MethodPost, url, bytes.NewReader(body))
+	if err != nil {
+		return "", err
+	}
+	req.Header.Set("Content-Type", "application/json")
+	if c.cfg.OpenAIAPIKey != "" {
+		req.Header.Set("Authorization", "Bearer "+c.cfg.OpenAIAPIKey)
+	}
+	r, err := c.http.Do(req)
+	if err != nil {
+		return "", err
+	}
+	defer r.Body.Close()
+	raw, _ := io.ReadAll(io.LimitReader(r.Body, 1<<20))
+	if r.StatusCode/100 != 2 {
+		return "", fmt.Errorf("llm: status %d: %s", r.StatusCode, raw)
+	}
+	var resp chatResp
+	if err := json.Unmarshal(raw, &resp); err != nil {
+		return "", err
+	}
+	if len(resp.Choices) == 0 {
+		return "", errors.New("llm: no choices")
+	}
+	return resp.Choices[0].Message.Content, nil
+}
+
 func (c *Client) complete(ctx context.Context, userPrompt string) (string, error) {
 	body, _ := json.Marshal(chatReq{
 		Model:     c.cfg.Model,

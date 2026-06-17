@@ -63,3 +63,19 @@ Feature: {{.Symbol.Name}} — {{.JourneyKind}} journey
     Then I remain on the same page
     And no success message is shown
 {{- end }}
+
+{{- if .ExtraScenarios }}
+
+  # ───────────────────────────────────────────────────────────────
+  # LLM-composed scenarios{{if .LLMModel}} (model: {{.LLMModel}}){{end}}
+  # Filter out with `--grep-invert @llm-composed` for stricter CI runs.
+  # ───────────────────────────────────────────────────────────────
+{{- range .ExtraScenarios }}
+
+  @journey:{{$.JourneyKind}} @priority:{{journeyPriority $.JourneyKind}} @llm-composed{{range .Tags}} {{.}}{{end}}
+  Scenario: {{.Name}}
+{{- range .Steps }}
+    {{.Keyword}} {{.Text}}
+{{- end }}
+{{- end }}
+{{- end }}
