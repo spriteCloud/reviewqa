@@ -17,7 +17,7 @@ Feature: WwwSpritecloudCom — research journey
   So that the page delivers on its user goal
 
   @journey:research @priority:standard @smoke
-  Scenario: Research Journey Ends on Correct Page
+  Scenario: research journey reaches its final page
     Given I open the landing page
     And the page title contains "spriteCloud - Test your software, not your reputation!"
     And the main heading reads "Test your software, not your reputation."
@@ -26,12 +26,12 @@ Feature: WwwSpritecloudCom — research journey
     And the page title contains "Case Study - eCommerce Platform"
 
   @journey:research @priority:standard @kind:resume
-  Scenario: Direct URL to Research Page Loads Correctly
+  Scenario: research — deep-link to the final page renders correctly
     Given I open the page "/case-study-ecomm-platform"
     Then I see the heading "Performance Testing for an eCommerce Platform"
 
   @journey:research @priority:standard @kind:back-button
-  Scenario: Back Button Returns to Landing Page
+  Scenario: research — back button returns to landing after navigation
     Given I open the landing page
     When I click the link to "/case-study-ecomm-platform"
     When I go back in the browser history
@@ -43,20 +43,21 @@ Feature: WwwSpritecloudCom — research journey
   # ───────────────────────────────────────────────────────────────
 
   @journey:research @priority:standard @llm-composed @kind:variant @model:qwen3-coder-next-latest
-  Scenario: Main Navigation Links Appear
+  Scenario: Verify landing page loads with correct title
     Given I open the landing page
-    Then I see the heading "Test your software, not your reputation."
-    Then the page has at least 10 items
-
-  @journey:research @priority:standard @llm-composed @kind:variant @model:qwen3-coder-next-latest
-  Scenario: Contact Page Accessible via Header Link
-    Given I open the landing page
-    When I click the link to "/contact"
-    Then the URL contains "/contact"
+    Then the page title contains "SpriteCloud"
+    Then the main heading reads "Test your software, not your reputation."
 
   @journey:research @priority:standard @llm-composed @kind:edge @model:qwen3-coder-next-latest
-  Scenario: Empty Form Submission Shows No Errors
-    Given I open the landing page
+  Scenario: Navigate to Test Automation page from header
+    Given I am on the landing page
+    When I click the link to "/test-automation"
+    Then the URL contains "/test-automation"
+    Then I see the heading "Test Automation"
+
+  @journey:research @priority:standard @llm-composed @kind:edge @model:qwen3-coder-next-latest
+  Scenario: Scroll to bottom and verify accessibility
+    Given I am on the landing page
+    When I scroll to the bottom of the page
+    Then I see the heading "Contact Us"
     Then no error message is shown in the form region
-    When I submit the form without filling any required field
-    Then no success message is shown

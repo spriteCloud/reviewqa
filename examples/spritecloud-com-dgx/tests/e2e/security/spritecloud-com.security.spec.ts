@@ -15,8 +15,8 @@
 import { test, expect } from '@playwright/test'
 
 test.describe.configure({ mode: 'parallel' })
-test.describe('WwwSpritecloudCom — security headers check at https://www.spritecloud.com', () => {
-  test('baseline security headers check', async ({ request }) => {
+test.describe('Security headers check for www.spritecloud.com', () => {
+  test('Verifies essential security headers are present', async ({ request }) => {
     const response = await request.get('https://www.spritecloud.com')
     expect(response.status(), 'origin should respond').toBeLessThan(500)
     const headers = response.headers()

@@ -17,7 +17,7 @@ Feature: WwwSpritecloudCom — browse journey
   So that the page delivers on its user goal
 
   @journey:browse @priority:standard @smoke
-  Scenario: user completes the browse flow and lands on the about page
+  Scenario: browse journey reaches its final page
     Given I open the landing page
     And the page title contains "spriteCloud - Test your software, not your reputation!"
     And the main heading reads "Test your software, not your reputation."
@@ -28,16 +28,23 @@ Feature: WwwSpritecloudCom — browse journey
     And the page title contains "About Us"
 
   @journey:browse @priority:standard @kind:resume
-  Scenario: deep-link to the about page loads correctly
+  Scenario: browse — deep-link to the final page renders correctly
     Given I open the page "/about-us"
     Then I see the heading "Testing is in our DNA."
 
   @journey:browse @priority:standard @kind:back-button
-  Scenario: browser back button returns user to the landing page
+  Scenario: back button after navigation returns to landing page
     Given I open the landing page
     When I click the link to "/about-us"
     When I go back in the browser history
     Then the main heading reads "Test your software, not your reputation."
+
+  @journey:browse @priority:standard @kind:cross-journey
+  Scenario: switching to landing and back leaves no broken state
+    Given I open the landing page
+    When I navigate directly to "/"
+    And I go back in the browser history
+    Then no error message is shown in the form region
 
   # ───────────────────────────────────────────────────────────────
   # LLM-composed scenarios (model: qwen3-coder-next:latest)
@@ -45,20 +52,19 @@ Feature: WwwSpritecloudCom — browse journey
   # ───────────────────────────────────────────────────────────────
 
   @journey:browse @priority:standard @llm-composed @kind:variant @model:qwen3-coder-next-latest
-  Scenario: user scrolls to view all top navigation links
+  Scenario: Navigate to contact page from landing
     Given I am on the landing page
-    When I scroll to the bottom of the page
-    Then the page has at least 10 items
-
-  @journey:browse @priority:standard @llm-composed @kind:edge @model:qwen3-coder-next-latest
-  Scenario: user opens the navigation menu
-    Given I am on the landing page
-    When I open the menu
-    Then the main heading reads "Test your software, not your reputation."
+    When I click the link to "/contact"
+    Then the URL contains "/contact"
 
   @journey:browse @priority:standard @llm-composed @kind:variant @model:qwen3-coder-next-latest
-  Scenario: user closes the navigation menu
+  Scenario: Navigate to test automation section
     Given I am on the landing page
-    When I open the menu
-    And I close the menu
-    Then no error message is shown in the form region
+    When I click the link to "/test-automation"
+    Then the page title contains "Test Automation"
+
+  @journey:browse @priority:standard @llm-composed @kind:edge @model:qwen3-coder-next-latest
+  Scenario: Scroll to the footer section
+    Given I am on the landing page
+    When I scroll to the bottom of the page
+    Then I see the heading "Test your software, not your reputation."

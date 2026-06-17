@@ -330,6 +330,8 @@ var registeredPatterns = []*regexp.Regexp{
 	regexp.MustCompile(`^the response status is \d+$`),
 	regexp.MustCompile(`^I scroll into view of the "[^"]+" element$`),
 	regexp.MustCompile(`^I go back in the browser history$`),
+	regexp.MustCompile(`^I am signed in as "[^"]+"$`),
+	regexp.MustCompile(`^I am not signed in$`),
 }
 
 func matchesRegisteredPattern(text string) bool {

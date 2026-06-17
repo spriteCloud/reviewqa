@@ -12,8 +12,8 @@ import { test, expect } from '@playwright/test'
 import { AxeBuilder } from '@axe-core/playwright'
 
 test.describe.configure({ mode: 'parallel' })
-test.describe('WwwSpritecloudCom — accessibility testing for https://www.spritecloud.com/style-guide', () => {
-  test('no serious or critical accessibility violations (smoke test)', async ({ page }) => {
+test.describe('www.spritecloud.com/style-guide accessibility check', () => {
+  test('passes a11y smoke test with no serious or critical violations', async ({ page }) => {
     await page.goto('/style-guide')
     const results = await new AxeBuilder({ page })
       .withTags(['wcag2a', 'wcag2aa', 'wcag21a', 'wcag21aa'])

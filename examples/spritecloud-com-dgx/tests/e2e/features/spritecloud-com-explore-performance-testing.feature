@@ -17,7 +17,7 @@ Feature: WwwSpritecloudCom — explore journey
   So that the page delivers on its user goal
 
   @journey:explore @priority:nice-to-have @smoke
-  Scenario: navigating to performance testing shows the expected terminal page
+  Scenario: explore journey leads to the expected final page
     Given I open the landing page
     And the page title contains "spriteCloud - Test your software, not your reputation!"
     And the main heading reads "Test your software, not your reputation."
@@ -26,13 +26,44 @@ Feature: WwwSpritecloudCom — explore journey
     And the page title contains "spriteCloud - Performance Testing"
 
   @journey:explore @priority:nice-to-have @kind:resume
-  Scenario: directly visiting performance testing page displays correctly
+  Scenario: deep-linking to the final page works as expected
     Given I open the page "/performance-testing"
     Then I see the heading "Your Software Put Through its Paces."
 
   @journey:explore @priority:nice-to-have @kind:back-button
-  Scenario: using the back button after navigation returns to the homepage
+  Scenario: navigating back after exploring returns to the home page
     Given I open the landing page
     When I click the link to "/performance-testing"
     When I go back in the browser history
+    Then the main heading reads "Test your software, not your reputation."
+
+  @journey:explore @priority:nice-to-have @kind:cross-journey
+  Scenario: switching between pages and using browser history doesn’t break the UI
+    Given I open the landing page
+    When I navigate directly to "/"
+    And I go back in the browser history
+    Then no error message is shown in the form region
+
+  # ───────────────────────────────────────────────────────────────
+  # LLM-composed scenarios (model: qwen3-coder-next:latest)
+  # Filter out with `--grep-invert @llm-composed` for stricter CI runs.
+  # ───────────────────────────────────────────────────────────────
+
+  @journey:explore @priority:nice-to-have @llm-composed @kind:variant @model:qwen3-coder-next-latest
+  Scenario: explore guides section loads correctly
+    Given I open the landing page
+    When I click the link to "/guides"
+    Then the page title contains "Guides"
+
+  @journey:explore @priority:nice-to-have @llm-composed @kind:variant @model:qwen3-coder-next-latest
+  Scenario: case studies section displays the expected content
+    Given I open the landing page
+    When I click the link to "/case-studies"
+    Then the page title contains "Case Studies"
+    Then the page has at least 3 items
+
+  @journey:explore @priority:nice-to-have @llm-composed @kind:edge @model:qwen3-coder-next-latest
+  Scenario: scolling to the bottom of the home page shows correct content
+    Given I am on the landing page
+    When I scroll to the bottom of the page
     Then the main heading reads "Test your software, not your reputation."

@@ -172,6 +172,43 @@ Feature: {{.Symbol.Name}} — {{.JourneyKind}} journey
 {{- end }}
 {{- end }}
 
+{{- /* v0.38 stateful + cross-journey families. Auth state only fires
+       when the suite has an authenticate journey (signalled via
+       Catalogue, populated by the probe wiring). Cross-journey
+       resume fires for every multi-step journey. */ -}}
+{{- if and (suiteHasAuthJourney .Catalogue) (ne .JourneyKind "authenticate") }}
+
+  @journey:{{.JourneyKind}} @priority:{{journeyPriority .JourneyKind}} @state:logged-in @kind:state
+  Scenario: {{.JourneyKind}} — signed-in users complete the journey
+    Given I am signed in as "reviewqa-test-user"
+    And I open the landing page
+{{- $landingH1 := firstH1 (index .Symbols 0).Contents }}
+{{- if $landingH1.Text }}
+    Then the main heading reads "{{$landingH1.Text}}"
+{{- end }}
+
+  @journey:{{.JourneyKind}} @priority:{{journeyPriority .JourneyKind}} @state:anonymous @kind:state
+  Scenario: {{.JourneyKind}} — anonymous users complete the journey
+    Given I am not signed in
+    And I open the landing page
+{{- if $landingH1.Text }}
+    Then the main heading reads "{{$landingH1.Text}}"
+{{- end }}
+{{- end }}
+
+{{- /* Cart-style abandonment: when a convert journey exists and the
+       current journey is browse / explore / read, emit one Scenario
+       that navigates between them and asserts no broken state. */ -}}
+{{- if and (suiteHasConvertJourney .Catalogue) (or (eq .JourneyKind "browse") (eq .JourneyKind "explore") (eq .JourneyKind "read")) }}
+
+  @journey:{{.JourneyKind}} @priority:{{journeyPriority .JourneyKind}} @kind:cross-journey
+  Scenario: {{.JourneyKind}} — switching to landing and back leaves no broken state
+    Given I open the landing page
+    When I navigate directly to "/"
+    And I go back in the browser history
+    Then no error message is shown in the form region
+{{- end }}
+
 {{- if .ExtraScenarios }}
 
   # ───────────────────────────────────────────────────────────────

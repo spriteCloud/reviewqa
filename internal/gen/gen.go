@@ -647,6 +647,33 @@ var funcs = template.FuncMap{
 	"paramRowsFor": paramRowsFor,
 	"paramRowVariant": func(r paramRow) string { return r.Variant },
 	"paramRowValue":   func(r paramRow) string { return r.Value },
+	// suiteHasAuthJourney reports whether the suite includes an
+	// authenticate journey. Used to gate v0.38 @state:logged-in /
+	// @state:anonymous variants — there's no point emitting them
+	// against a site without authentication.
+	"suiteHasAuthJourney": func(c *plan.Catalogue) bool {
+		if c == nil {
+			return false
+		}
+		for _, j := range c.Journeys {
+			if j.Kind == "authenticate" {
+				return true
+			}
+		}
+		return false
+	},
+	// suiteHasConvertJourney mirrors the above for the convert kind.
+	"suiteHasConvertJourney": func(c *plan.Catalogue) bool {
+		if c == nil {
+			return false
+		}
+		for _, j := range c.Journeys {
+			if j.Kind == "convert" {
+				return true
+			}
+		}
+		return false
+	},
 	// pageIsListLike reports whether the symbol's tags / content
 	// suggest a list / search shape that warrants an empty-state test.
 	"pageIsListLike": func(s ast.Symbol) bool {
