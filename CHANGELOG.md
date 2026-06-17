@@ -7,6 +7,28 @@ shipped the depth-parity arc (Contract, Integration, Mobile, A11y trio).
 v0.61–v0.62 are the live-execution + composer-validation arc — first
 real-site run + composer destination-DOM enforcement.
 
+## v0.82 — Multi-run history + pass-rate sparkline
+
+The per-run JSON reports written under `tests/e2e/.reviewqa-runs/`
+have been on disk since v0.75 but only the most-recent one fed
+the last-run pill; previous runs were inert. v0.82 reads them.
+
+- New `LoadScenarioTimeline(workdir, scenarioName)` in
+  `internal/serve/run.go` walks every `run-*.json` in the runs
+  dir, parses each via the existing `ParsePlaywrightJSON`, picks
+  the scenario's record out, and returns the last 20 sorted
+  oldest→newest. Falls back to the file's mtime when the parsed
+  record's `At` is empty.
+- New `GET /api/scenario-runs?scenario=…` returns
+  `{ runs: [{at, status, durationMs}] }`.
+- Frontend: the last-run pill is now clickable. Click → popover
+  with a vanilla SVG sparkline (one bar per run, height by
+  duration, color by status) plus the last 5 rows as a list.
+  Click outside / on the pill again to close.
+
+2 new tests for the timeline reader + endpoint validation.
+582 → 584 passing.
+
 ## v0.81 — Probe creates a new sibling project
 
 The HOME Probe form used to write generated files into the

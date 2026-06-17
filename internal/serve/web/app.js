@@ -76,7 +76,7 @@ function formatAgo (iso) {
   return Math.round(s / 86400) + 'd ago'
 }
 
-function renderLastRunPill (lastRun) {
+function renderLastRunPill (lastRun, scenarioName) {
   if (!lastRun) return el('span', { class: 'last-run-pill last-run-none', title: 'No run recorded yet' }, '○ not run')
   const status = (lastRun.status || '').toLowerCase()
   const cls = status === 'passed' ? 'last-run-pass'
@@ -84,8 +84,62 @@ function renderLastRunPill (lastRun) {
     : status === 'skipped' ? 'last-run-skip' : 'last-run-other'
   const icon = status === 'passed' ? '✓' : status === 'failed' ? '✗' : status === 'skipped' ? '–' : '●'
   const dur = lastRun.durationMs ? ` · ${(lastRun.durationMs / 1000).toFixed(1)}s` : ''
-  return el('span', { class: 'last-run-pill ' + cls, title: `Last run ${lastRun.at || ''}` },
-    `${icon} ${status} · ${formatAgo(lastRun.at)}${dur}`)
+  const pill = el('span', {
+    class: 'last-run-pill last-run-pill-clickable ' + cls,
+    title: 'Click for run history',
+    onclick: (e) => { e.stopPropagation(); openRunHistory(pill, scenarioName) },
+  }, `${icon} ${status} · ${formatAgo(lastRun.at)}${dur}`)
+  return pill
+}
+
+async function openRunHistory (anchor, scenarioName) {
+  // Toggle: a second click closes.
+  const existing = document.querySelector('.run-history-popover')
+  if (existing) { existing.remove(); return }
+  if (!scenarioName) return
+  let runs = []
+  try {
+    const data = await fetchJSON('/api/scenario-runs?scenario=' + encodeURIComponent(scenarioName))
+    runs = data.runs || []
+  } catch (_) { /* show empty state */ }
+
+  const pop = el('div', { class: 'run-history-popover' },
+    el('div', { class: 'run-history-title' }, 'Recent runs'),
+    renderSparkline(runs),
+    runs.length
+      ? el('ul', { class: 'run-history-list' }, ...runs.slice(-5).reverse().map(r =>
+          el('li', { class: 'run-history-row run-history-' + (r.status || 'other') },
+            el('span', { class: 'r-status' }, (r.status === 'passed' ? '✓' : r.status === 'failed' ? '✗' : '–') + ' ' + (r.status || '?')),
+            el('span', { class: 'r-when' }, formatAgo(r.at)),
+            el('span', { class: 'r-dur' }, r.durationMs ? `${(r.durationMs / 1000).toFixed(1)}s` : ''),
+          ),
+        ))
+      : el('div', { class: 'run-history-empty' }, 'No history yet.'),
+  )
+  anchor.parentNode.appendChild(pop)
+  const closer = (ev) => {
+    if (!pop.contains(ev.target) && ev.target !== anchor) {
+      pop.remove()
+      document.removeEventListener('mousedown', closer)
+    }
+  }
+  setTimeout(() => document.addEventListener('mousedown', closer), 0)
+}
+
+function renderSparkline (runs) {
+  if (!runs.length) return el('div', { class: 'sparkline sparkline-empty' }, '')
+  const w = 220, h = 40, pad = 2, gap = 2
+  const n = runs.length
+  const barW = Math.max(2, (w - pad * 2 - gap * (n - 1)) / n)
+  const maxDur = Math.max(1, ...runs.map(r => r.durationMs || 0))
+  const bars = runs.map((r, i) => {
+    const bh = Math.max(4, Math.round(((r.durationMs || 0) / maxDur) * (h - pad * 2)))
+    const x = pad + i * (barW + gap)
+    const y = h - pad - bh
+    const fill = r.status === 'passed' ? '#15803D' : r.status === 'failed' ? '#B91C1C' : r.status === 'skipped' ? '#A16207' : '#8899AA'
+    return `<rect x="${x}" y="${y}" width="${barW}" height="${bh}" fill="${fill}" rx="1.5"><title>${r.status || '?'} · ${formatAgo(r.at)}</title></rect>`
+  }).join('')
+  return el('div', { class: 'sparkline', html: `<svg viewBox="0 0 ${w} ${h}" xmlns="http://www.w3.org/2000/svg" width="100%" height="${h}">${bars}</svg>` })
 }
 
 function scenarioToGherkin (sc) {
@@ -135,7 +189,7 @@ function renderFeature (feature) {
       el('div', { class: 'scenario-head' },
         el('div', { class: 'scenario-name-wrap' },
           el('div', { class: 'scenario-name' }, sc.name || '(unnamed)'),
-          renderLastRunPill(sc.lastRun),
+          renderLastRunPill(sc.lastRun, sc.name),
         ),
         el('div', { class: 'scenario-actions' },
           el('button', {
