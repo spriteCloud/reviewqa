@@ -20,6 +20,12 @@ func composeScenarios(ctx context.Context, cfg config.Config, items []plan.Item)
 	if !client.Enabled() {
 		return items
 	}
+	// v0.33: read the bug-discovery ledger so the composer avoids
+	// repeating scenarios that have failed in prior runs.
+	feedback := composer.LoadFeedback(cfg.WorkDir)
+	if len(feedback.FailedTitles) > 0 {
+		rlog.Info("composer: feeding ledger findings to LLM", "failed_titles", len(feedback.FailedTitles))
+	}
 	rlog.Info("composer: requesting LLM scenarios", "model", cfg.Model, "endpoint", cfg.OpenAIBaseURL)
 	// v0.31 cross-journey dedup. Track every step-sequence we've
 	// accepted across the whole suite — duplicate scenarios from
@@ -32,7 +38,7 @@ func composeScenarios(ctx context.Context, cfg config.Config, items []plan.Item)
 			continue
 		}
 		j := buildJourneyForComposer(items[i])
-		extras, err := composer.Propose(ctx, client, j, 3)
+		extras, err := composer.ProposeWithFeedback(ctx, client, j, 3, feedback)
 		if err != nil {
 			rlog.Warn("composer: skipped journey", "kind", j.Kind, "err", err)
 			continue

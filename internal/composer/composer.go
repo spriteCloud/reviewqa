@@ -114,16 +114,23 @@ Then I scroll into view of the "<text>" element
 // nothing useful — never an error.
 //
 // v0.31: retries once with a stricter prompt when the first attempt
-// returns un-parseable JSON. The retry is essentially free if the
-// initial prompt was the unlucky 22% that hits dirty JSON.
+// returns un-parseable JSON.
+// v0.33: when fb is non-empty, the prompt is extended with a "DO NOT
+// re-propose" list so the model avoids repeating known-broken
+// scenarios surfaced by the bug-discovery ledger.
 func Propose(ctx context.Context, llm Client, j Journey, n int) ([]ExtraScenario, error) {
+	return ProposeWithFeedback(ctx, llm, j, n, Feedback{})
+}
+
+// ProposeWithFeedback is the feedback-aware variant.
+func ProposeWithFeedback(ctx context.Context, llm Client, j Journey, n int, fb Feedback) ([]ExtraScenario, error) {
 	if llm == nil {
 		return nil, nil
 	}
 	if n <= 0 {
 		n = 3
 	}
-	user := buildUserPrompt(j, n)
+	user := buildUserPrompt(j, n) + fb.String()
 	scenarios, err := proposeOnce(ctx, llm, systemPrompt, user)
 	if err != nil {
 		// Single retry with a stricter "JSON ONLY" reinforcement.
