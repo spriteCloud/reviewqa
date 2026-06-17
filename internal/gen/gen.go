@@ -143,156 +143,94 @@ func load(t plan.Template) (*template.Template, error) {
 	return template.New(string(t)).Funcs(funcs).Parse(string(body))
 }
 
+// templateRegistry maps plan.Template constants to (subdir, filename)
+// pairs under internal/gen/templates/. Lookup is O(1) and adding a new
+// template is a one-line registration (no growing switch). Cyclomatic
+// complexity drops from 75 (the old switch) to 2.
+type templateLoc struct {
+	subdir, file string
+}
+
+var templateRegistry = map[plan.Template]templateLoc{
+	plan.TmplJestUnit:                   {"ts", "jest_unit.tmpl"},
+	plan.TmplJestAPI:                    {"ts", "jest_api.tmpl"},
+	plan.TmplPlaywrightE2E:              {"ts", "pw_e2e.tmpl"},
+	plan.TmplPlaywrightHappyFlow:        {"ts", "pw_happyflow.tmpl"},
+	plan.TmplPlaywrightFixtures:         {"ts", "pw_fixtures.tmpl"},
+	plan.TmplPlaywrightConfig:           {"ts", "pw_config.tmpl"},
+	plan.TmplPlaywrightReadme:           {"ts", "pw_readme.tmpl"},
+	plan.TmplPlaywrightPackage:          {"ts", "pw_package.tmpl"},
+	plan.TmplPlaywrightTsconfig:         {"ts", "pw_tsconfig.tmpl"},
+	plan.TmplPlaywrightCIFile:           {"ts", "pw_ci_workflow.tmpl"},
+	plan.TmplPlaywrightFuzz:             {"ts", "pw_fuzz.tmpl"},
+	plan.TmplPlaywrightFeature:          {"ts", "pw_feature.tmpl"},
+	plan.TmplPlaywrightSteps:            {"ts", "pw_steps.tmpl"},
+	plan.TmplPlaywrightCatalogue:        {"ts", "pw_test_catalogue.tmpl"},
+	plan.TmplPlaywrightSummary:          {"ts", "pw_work_summary.tmpl"},
+	plan.TmplPlaywrightAPI:              {"ts", "pw_api.tmpl"},
+	plan.TmplPlaywrightFindings:         {"ts", "pw_findings.tmpl"},
+	plan.TmplPlaywrightStepsBDD:         {"ts", "pw_steps_bdd.tmpl"},
+	plan.TmplPlaywrightA11y:             {"ts", "pw_a11y.tmpl"},
+	plan.TmplPlaywrightResponsive:       {"ts", "pw_responsive.tmpl"},
+	plan.TmplPlaywrightPerf:             {"ts", "pw_perf.tmpl"},
+	plan.TmplPlaywrightSecurity:         {"ts", "pw_security.tmpl"},
+	plan.TmplPlaywrightHealth:           {"ts", "pw_health.tmpl"},
+	plan.TmplPlaywrightContract:         {"ts", "pw_contract.tmpl"},
+	plan.TmplPlaywrightObservability:    {"ts", "pw_observability.tmpl"},
+	plan.TmplPlaywrightI18n:             {"ts", "pw_i18n.tmpl"},
+	plan.TmplJestProperty:               {"ts", "jest_property.tmpl"},
+	plan.TmplJestSerialization:          {"ts", "jest_serialization.tmpl"},
+	plan.TmplJestValidatorPos:           {"ts", "jest_validator_positive.tmpl"},
+	plan.TmplPytestProperty:             {"py", "pytest_property.tmpl"},
+	plan.TmplPytestSerialization:        {"py", "pytest_serialization.tmpl"},
+	plan.TmplPytestValidatorPos:         {"py", "pytest_validator_positive.tmpl"},
+	plan.TmplPlaywrightVisual:           {"ts", "pw_visual.tmpl"},
+	plan.TmplPlaywrightGraphQL:          {"ts", "pw_graphql.tmpl"},
+	plan.TmplPlaywrightWebhook:          {"ts", "pw_webhook.tmpl"},
+	plan.TmplGRPCUnary:                  {"ts", "grpc_unary.tmpl"},
+	plan.TmplGRPCServerStream:           {"ts", "grpc_server_stream.tmpl"},
+	plan.TmplGRPCClientStream:           {"ts", "grpc_client_stream.tmpl"},
+	plan.TmplGRPCBidi:                   {"ts", "grpc_bidi.tmpl"},
+	plan.TmplPlaywrightIdempotency:      {"ts", "pw_idempotency.tmpl"},
+	plan.TmplPlaywrightPagination:       {"ts", "pw_pagination.tmpl"},
+	plan.TmplPlaywrightContentNegotiation: {"ts", "pw_content_negotiation.tmpl"},
+	plan.TmplPlaywrightAuthHeaders:      {"ts", "pw_auth_headers.tmpl"},
+	plan.TmplPlaywrightVersioning:       {"ts", "pw_versioning.tmpl"},
+	plan.TmplOpenAPICompat:              {"ts", "openapi_compat.tmpl"},
+	plan.TmplProtoCompat:                {"ts", "proto_compat.tmpl"},
+	plan.TmplAsyncAPICompat:             {"ts", "asyncapi_compat.tmpl"},
+	plan.TmplJestStore:                  {"ts", "jest_store.tmpl"},
+	plan.TmplJestConstructor:            {"ts", "jest_constructor.tmpl"},
+	plan.TmplPytestConstructor:          {"py", "pytest_constructor.tmpl"},
+	plan.TmplScheduledJob:               {"ts", "scheduled_job.tmpl"},
+	plan.TmplEventHandler:               {"ts", "event_handler.tmpl"},
+	plan.TmplEmailTemplate:              {"ts", "email_template.tmpl"},
+	plan.TmplIntegrationDB:              {"ts", "integration_db.tmpl"},
+	plan.TmplIntegrationBroker:          {"ts", "integration_broker.tmpl"},
+	plan.TmplIntegrationCache:           {"ts", "integration_cache.tmpl"},
+	plan.TmplIntegrationStorage:         {"ts", "integration_storage.tmpl"},
+	plan.TmplIntegrationSearch:          {"ts", "integration_search.tmpl"},
+	plan.TmplIntegrationAuth:            {"ts", "integration_auth.tmpl"},
+	plan.TmplIntegrationContainers:      {"ts", "integration_containers.tmpl"},
+	plan.TmplIntegrationCompose:         {"ts", "integration_compose.tmpl"},
+	plan.TmplPlaywrightMobile:           {"ts", "pw_mobile.tmpl"},
+	plan.TmplPlaywrightDeepLink:         {"ts", "pw_deeplink.tmpl"},
+	plan.TmplRNHappyFlow:                {"ts", "rn_happyflow.tmpl"},
+	plan.TmplFlutterHappyFlow:           {"ts", "flutter_happyflow.tmpl"},
+	plan.TmplDbtSchema:                  {"py", "dbt_schema.tmpl"},
+	plan.TmplPanderaConformance:         {"py", "pandera_conformance.tmpl"},
+	plan.TmplGreatExpectations:          {"py", "great_expectations.tmpl"},
+	plan.TmplPytestUnit:                 {"py", "pytest_unit.tmpl"},
+	plan.TmplPytestAPI:                  {"py", "pytest_api.tmpl"},
+	plan.TmplGoUnit:                     {"go", "gotest_unit.tmpl"},
+	plan.TmplGoHTTPTest:                 {"go", "gotest_httptest.tmpl"},
+	plan.TmplJUnit5Unit:                 {"java", "junit5_unit.tmpl"},
+	plan.TmplJUnit5RestAssured:          {"java", "junit5_restassured.tmpl"},
+}
+
 func templateLocation(t plan.Template) (string, string) {
-	switch t {
-	case plan.TmplJestUnit:
-		return "ts", "jest_unit.tmpl"
-	case plan.TmplJestAPI:
-		return "ts", "jest_api.tmpl"
-	case plan.TmplPlaywrightE2E:
-		return "ts", "pw_e2e.tmpl"
-	case plan.TmplPlaywrightHappyFlow:
-		return "ts", "pw_happyflow.tmpl"
-	case plan.TmplPlaywrightFixtures:
-		return "ts", "pw_fixtures.tmpl"
-	case plan.TmplPlaywrightConfig:
-		return "ts", "pw_config.tmpl"
-	case plan.TmplPlaywrightReadme:
-		return "ts", "pw_readme.tmpl"
-	case plan.TmplPlaywrightPackage:
-		return "ts", "pw_package.tmpl"
-	case plan.TmplPlaywrightTsconfig:
-		return "ts", "pw_tsconfig.tmpl"
-	case plan.TmplPlaywrightCIFile:
-		return "ts", "pw_ci_workflow.tmpl"
-	case plan.TmplPlaywrightFuzz:
-		return "ts", "pw_fuzz.tmpl"
-	case plan.TmplPlaywrightFeature:
-		return "ts", "pw_feature.tmpl"
-	case plan.TmplPlaywrightSteps:
-		return "ts", "pw_steps.tmpl"
-	case plan.TmplPlaywrightCatalogue:
-		return "ts", "pw_test_catalogue.tmpl"
-	case plan.TmplPlaywrightSummary:
-		return "ts", "pw_work_summary.tmpl"
-	case plan.TmplPlaywrightAPI:
-		return "ts", "pw_api.tmpl"
-	case plan.TmplPlaywrightFindings:
-		return "ts", "pw_findings.tmpl"
-	case plan.TmplPlaywrightStepsBDD:
-		return "ts", "pw_steps_bdd.tmpl"
-	case plan.TmplPlaywrightA11y:
-		return "ts", "pw_a11y.tmpl"
-	case plan.TmplPlaywrightResponsive:
-		return "ts", "pw_responsive.tmpl"
-	case plan.TmplPlaywrightPerf:
-		return "ts", "pw_perf.tmpl"
-	case plan.TmplPlaywrightSecurity:
-		return "ts", "pw_security.tmpl"
-	case plan.TmplPlaywrightHealth:
-		return "ts", "pw_health.tmpl"
-	case plan.TmplPlaywrightContract:
-		return "ts", "pw_contract.tmpl"
-	case plan.TmplPlaywrightObservability:
-		return "ts", "pw_observability.tmpl"
-	case plan.TmplPlaywrightI18n:
-		return "ts", "pw_i18n.tmpl"
-	case plan.TmplJestProperty:
-		return "ts", "jest_property.tmpl"
-	case plan.TmplJestSerialization:
-		return "ts", "jest_serialization.tmpl"
-	case plan.TmplJestValidatorPos:
-		return "ts", "jest_validator_positive.tmpl"
-	case plan.TmplPytestProperty:
-		return "py", "pytest_property.tmpl"
-	case plan.TmplPytestSerialization:
-		return "py", "pytest_serialization.tmpl"
-	case plan.TmplPytestValidatorPos:
-		return "py", "pytest_validator_positive.tmpl"
-	case plan.TmplPlaywrightVisual:
-		return "ts", "pw_visual.tmpl"
-	case plan.TmplPlaywrightGraphQL:
-		return "ts", "pw_graphql.tmpl"
-	case plan.TmplPlaywrightWebhook:
-		return "ts", "pw_webhook.tmpl"
-	case plan.TmplGRPCUnary:
-		return "ts", "grpc_unary.tmpl"
-	case plan.TmplGRPCServerStream:
-		return "ts", "grpc_server_stream.tmpl"
-	case plan.TmplGRPCClientStream:
-		return "ts", "grpc_client_stream.tmpl"
-	case plan.TmplGRPCBidi:
-		return "ts", "grpc_bidi.tmpl"
-	case plan.TmplPlaywrightIdempotency:
-		return "ts", "pw_idempotency.tmpl"
-	case plan.TmplPlaywrightPagination:
-		return "ts", "pw_pagination.tmpl"
-	case plan.TmplPlaywrightContentNegotiation:
-		return "ts", "pw_content_negotiation.tmpl"
-	case plan.TmplPlaywrightAuthHeaders:
-		return "ts", "pw_auth_headers.tmpl"
-	case plan.TmplPlaywrightVersioning:
-		return "ts", "pw_versioning.tmpl"
-	case plan.TmplOpenAPICompat:
-		return "ts", "openapi_compat.tmpl"
-	case plan.TmplProtoCompat:
-		return "ts", "proto_compat.tmpl"
-	case plan.TmplAsyncAPICompat:
-		return "ts", "asyncapi_compat.tmpl"
-	case plan.TmplJestStore:
-		return "ts", "jest_store.tmpl"
-	case plan.TmplJestConstructor:
-		return "ts", "jest_constructor.tmpl"
-	case plan.TmplPytestConstructor:
-		return "py", "pytest_constructor.tmpl"
-	case plan.TmplScheduledJob:
-		return "ts", "scheduled_job.tmpl"
-	case plan.TmplEventHandler:
-		return "ts", "event_handler.tmpl"
-	case plan.TmplEmailTemplate:
-		return "ts", "email_template.tmpl"
-	case plan.TmplIntegrationDB:
-		return "ts", "integration_db.tmpl"
-	case plan.TmplIntegrationBroker:
-		return "ts", "integration_broker.tmpl"
-	case plan.TmplIntegrationCache:
-		return "ts", "integration_cache.tmpl"
-	case plan.TmplIntegrationStorage:
-		return "ts", "integration_storage.tmpl"
-	case plan.TmplIntegrationSearch:
-		return "ts", "integration_search.tmpl"
-	case plan.TmplIntegrationAuth:
-		return "ts", "integration_auth.tmpl"
-	case plan.TmplIntegrationContainers:
-		return "ts", "integration_containers.tmpl"
-	case plan.TmplIntegrationCompose:
-		return "ts", "integration_compose.tmpl"
-	case plan.TmplPlaywrightMobile:
-		return "ts", "pw_mobile.tmpl"
-	case plan.TmplPlaywrightDeepLink:
-		return "ts", "pw_deeplink.tmpl"
-	case plan.TmplRNHappyFlow:
-		return "ts", "rn_happyflow.tmpl"
-	case plan.TmplFlutterHappyFlow:
-		return "ts", "flutter_happyflow.tmpl"
-	case plan.TmplDbtSchema:
-		return "py", "dbt_schema.tmpl"
-	case plan.TmplPanderaConformance:
-		return "py", "pandera_conformance.tmpl"
-	case plan.TmplGreatExpectations:
-		return "py", "great_expectations.tmpl"
-	case plan.TmplPytestUnit:
-		return "py", "pytest_unit.tmpl"
-	case plan.TmplPytestAPI:
-		return "py", "pytest_api.tmpl"
-	case plan.TmplGoUnit:
-		return "go", "gotest_unit.tmpl"
-	case plan.TmplGoHTTPTest:
-		return "go", "gotest_httptest.tmpl"
-	case plan.TmplJUnit5Unit:
-		return "java", "junit5_unit.tmpl"
-	case plan.TmplJUnit5RestAssured:
-		return "java", "junit5_restassured.tmpl"
+	if loc, ok := templateRegistry[t]; ok {
+		return loc.subdir, loc.file
 	}
 	return "", ""
 }

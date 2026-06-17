@@ -34,6 +34,18 @@ when the site advertises a schema, webhook endpoint, or hreflang
 siblings. `tests/grpc/` emits in diff mode when a PR touches a
 `.proto` file.
 
+## v1.0 release candidate — full release history
+
+See [`CHANGELOG.md`](./CHANGELOG.md) for the v0.19 → v0.30 arc that closed
+the deterministic 10-layer test taxonomy: Gherkin-first journeys via
+playwright-bdd, API + GraphQL + webhook + gRPC contracts, visual /
+a11y / responsive / perf / security / health / observability /
+i18n / mobile, schema compatibility on PR diff, scheduled-job /
+event-handler / email diff-mode auto-emission, Layer 5 integration
+via `reviewqa.yml`, Layer 9 data quality (dbt / pandera / GE), and
+an opt-in LLM scenario composer that proposes extras beyond the
+deterministic baseline.
+
 ## v0.25 — LLM-driven scenario composer (opt-in, local-only)
 
 Templates are deterministic Go text/templates by default — the same

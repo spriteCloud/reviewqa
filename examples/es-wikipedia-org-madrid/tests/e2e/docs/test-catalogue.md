@@ -19,7 +19,7 @@ suite covers — anything missing here is a coverage gap.
 | `https://es.wikipedia.org/wiki/Portal:Actualidad` | Portal:Actualidad - Wikipedia, la enciclopedia libre | `list`, `interactive` |
 | `https://es.wikipedia.org/wiki/Especial:CambiosRecientes` | Cambios recientes - Wikipedia, la enciclopedia libre | `list`, `interactive` |
 | `https://es.wikipedia.org/wiki/Especial:P%C3%A1ginasNuevas` | Páginas nuevas - Wikipedia, la enciclopedia libre | `list`, `interactive` |
-| `https://es.wikipedia.org/wiki/Izumi_Yukimura` | Izumi Yukimura - Wikipedia, la enciclopedia libre | `list`, `interactive` |
+| `https://es.wikipedia.org/wiki/Obelisco_conmemorativo_de_la_Batalla_de_Carabobo` | Obelisco conmemorativo de la Batalla de Carabobo - Wikipedia, la enciclopedia libre | `list`, `interactive` |
 | `https://es.wikipedia.org/wiki/Ayuda:Contenidos` | Ayuda:Contenidos - Wikipedia, la enciclopedia libre | `list`, `interactive` |
 | `https://es.wikipedia.org/wiki/Wikipedia:Informes_de_error` | Wikipedia:Informes de error - Wikipedia, la enciclopedia libre | `list`, `interactive` |
 | `https://es.wikipedia.org/wiki/Especial:P%C3%A1ginasEspeciales` | Páginas especiales - Wikipedia, la enciclopedia libre | `list`, `detail`, `interactive` |
