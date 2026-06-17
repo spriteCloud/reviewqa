@@ -1,6 +1,10 @@
 package grpc
 
-import "testing"
+import (
+	"testing"
+
+	"reflect"
+)
 
 func TestParse_ClassifiesAllStreamingShapes(t *testing.T) {
 	proto := []byte(`
@@ -64,4 +68,19 @@ service Demo {
 	if len(got) != 2 {
 		t.Fatalf("expected 2 RPCs; got %d", len(got))
 	}
+}
+func TestParse(t *testing.T) {
+	t.Run("happy path", func(t *testing.T) {
+		got := Parse(nil)
+		if reflect.DeepEqual(got, *new([]RPC)) {
+			t.Fatalf("got zero value: %#v", got)
+		}
+	})
+
+	t.Run("returns expected type", func(t *testing.T) {
+		got := Parse(nil)
+		if got, want := reflect.TypeOf(got), reflect.TypeOf(*new([]RPC)); got != want {
+			t.Fatalf("type = %v, want %v", got, want)
+		}
+	})
 }

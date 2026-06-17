@@ -36,3 +36,8 @@ service Pets {
 		t.Errorf("receiver should be the service name; got %s", syms[0].Receiver)
 	}
 }
+func TestExtract(t *testing.T) {
+	t.Run("happy path", func(t *testing.T) {
+		Extract("", nil)
+	})
+}

@@ -1,6 +1,10 @@
 package graphql
 
-import "testing"
+import (
+	"testing"
+
+	"reflect"
+)
 
 func TestParse_FlattensQueriesAndMutations(t *testing.T) {
 	body := []byte(`{
@@ -58,4 +62,19 @@ func TestParse_RejectsResponseWithErrors(t *testing.T) {
 	if _, err := Parse(body); err == nil {
 		t.Error("expected error when response carries errors[]")
 	}
+}
+func TestSampleArguments(t *testing.T) {
+	t.Run("happy path", func(t *testing.T) {
+		got := SampleArguments(nil)
+		if reflect.DeepEqual(got, *new(string)) {
+			t.Fatalf("got zero value: %#v", got)
+		}
+	})
+
+	t.Run("returns expected type", func(t *testing.T) {
+		got := SampleArguments(nil)
+		if got, want := reflect.TypeOf(got), reflect.TypeOf(*new(string)); got != want {
+			t.Fatalf("type = %v, want %v", got, want)
+		}
+	})
 }
