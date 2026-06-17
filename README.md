@@ -34,6 +34,35 @@ when the site advertises a schema, webhook endpoint, or hreflang
 siblings. `tests/grpc/` emits in diff mode when a PR touches a
 `.proto` file.
 
+## v0.24 — diff-mode + OpenAPI-conditional fan-outs
+
+The taxonomy is now closed on the deterministically-reachable side. Every
+PR that touches code or schemas, and every probe that finds OpenAPI, fans
+out into the appropriate test family. Tagged for filtering:
+
+```bash
+npx playwright test --grep @kind:api-idempotency  # repeated PUT/DELETE
+npx playwright test --grep @kind:api-pagination   # collection endpoints
+npx playwright test --grep @kind:api-auth         # security-declared endpoints
+npx playwright test --grep @kind:api-versioning   # /v1 + /v2 pairs
+npx jest --testPathPattern .compat.test.ts        # OpenAPI/.proto/AsyncAPI compat
+npx jest --testPathPattern .property.test.ts      # pure-function property tests
+npx jest --testPathPattern .validator.test.ts     # *Validator positive cases
+npx jest --testPathPattern .cron.test.ts          # @Cron/@Scheduled smoke
+npx jest --testPathPattern .event.test.ts         # queue handler smoke
+npx jest --testPathPattern .email.test.ts         # mailer smoke
+```
+
+Detection runs in two modes:
+- **Diff-mode** (`reviewqa generate`): scans changed TS / Python files for
+  pure functions (no `await`/`fetch`/`console`/`Date.now`/`this`),
+  validator-shaped names, and cron/queue/email patterns. Schema files
+  (`*.proto`, OpenAPI / Swagger JSON or YAML, AsyncAPI) trigger
+  backward-compat tests via `internal/compat`.
+- **Probe-mode** (`reviewqa probe`): when `/openapi.json` is discovered,
+  endpoints fan out into idempotency / pagination / versioning specs
+  based on declared shape.
+
 ## What a `probe` run produces (v0.23)
 
 A single probe of a live URL emits a full, runnable suite plus stakeholder

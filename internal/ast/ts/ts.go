@@ -247,6 +247,67 @@ func setBodyFlags(s *ast.Symbol, body string) {
 		strings.Contains(body, "useNavigate(") {
 		s.HasNavigate = true
 	}
+	// v0.24 diff-mode signals.
+	annotateV024Signals(s, body)
+}
+
+// annotateV024Signals stamps the v0.24 diff-mode flags on a Symbol.
+// IsPure: body has no side-effect tokens. IsValidator: name matches
+// validator pattern. JobKind: signature smells like a cron / queue
+// handler / email sender.
+func annotateV024Signals(s *ast.Symbol, body string) {
+	if s.Kind == ast.KindFunction || s.Kind == ast.KindMethod {
+		s.IsPure = isPureBody(body)
+	}
+	s.IsValidator = isValidatorName(s.Name)
+	if kind := detectJobKind(s.Name, body); kind != "" {
+		s.JobKind = kind
+	}
+}
+
+// pureForbiddenTokens are body substrings that disqualify a function
+// from being a property-based candidate. Conservative — we'd rather
+// skip a pure function than emit a property test against an impure one.
+var pureForbiddenTokens = []string{
+	"await ", "fetch(", "process.", "console.", "this.",
+	"Math.random", "Date.now", "Date()", "new Date",
+	"document.", "window.", "localStorage", "sessionStorage",
+}
+
+func isPureBody(body string) bool {
+	for _, t := range pureForbiddenTokens {
+		if strings.Contains(body, t) {
+			return false
+		}
+	}
+	return true
+}
+
+// reValidatorName matches names like EmailValidator, validateInput,
+// userSchema, AddressSchema.
+var reValidatorName = regexp.MustCompile(`^(?:.+(?:Validator|Validate|Schema)|validate.+)$`)
+
+func isValidatorName(name string) bool {
+	return reValidatorName.MatchString(name)
+}
+
+// detectJobKind looks for cron / queue / email patterns in either the
+// function name or its body. Empty string when no signal matches.
+func detectJobKind(name, body string) string {
+	lowerName := strings.ToLower(name)
+	switch {
+	case strings.Contains(body, "cron.schedule(") || strings.Contains(body, "@Cron(") ||
+		strings.Contains(body, "@Scheduled(") || strings.Contains(lowerName, "cronjob"):
+		return "cron"
+	case strings.Contains(body, "@KafkaListener") || strings.Contains(body, "kafkaConsumer.subscribe") ||
+		strings.Contains(body, "@RabbitListener") || strings.Contains(body, "@MessageHandler") ||
+		strings.HasSuffix(lowerName, "handler") && strings.Contains(body, "subscribe"):
+		return "event"
+	case strings.Contains(body, "mailer.send(") || strings.Contains(body, "sgMail.send(") ||
+		strings.Contains(body, "nodemailer.") || strings.Contains(body, "transporter.sendMail"):
+		return "email"
+	}
+	return ""
 }
 
 func attachAnchors(s *ast.Symbol, anchors []ast.LocatorAnchor, lines []string, end int) {

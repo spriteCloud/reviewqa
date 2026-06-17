@@ -52,6 +52,20 @@ const (
 	TmplGRPCServerStream    Template = "grpc_server_stream"
 	TmplGRPCClientStream    Template = "grpc_client_stream"
 	TmplGRPCBidi            Template = "grpc_bidi"
+	TmplPlaywrightIdempotency       Template = "pw_idempotency"
+	TmplPlaywrightPagination        Template = "pw_pagination"
+	TmplPlaywrightContentNegotiation Template = "pw_content_negotiation"
+	TmplPlaywrightAuthHeaders       Template = "pw_auth_headers"
+	TmplPlaywrightVersioning        Template = "pw_versioning"
+	TmplOpenAPICompat               Template = "openapi_compat"
+	TmplProtoCompat                 Template = "proto_compat"
+	TmplAsyncAPICompat              Template = "asyncapi_compat"
+	TmplJestStore                   Template = "jest_store"
+	TmplJestConstructor             Template = "jest_constructor"
+	TmplPytestConstructor           Template = "pytest_constructor"
+	TmplScheduledJob                Template = "scheduled_job"
+	TmplEventHandler                Template = "event_handler"
+	TmplEmailTemplate               Template = "email_template"
 	TmplRaw                 Template = "raw" // sentinel: emit Item.RawContent verbatim
 	TmplPytestUnit          Template = "pytest_unit"
 	TmplPytestAPI           Template = "pytest_api"
@@ -204,12 +218,173 @@ func Build(files []diff.File, layout Layout) []Item {
 			it.Template = pickTemplate(s, layout)
 			it.OutPath = testPathFor(s, it.Template, layout)
 			items = append(items, it)
+			// v0.24 fan-out: a single Symbol can spawn extra
+			// per-aspect tests when the extractor stamped one of
+			// the diff-mode signals.
+			items = append(items, fanOutAspects(s, layout)...)
 		}
 	}
 	if os.Getenv("REVIEWQA_E2E_STYLE") != "per-component" {
 		items = groupByPage(items, files, layout)
 	}
 	return items
+}
+
+// fanOutAspects emits the v0.24 aspect items for a Symbol — property,
+// validator, scheduled job / event handler / email — when the
+// extractor's diff-mode signals are set. Each becomes a sibling test
+// file under tests/<aspect>/<stem>.<aspect>.test.<ext>.
+func fanOutAspects(s ast.Symbol, l Layout) []Item {
+	var out []Item
+	stem := stemOf(s.File)
+	if s.IsPure && (s.Kind == ast.KindFunction || s.Kind == ast.KindMethod) {
+		out = append(out, aspectItem(s, TmplJestProperty,
+			"tests/property/"+stem+".property.test.ts"))
+	}
+	if s.IsValidator {
+		out = append(out, aspectItem(s, TmplJestValidatorPos,
+			"tests/validator/"+stem+".validator.test.ts"))
+	}
+	switch s.JobKind {
+	case "cron":
+		out = append(out, aspectItem(s, TmplScheduledJob,
+			"tests/jobs/"+stem+".cron.test.ts"))
+	case "event":
+		out = append(out, aspectItem(s, TmplEventHandler,
+			"tests/events/"+stem+".event.test.ts"))
+	case "email":
+		out = append(out, aspectItem(s, TmplEmailTemplate,
+			"tests/email/"+stem+".email.test.ts"))
+	}
+	return out
+}
+
+func aspectItem(s ast.Symbol, t Template, path string) Item {
+	return Item{Symbol: s, Template: t, OutPath: path}
+}
+
+// BuildCompat scans the PR diff for changed schema files (.json /
+// .yaml / .yml / .proto) and emits one compatibility-test item per
+// detected breaking change set. Caller must supply oldBytes via the
+// File.OldBlob field; new bytes come from File.NewBlob.
+//
+// The actual diff comparison is delegated to internal/compat. Items
+// produced by BuildCompat carry the regression list packed into
+// Symbol.Anchors (Tag=Kind, Name=Detail) so the compat template can
+// render the rows verbatim.
+func BuildCompat(files []diff.File, compare CompatComparator) []Item {
+	var items []Item
+	for _, f := range files {
+		if f.Status == "removed" {
+			continue
+		}
+		old := []byte(f.OldBlob)
+		new_ := []byte(f.NewBlob)
+		if len(old) == 0 || len(new_) == 0 {
+			continue
+		}
+		kind, regs, err := compare(f.Path, old, new_)
+		if err != nil || len(regs) == 0 {
+			continue
+		}
+		var tmpl Template
+		switch kind {
+		case "openapi":
+			tmpl = TmplOpenAPICompat
+		case "proto":
+			tmpl = TmplProtoCompat
+		case "asyncapi":
+			tmpl = TmplAsyncAPICompat
+		default:
+			continue
+		}
+		anchors := make([]ast.LocatorAnchor, 0, len(regs))
+		for _, r := range regs {
+			anchors = append(anchors, ast.LocatorAnchor{Tag: r.Kind, Name: r.Detail})
+		}
+		base := f.Path
+		if i := strings.LastIndexByte(base, '/'); i != -1 {
+			base = base[i+1:]
+		}
+		sym := ast.Symbol{
+			Name:    "Compat" + camelize(base),
+			Kind:    ast.KindFunction,
+			File:    f.Path,
+			Language: "ts",
+			Anchors: anchors,
+		}
+		items = append(items, Item{
+			Symbol:   sym,
+			Symbols:  []ast.Symbol{sym},
+			Template: tmpl,
+			OutPath:  "tests/contract/" + sanitizeFilename(base) + ".compat.test.ts",
+		})
+	}
+	return items
+}
+
+// CompatComparator classifies a schema file and returns a list of
+// regressions (kind + detail). Concrete implementations live in
+// cmd/reviewqa so internal/plan stays free of the openapi/proto/
+// asyncapi dependencies — this keeps the package graph thin.
+type CompatComparator func(path string, old, new_ []byte) (kind string, regressions []CompatRegression, err error)
+
+// CompatRegression is the package-public mirror of compat.Regression.
+type CompatRegression struct {
+	Kind   string
+	Detail string
+}
+
+func camelize(s string) string {
+	out := []byte{}
+	upper := true
+	for _, c := range []byte(s) {
+		if c == '.' || c == '-' || c == '_' || c == '/' {
+			upper = true
+			continue
+		}
+		if upper {
+			if c >= 'a' && c <= 'z' {
+				c = c - 'a' + 'A'
+			}
+			upper = false
+		}
+		out = append(out, c)
+	}
+	return string(out)
+}
+
+func sanitizeFilename(s string) string {
+	out := []byte{}
+	for _, c := range []byte(s) {
+		switch {
+		case c >= 'a' && c <= 'z', c >= 'A' && c <= 'Z', c >= '0' && c <= '9':
+			out = append(out, c)
+		case c == '-', c == '_':
+			out = append(out, c)
+		default:
+			out = append(out, '-')
+		}
+	}
+	collapsed := []byte{}
+	prevDash := false
+	for _, c := range out {
+		if c == '-' {
+			if prevDash {
+				continue
+			}
+			prevDash = true
+		} else {
+			prevDash = false
+		}
+		collapsed = append(collapsed, c)
+	}
+	r := string(collapsed)
+	r = strings.Trim(r, "-")
+	if r == "" {
+		return "schema"
+	}
+	return r
 }
 
 func readNew(workDir, rel, fallback string) []byte {

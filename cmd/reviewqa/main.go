@@ -21,6 +21,7 @@ import (
 	_ "github.com/reviewqa/reviewqa/internal/ast/python"
 	_ "github.com/reviewqa/reviewqa/internal/ast/ts"
 
+	"github.com/reviewqa/reviewqa/internal/compat"
 	"github.com/reviewqa/reviewqa/internal/config"
 	"github.com/reviewqa/reviewqa/internal/diff"
 	"github.com/reviewqa/reviewqa/internal/gen"
@@ -33,6 +34,36 @@ import (
 	"github.com/reviewqa/reviewqa/internal/probe"
 	"github.com/reviewqa/reviewqa/internal/prompt"
 )
+
+// compareSchema is the plan.CompatComparator implementation. Classifies
+// `path` by extension + content, delegates to the right compat.X
+// function, returns ("openapi"|"proto"|"asyncapi", regressions, nil).
+func compareSchema(path string, old, new_ []byte) (string, []plan.CompatRegression, error) {
+	lowerPath := strings.ToLower(path)
+	wrap := func(kind string, regs []compat.Regression, err error) (string, []plan.CompatRegression, error) {
+		if err != nil {
+			return "", nil, err
+		}
+		out := make([]plan.CompatRegression, 0, len(regs))
+		for _, r := range regs {
+			out = append(out, plan.CompatRegression{Kind: r.Kind, Detail: r.Detail})
+		}
+		return kind, out, nil
+	}
+	switch {
+	case strings.HasSuffix(lowerPath, ".proto"):
+		regs, err := compat.Proto(old, new_)
+		return wrap("proto", regs, err)
+	case strings.Contains(string(new_), "\"openapi\"") || strings.Contains(string(new_), "openapi:") ||
+		strings.Contains(string(new_), "\"swagger\"") || strings.Contains(string(new_), "swagger:"):
+		regs, err := compat.OpenAPI(old, new_)
+		return wrap("openapi", regs, err)
+	case strings.Contains(string(new_), "\"asyncapi\"") || strings.Contains(string(new_), "asyncapi:"):
+		regs, err := compat.AsyncAPI(old, new_)
+		return wrap("asyncapi", regs, err)
+	}
+	return "", nil, nil
+}
 
 var (
 	version = "0.1.0"
@@ -248,6 +279,9 @@ func runGenerate(ctx context.Context, cfg config.Config) error {
 	}
 	layout := plan.Detect(cfg.WorkDir)
 	items := plan.Build(files, layout)
+	// v0.24: when the PR diff touches a schema file, append one
+	// compatibility-test item per detected breaking-change set.
+	items = append(items, plan.BuildCompat(files, compareSchema)...)
 	if probeURLs := nonEmptyURLs(os.Getenv("REVIEWQA_TARGET_URLS")); len(probeURLs) > 0 {
 		probeItems, probeErrs := probe.RunAll(ctx, probeURLs)
 		for _, e := range probeErrs {

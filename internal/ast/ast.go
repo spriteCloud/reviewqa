@@ -80,6 +80,18 @@ type Symbol struct {
 	// AbsoluteURL is the full URL of this step's page. Used by the template
 	// when DirectGoto is true.
 	AbsoluteURL string
+	// v0.24 diff-mode signals — set by language extractors to fan a
+	// Symbol out into additional per-aspect tests on top of the base
+	// jest_unit / pytest_unit / Playwright shape.
+	IsPure      bool   // body has no side effects → property-based candidate
+	IsDTO       bool   // shape is data-only → serialization round-trip candidate
+	IsValidator bool   // name matches *Validator / *Schema / validate* → validator-positive candidate
+	StoreKind   string // redux | pinia | zustand | vuex (when the file declares a store)
+	JobKind     string // cron | event | email
+	// StoreActions are the action names declared in a state store
+	// (Redux reducers, Pinia actions, Zustand setters). Drives the
+	// jest_store template's per-action assertion loop.
+	StoreActions []string
 }
 
 // ContentAnchor describes a page-level text anchor — the <title>, an <h1>,

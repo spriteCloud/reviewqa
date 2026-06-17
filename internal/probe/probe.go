@@ -645,6 +645,107 @@ func openAPIContractItems(ctx context.Context, sourceURL string) []plan.Item {
 			OutPath:  "tests/e2e/contract/" + hostSlug + "-" + ep.Method + "-" + slug + ".contract.spec.ts",
 			Form:     form,
 		})
+		// v0.24 fan-out: idempotency for write methods that should be
+		// idempotent by HTTP spec (PUT, DELETE — and PATCH when the
+		// declared 204 / 2xx signals "no body change").
+		switch strings.ToLower(ep.Method) {
+		case "put", "delete":
+			out = append(out, plan.Item{
+				Symbol:   stub,
+				Symbols:  []ast.Symbol{stub},
+				PageURL:  endpoint,
+				Template: plan.TmplPlaywrightIdempotency,
+				OutPath:  "tests/e2e/api/" + hostSlug + "-" + ep.Method + "-" + slug + ".idempotency.spec.ts",
+				Form:     form,
+			})
+		}
+		// Pagination: heuristic on the endpoint path / operation —
+		// any OpenAPI list endpoint that's clearly a collection GET
+		// (path ends in a plural noun) gets a pagination probe.
+		if strings.ToLower(ep.Method) == "get" && looksLikeCollectionPath(ep.Path) {
+			out = append(out, plan.Item{
+				Symbol:   stub,
+				Symbols:  []ast.Symbol{stub},
+				PageURL:  endpoint,
+				Template: plan.TmplPlaywrightPagination,
+				OutPath:  "tests/e2e/api/" + hostSlug + "-" + ep.Method + "-" + slug + ".pagination.spec.ts",
+				Form:     form,
+			})
+		}
+	}
+	// API versioning: if we see endpoints under both /v1/ and /v2/,
+	// emit one versioning spec per pair (capped at 4).
+	versioningItems := pairVersionedPaths(endpoints, origin, hostSlug)
+	const versCap = 4
+	if len(versioningItems) > versCap {
+		versioningItems = versioningItems[:versCap]
+	}
+	out = append(out, versioningItems...)
+	return out
+}
+
+// looksLikeCollectionPath returns true for OpenAPI paths that smell
+// like list endpoints — `/pets`, `/users`, `/api/orders`. Conservative:
+// returns false when the last segment is a path parameter (`{id}`).
+func looksLikeCollectionPath(p string) bool {
+	if p == "" {
+		return false
+	}
+	last := p
+	if i := strings.LastIndexByte(last, '/'); i != -1 {
+		last = last[i+1:]
+	}
+	if last == "" || strings.HasPrefix(last, "{") {
+		return false
+	}
+	return strings.HasSuffix(last, "s") || strings.HasSuffix(last, "es")
+}
+
+// pairVersionedPaths detects (/v1/x, /v2/x) pairs and emits one
+// versioning spec per kept pair.
+func pairVersionedPaths(endpoints []openapi.Endpoint, origin, hostSlug string) []plan.Item {
+	type key struct{ rest, method string }
+	seen := map[key]map[string]bool{}
+	for _, ep := range endpoints {
+		var version, rest string
+		if strings.HasPrefix(ep.Path, "/v1/") {
+			version, rest = "v1", ep.Path[len("/v1"):]
+		} else if strings.HasPrefix(ep.Path, "/v2/") {
+			version, rest = "v2", ep.Path[len("/v2"):]
+		} else {
+			continue
+		}
+		k := key{rest, ep.Method}
+		if seen[k] == nil {
+			seen[k] = map[string]bool{}
+		}
+		seen[k][version] = true
+	}
+	var out []plan.Item
+	for k, versions := range seen {
+		if !(versions["v1"] && versions["v2"]) {
+			continue
+		}
+		// PageURL points at v1; the template rewrites for v2.
+		endpoint := origin + "/v1" + k.rest
+		stub := ast.Symbol{
+			Name:     hostToName(parseHost(endpoint)),
+			Kind:     ast.KindComponent,
+			File:     endpoint,
+			Language: "ts",
+		}
+		slug := pathSlug(k.rest)
+		if slug == "" {
+			slug = "root"
+		}
+		out = append(out, plan.Item{
+			Symbol:   stub,
+			Symbols:  []ast.Symbol{stub},
+			PageURL:  endpoint,
+			Template: plan.TmplPlaywrightVersioning,
+			OutPath:  "tests/e2e/api/" + hostSlug + "-" + k.method + "-" + slug + ".versioning.spec.ts",
+			Form:     &ast.FormSpec{Method: k.method},
+		})
 	}
 	return out
 }

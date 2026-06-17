@@ -223,6 +223,34 @@ func templateLocation(t plan.Template) (string, string) {
 		return "ts", "grpc_client_stream.tmpl"
 	case plan.TmplGRPCBidi:
 		return "ts", "grpc_bidi.tmpl"
+	case plan.TmplPlaywrightIdempotency:
+		return "ts", "pw_idempotency.tmpl"
+	case plan.TmplPlaywrightPagination:
+		return "ts", "pw_pagination.tmpl"
+	case plan.TmplPlaywrightContentNegotiation:
+		return "ts", "pw_content_negotiation.tmpl"
+	case plan.TmplPlaywrightAuthHeaders:
+		return "ts", "pw_auth_headers.tmpl"
+	case plan.TmplPlaywrightVersioning:
+		return "ts", "pw_versioning.tmpl"
+	case plan.TmplOpenAPICompat:
+		return "ts", "openapi_compat.tmpl"
+	case plan.TmplProtoCompat:
+		return "ts", "proto_compat.tmpl"
+	case plan.TmplAsyncAPICompat:
+		return "ts", "asyncapi_compat.tmpl"
+	case plan.TmplJestStore:
+		return "ts", "jest_store.tmpl"
+	case plan.TmplJestConstructor:
+		return "ts", "jest_constructor.tmpl"
+	case plan.TmplPytestConstructor:
+		return "py", "pytest_constructor.tmpl"
+	case plan.TmplScheduledJob:
+		return "ts", "scheduled_job.tmpl"
+	case plan.TmplEventHandler:
+		return "ts", "event_handler.tmpl"
+	case plan.TmplEmailTemplate:
+		return "ts", "email_template.tmpl"
 	case plan.TmplPytestUnit:
 		return "py", "pytest_unit.tmpl"
 	case plan.TmplPytestAPI:
