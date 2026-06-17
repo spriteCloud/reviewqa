@@ -352,8 +352,13 @@ func outPathStemForJourney(j mindmap.Journey, first *mindmap.Page) string {
 	hostStem := strings.TrimPrefix(strings.ReplaceAll(host, ".", "-"), "www-")
 	stem := hostStem + "-" + string(j.Kind)
 	// Disambiguate multiple journeys of the same kind by the terminal page
-	// slug. Single-step journeys (terminal == first) get no suffix.
-	if len(j.Steps) > 1 {
+	// slug. Multi-step journeys naturally have a non-landing terminal;
+	// exercise journeys are single-step but still need the slug because
+	// multiple interactive pages can each produce one. The pathSlug guard
+	// against "" handles the landing-page case (slug is empty there, so
+	// the stem stays clean — no dangling dash).
+	useSlug := len(j.Steps) > 1 || j.Kind == mindmap.JourneyExercise
+	if useSlug {
 		if slug := pathSlug(j.Steps[len(j.Steps)-1].Page.URL); slug != "" {
 			stem += "-" + slug
 		}

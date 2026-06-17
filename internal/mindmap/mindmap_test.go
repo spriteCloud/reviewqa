@@ -298,6 +298,44 @@ func TestDedupJourneys_HigherPriorityWins(t *testing.T) {
 	}
 }
 
+func TestDedupJourneys_ExerciseDoesNotCollideWithConvert(t *testing.T) {
+	// Landing page hosts BOTH a homepage form (→ convert journey) AND
+	// interactive components (→ exercise journey). Both should ship —
+	// they exercise different testing axes. Before v0.12.1 the exercise
+	// silently lost because they share the same terminal URL.
+	page := &Page{URL: "https://x.test/"}
+	in := []Journey{
+		{Kind: JourneyConvert, Steps: []Step{{Page: page}}},
+		{Kind: JourneyExercise, Steps: []Step{{Page: page}}},
+	}
+	out := dedupJourneys(in)
+	if len(out) != 2 {
+		t.Fatalf("expected both Convert AND Exercise to survive dedup; got %d journeys: %+v", len(out), out)
+	}
+	kinds := map[JourneyKind]bool{}
+	for _, j := range out {
+		kinds[j.Kind] = true
+	}
+	if !kinds[JourneyConvert] || !kinds[JourneyExercise] {
+		t.Errorf("expected both Convert and Exercise; got %+v", kinds)
+	}
+}
+
+func TestDedupJourneys_ExerciseStillDedupesAgainstItself(t *testing.T) {
+	// Two exercise journeys terminating on the same URL should still
+	// collapse — we don't want duplicate specs for the same interactive
+	// page.
+	page := &Page{URL: "https://x.test/about"}
+	in := []Journey{
+		{Kind: JourneyExercise, Steps: []Step{{Page: page}}},
+		{Kind: JourneyExercise, Steps: []Step{{Page: page}}},
+	}
+	out := dedupJourneys(in)
+	if len(out) != 1 {
+		t.Errorf("expected exercise vs exercise to dedup; got %d journeys", len(out))
+	}
+}
+
 func TestIdentifyJourneys_ProducesConvertAndBrowse(t *testing.T) {
 	pages := fakeFetcher{
 		"https://x.test/": `<html><body><h1>Home</h1>

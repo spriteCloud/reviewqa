@@ -87,6 +87,12 @@ func IdentifyJourneys(m *Map, maxPerKind int) []Journey {
 // dedupJourneys drops journeys whose terminal page is already covered by
 // a higher-priority kind, and drops within-kind duplicates that end on the
 // same page.
+//
+// Exercise journeys are partitioned OUT of the cross-kind dedup because
+// they exercise a different testing axis (in-page interactions) rather
+// than page-graph navigation. A landing page with both a homepage form
+// AND an interactive accordion should emit both a convert spec AND an
+// exercise spec — they end on the same URL but test different things.
 func dedupJourneys(in []Journey) []Journey {
 	type slot struct {
 		j   Journey
@@ -99,19 +105,26 @@ func dedupJourneys(in []Journey) []Journey {
 			continue
 		}
 		terminal := j.Steps[len(j.Steps)-1].Page.URL
+		// Exercise journeys live in their own dedup namespace — they dedup
+		// against other exercise journeys (same URL → keep first), but
+		// don't collide with page-graph journeys at the same URL.
+		key := terminal
+		if j.Kind == JourneyExercise {
+			key = "exercise:" + terminal
+		}
 		pri := journeyPriority[j.Kind]
-		if cur, ok := bestByTerminal[terminal]; ok {
+		if cur, ok := bestByTerminal[key]; ok {
 			if pri <= cur.pri {
 				continue
 			}
 		} else {
-			order = append(order, terminal)
+			order = append(order, key)
 		}
-		bestByTerminal[terminal] = slot{j: j, pri: pri}
+		bestByTerminal[key] = slot{j: j, pri: pri}
 	}
 	out := make([]Journey, 0, len(order))
-	for _, t := range order {
-		out = append(out, bestByTerminal[t].j)
+	for _, k := range order {
+		out = append(out, bestByTerminal[k].j)
 	}
 	// Re-sort by kind priority for deterministic file naming.
 	sort.SliceStable(out, func(i, j int) bool {
