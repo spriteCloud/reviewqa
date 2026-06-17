@@ -251,6 +251,22 @@ func templateLocation(t plan.Template) (string, string) {
 		return "ts", "event_handler.tmpl"
 	case plan.TmplEmailTemplate:
 		return "ts", "email_template.tmpl"
+	case plan.TmplIntegrationDB:
+		return "ts", "integration_db.tmpl"
+	case plan.TmplIntegrationBroker:
+		return "ts", "integration_broker.tmpl"
+	case plan.TmplIntegrationCache:
+		return "ts", "integration_cache.tmpl"
+	case plan.TmplIntegrationStorage:
+		return "ts", "integration_storage.tmpl"
+	case plan.TmplIntegrationSearch:
+		return "ts", "integration_search.tmpl"
+	case plan.TmplIntegrationAuth:
+		return "ts", "integration_auth.tmpl"
+	case plan.TmplIntegrationContainers:
+		return "ts", "integration_containers.tmpl"
+	case plan.TmplIntegrationCompose:
+		return "ts", "integration_compose.tmpl"
 	case plan.TmplPytestUnit:
 		return "py", "pytest_unit.tmpl"
 	case plan.TmplPytestAPI:
@@ -971,6 +987,8 @@ type renderData struct {
 	// v0.25: LLM-composed scenarios for the feature template.
 	ExtraScenarios []plan.ExtraScenario
 	LLMModel       string
+	// v0.27: integration-test context (reviewqa.yml-derived).
+	Integration *plan.IntegrationCtx
 }
 
 func buildData(it plan.Item, workDir string) renderData {
@@ -979,6 +997,7 @@ func buildData(it plan.Item, workDir string) renderData {
 	d.Form = it.Form
 	d.ExtraScenarios = it.ExtraScenarios
 	d.LLMModel = it.LLMModel
+	d.Integration = it.Integration
 	d.Symbols = it.Symbols
 	if len(d.Symbols) == 0 {
 		d.Symbols = []ast.Symbol{it.Symbol}

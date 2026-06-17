@@ -27,6 +27,7 @@ import (
 	"github.com/reviewqa/reviewqa/internal/gen"
 	"github.com/reviewqa/reviewqa/internal/gh"
 	"github.com/reviewqa/reviewqa/internal/heal"
+	"github.com/reviewqa/reviewqa/internal/integration"
 	"github.com/reviewqa/reviewqa/internal/llm"
 	rlog "github.com/reviewqa/reviewqa/internal/log"
 	"github.com/reviewqa/reviewqa/internal/merge"
@@ -34,6 +35,23 @@ import (
 	"github.com/reviewqa/reviewqa/internal/probe"
 	"github.com/reviewqa/reviewqa/internal/prompt"
 )
+
+// loadIntegrationItems reads reviewqa.yml from the work directory and
+// returns integration-test plan.Items. Empty when the config is
+// missing or declares no resources.
+func loadIntegrationItems(workDir string) []plan.Item {
+	cfg, err := integration.Load(workDir)
+	if err != nil {
+		rlog.Warn("integration: skipping reviewqa.yml", "err", err)
+		return nil
+	}
+	if cfg.IsEmpty() {
+		return nil
+	}
+	items := integration.EmitItems(cfg)
+	rlog.Info("integration: emitting items from reviewqa.yml", "count", len(items))
+	return items
+}
 
 // compareSchema is the plan.CompatComparator implementation. Classifies
 // `path` by extension + content, delegates to the right compat.X
@@ -326,6 +344,8 @@ func runGenerate(ctx context.Context, cfg config.Config) error {
 	// v0.24: when the PR diff touches a schema file, append one
 	// compatibility-test item per detected breaking-change set.
 	items = append(items, plan.BuildCompat(files, compareSchema)...)
+	// v0.27: when reviewqa.yml is present, emit integration items.
+	items = append(items, loadIntegrationItems(cfg.WorkDir)...)
 	if probeURLs := nonEmptyURLs(os.Getenv("REVIEWQA_TARGET_URLS")); len(probeURLs) > 0 {
 		probeItems, probeErrs := probe.RunAll(ctx, probeURLs)
 		for _, e := range probeErrs {

@@ -66,6 +66,14 @@ const (
 	TmplScheduledJob                Template = "scheduled_job"
 	TmplEventHandler                Template = "event_handler"
 	TmplEmailTemplate               Template = "email_template"
+	TmplIntegrationDB               Template = "integration_db"
+	TmplIntegrationBroker           Template = "integration_broker"
+	TmplIntegrationCache            Template = "integration_cache"
+	TmplIntegrationStorage          Template = "integration_storage"
+	TmplIntegrationSearch           Template = "integration_search"
+	TmplIntegrationAuth             Template = "integration_auth"
+	TmplIntegrationContainers       Template = "integration_containers"
+	TmplIntegrationCompose          Template = "integration_compose"
 	TmplRaw                 Template = "raw" // sentinel: emit Item.RawContent verbatim
 	TmplPytestUnit          Template = "pytest_unit"
 	TmplPytestAPI           Template = "pytest_api"
@@ -111,6 +119,9 @@ type Item struct {
 	// LLMModel is the model identifier embedded as a comment above the
 	// composed scenarios block. Empty when ExtraScenarios is empty.
 	LLMModel string
+	// Integration carries reviewqa.yml-derived data for the v0.27
+	// integration-test family. Populated only for integration Items.
+	Integration *IntegrationCtx
 }
 
 // ExtraScenario mirrors composer.ExtraScenario in the plan layer so
@@ -127,6 +138,42 @@ type ExtraScenario struct {
 type ExtraScenarioStep struct {
 	Keyword string
 	Text    string
+}
+
+// IntegrationCtx carries the integration-test data the v0.27
+// templates render against. Populated for one of (Database / Broker /
+// Cache / Storage / Search / Auth) depending on which template the
+// Item drives.
+type IntegrationCtx struct {
+	Database *IntegrationDB
+	Broker   *IntegrationBroker
+	Cache    *IntegrationCache
+	Storage  *IntegrationStorage
+	Search   *IntegrationSearch
+	Auth     *IntegrationAuth
+	// Containers holds the aggregated set rendered into the shared
+	// _containers.ts file.
+	Containers *IntegrationContainers
+}
+
+type IntegrationDB struct {
+	Name, Driver, Image, Migrations string
+}
+type IntegrationBroker struct {
+	Kind, Image string
+	Topics      []string
+}
+type IntegrationCache struct{ Kind, Image string }
+type IntegrationStorage struct{ Kind, Bucket string }
+type IntegrationSearch struct{ Kind string }
+type IntegrationAuth struct{ Provider, Issuer string }
+type IntegrationContainers struct {
+	Databases []IntegrationDB
+	Brokers   []IntegrationBroker
+	Caches    []IntegrationCache
+	Storage   []IntegrationStorage
+	Search    []IntegrationSearch
+	Auth      []IntegrationAuth
 }
 
 // Catalogue is the suite-level data passed to the test-catalogue and
