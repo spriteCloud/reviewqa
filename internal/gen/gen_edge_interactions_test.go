@@ -1,6 +1,7 @@
 package gen
 
 import (
+	"strings"
 	"testing"
 
 	"github.com/reviewqa/reviewqa/internal/ast"
@@ -13,6 +14,27 @@ func TestTouchTemplate(t *testing.T) {
 	mustContain(t, body, "@kind:touch")
 	mustContain(t, body, "iPhone 13")
 	mustContain(t, body, "touchscreen.tap")
+}
+
+// v0.56 — depth parity. Touch template now ships 5 gesture families.
+func TestTouchTemplate_GestureFamilies_v056(t *testing.T) {
+	sym := ast.Symbol{Name: "X", Kind: ast.KindComponent, File: "https://x.test/", Language: "ts"}
+	body := renderQuality(t, plan.TmplPlaywrightTouch, sym, "https://x.test/")
+	for _, needle := range []string{
+		"@kind:touch @smoke long-press",
+		"@kind:touch @swipe",
+		"@kind:touch @pinch-zoom",
+		"@kind:touch @scroll-momentum",
+		"@kind:touch @tap-then-rotate",
+	} {
+		if !strings.Contains(body, needle) {
+			t.Errorf("pw_touch missing gesture family %q", needle)
+		}
+	}
+	count := strings.Count(body, "test('")
+	if count < 5 {
+		t.Errorf("expected ≥5 tests in pw_touch (5 gesture families); got %d", count)
+	}
 }
 
 func TestDragDropTemplate(t *testing.T) {
