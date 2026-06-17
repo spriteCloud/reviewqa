@@ -58,10 +58,13 @@ func TestFeatureTemplate_NoOutlineForFormlessJourney(t *testing.T) {
 }
 
 func TestParamRowsFor_AllInputTypes(t *testing.T) {
+	// v0.42 — each type returns 5-7 rows (expanded from the original 3
+	// to cover unicode-domain emails, punycode urls, negative numbers,
+	// RTL/emoji/control chars in text, etc.).
 	for _, typ := range []string{"email", "password", "tel", "url", "number", "text", "search", "textarea"} {
 		rows := paramRowsFor(ast.FormInput{Type: typ})
-		if len(rows) != 3 {
-			t.Errorf("%s: expected 3 rows; got %d", typ, len(rows))
+		if len(rows) < 5 {
+			t.Errorf("%s: expected ≥5 rows after v0.42 expansion; got %d", typ, len(rows))
 		}
 		for _, r := range rows {
 			if r.Variant == "" || r.Value == "" {

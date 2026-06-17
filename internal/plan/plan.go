@@ -85,6 +85,16 @@ const (
 	TmplPlaywrightKeyboardNav       Template = "pw_keyboard_nav"
 	TmplPlaywrightA11yLandmarks     Template = "pw_a11y_landmarks"
 	TmplPlaywrightSentinel          Template = "pw_sentinel"
+	// v0.42 — edge-case templates: deterministic coverage of the
+	// common failure modes the happy-path suite misses.
+	TmplPlaywrightNetworkResilience Template = "pw_network_resilience"
+	TmplPlaywrightRace              Template = "pw_race"
+	TmplPlaywrightStorage           Template = "pw_storage"
+	TmplPlaywrightZoom              Template = "pw_zoom"
+	TmplPlaywrightA11yPrefs         Template = "pw_a11y_prefs"
+	TmplPlaywrightPrint             Template = "pw_print"
+	TmplPlaywrightClipboard         Template = "pw_clipboard"
+	TmplPlaywrightHTTPChains        Template = "pw_http_chains"
 	TmplRaw                 Template = "raw" // sentinel: emit Item.RawContent verbatim
 	TmplPytestUnit          Template = "pytest_unit"
 	TmplPytestAPI           Template = "pytest_api"
