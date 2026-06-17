@@ -1,0 +1,27 @@
+#!/bin/sh
+# Repository convention: no Co-Authored-By trailers on any commit.
+#
+# This hook refuses any commit whose message contains a
+# "Co-Authored-By:" line (any casing). The CLA check the repo runs
+# already covers human/bot attribution; co-author lines added by AI
+# assistants are explicitly disallowed by the maintainer.
+#
+# To enable: `git config core.hooksPath .githooks` (this is set
+# automatically by `make setup-hooks`, or run it once by hand).
+#
+# To bypass intentionally (NOT recommended): `git commit --no-verify`.
+# Do not bypass without explicit maintainer approval.
+
+msg_file="$1"
+if grep -i -E '^[[:space:]]*Co-?Authored-?By:' "$msg_file" > /dev/null 2>&1; then
+  echo "" >&2
+  echo "ERROR: commit message contains a Co-Authored-By line." >&2
+  echo "This repo forbids co-author trailers (see .githooks/commit-msg)." >&2
+  echo "" >&2
+  echo "Offending line(s):" >&2
+  grep -i -n -E '^[[:space:]]*Co-?Authored-?By:' "$msg_file" >&2
+  echo "" >&2
+  echo "Remove the trailer and try again." >&2
+  exit 1
+fi
+exit 0
