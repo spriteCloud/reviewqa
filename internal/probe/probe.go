@@ -511,6 +511,9 @@ func qualityCompanions(sourceURL string, m *mindmap.Map, coverage CoverageMode) 
 
 	// Per-origin: one of each. The page URL is the origin itself so the
 	// templates can hit "/" relative to baseURL.
+	//
+	// v0.42 — added HTTPChains (3xx chains, 410, 429) as per-origin
+	// alongside security/health/observability.
 	for _, kind := range []struct {
 		tmpl   plan.Template
 		subdir string
@@ -518,6 +521,7 @@ func qualityCompanions(sourceURL string, m *mindmap.Map, coverage CoverageMode) 
 		{plan.TmplPlaywrightSecurity, "security"},
 		{plan.TmplPlaywrightHealth, "health"},
 		{plan.TmplPlaywrightObservability, "observability"},
+		{plan.TmplPlaywrightHTTPChains, "http-chains"},
 	} {
 		out = append(out, plan.Item{
 			Symbol:   stub,
@@ -560,6 +564,12 @@ func qualityCompanions(sourceURL string, m *mindmap.Map, coverage CoverageMode) 
 			{plan.TmplPlaywrightVisualStates, "visual", "visual-states"},
 			{plan.TmplPlaywrightKeyboardNav, "a11y", "keyboard"},
 			{plan.TmplPlaywrightA11yLandmarks, "a11y", "landmarks"},
+			// v0.42: edge-case families — always emitted per page.
+			{plan.TmplPlaywrightNetworkResilience, "network", "network"},
+			{plan.TmplPlaywrightStorage, "storage", "storage"},
+			{plan.TmplPlaywrightZoom, "a11y", "zoom"},
+			{plan.TmplPlaywrightA11yPrefs, "a11y", "prefs"},
+			{plan.TmplPlaywrightPrint, "print", "print"},
 		} {
 			out = append(out, plan.Item{
 				Symbol:   pageStub,
@@ -567,6 +577,28 @@ func qualityCompanions(sourceURL string, m *mindmap.Map, coverage CoverageMode) 
 				PageURL:  page.URL,
 				Template: kind.tmpl,
 				OutPath:  "tests/e2e/" + kind.subdir + "/" + stem + "." + kind.suffix + ".spec.ts",
+			})
+		}
+		// v0.42: gated edge templates emitted per page based on probe
+		// signals — race when the page has a form, clipboard when it
+		// exposes a text-like input. Avoids polluting pages that
+		// can't meaningfully run the assertion.
+		if page.HasForm {
+			out = append(out, plan.Item{
+				Symbol:   pageStub,
+				Symbols:  []ast.Symbol{pageStub},
+				PageURL:  page.URL,
+				Template: plan.TmplPlaywrightRace,
+				OutPath:  "tests/e2e/race/" + stem + ".race.spec.ts",
+			})
+		}
+		if pageHasTextInput(page) {
+			out = append(out, plan.Item{
+				Symbol:   pageStub,
+				Symbols:  []ast.Symbol{pageStub},
+				PageURL:  page.URL,
+				Template: plan.TmplPlaywrightClipboard,
+				OutPath:  "tests/e2e/clipboard/" + stem + ".clipboard.spec.ts",
 			})
 		}
 		emitted++
@@ -1224,15 +1256,28 @@ func pageNeedsFuzz(p *mindmap.Page) bool {
 	if p == nil {
 		return false
 	}
-	for _, i := range p.Inputs {
-		switch i.Type {
-		case "text", "email", "search", "url", "tel", "textarea":
-			return true
-		}
+	if pageHasTextInput(p) {
+		return true
 	}
 	for _, ix := range p.Interactions {
 		switch ix.Kind {
 		case "details", "collapse", "tab", "popup":
+			return true
+		}
+	}
+	return false
+}
+
+// pageHasTextInput reports whether the page exposes at least one
+// text-shaped input the v0.42 clipboard / paste edge spec can target.
+// Centralised so other edge templates can share the same gate.
+func pageHasTextInput(p *mindmap.Page) bool {
+	if p == nil {
+		return false
+	}
+	for _, i := range p.Inputs {
+		switch i.Type {
+		case "text", "email", "search", "url", "tel", "textarea", "":
 			return true
 		}
 	}

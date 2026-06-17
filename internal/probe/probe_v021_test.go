@@ -57,7 +57,14 @@ func TestRunAll_EmitsFeatureFilesAndBDDSteps(t *testing.T) {
 			!strings.Contains(it.OutPath, "/i18n/") &&
 			// v0.23: additional quality-companion subdirs.
 			!strings.Contains(it.OutPath, "/visual/") &&
-			!strings.Contains(it.OutPath, "/webhooks/"):
+			!strings.Contains(it.OutPath, "/webhooks/") &&
+			// v0.42: edge-case quality-companion subdirs.
+			!strings.Contains(it.OutPath, "/network/") &&
+			!strings.Contains(it.OutPath, "/storage/") &&
+			!strings.Contains(it.OutPath, "/race/") &&
+			!strings.Contains(it.OutPath, "/clipboard/") &&
+			!strings.Contains(it.OutPath, "/print/") &&
+			!strings.Contains(it.OutPath, "/http-chains/"):
 			gotSpecTs++
 		case it.OutPath == "tests/e2e/steps/reviewqa.steps.ts":
 			gotStepsFile = true

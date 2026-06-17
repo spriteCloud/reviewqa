@@ -224,6 +224,15 @@ var templateRegistry = map[plan.Template]templateLoc{
 	plan.TmplPlaywrightKeyboardNav:      {"ts", "pw_keyboard_nav.tmpl"},
 	plan.TmplPlaywrightA11yLandmarks:    {"ts", "pw_a11y_landmarks.tmpl"},
 	plan.TmplPlaywrightSentinel:         {"ts", "pw_sentinel.tmpl"},
+	// v0.42 — edge-case templates.
+	plan.TmplPlaywrightNetworkResilience: {"ts", "pw_network_resilience.tmpl"},
+	plan.TmplPlaywrightRace:              {"ts", "pw_race.tmpl"},
+	plan.TmplPlaywrightStorage:           {"ts", "pw_storage.tmpl"},
+	plan.TmplPlaywrightZoom:              {"ts", "pw_zoom.tmpl"},
+	plan.TmplPlaywrightA11yPrefs:         {"ts", "pw_a11y_prefs.tmpl"},
+	plan.TmplPlaywrightPrint:             {"ts", "pw_print.tmpl"},
+	plan.TmplPlaywrightClipboard:         {"ts", "pw_clipboard.tmpl"},
+	plan.TmplPlaywrightHTTPChains:        {"ts", "pw_http_chains.tmpl"},
 	plan.TmplPytestUnit:                 {"py", "pytest_unit.tmpl"},
 	plan.TmplPytestAPI:                  {"py", "pytest_api.tmpl"},
 	plan.TmplGoUnit:                     {"go", "gotest_unit.tmpl"},
@@ -1020,10 +1029,15 @@ type paramRow struct {
 	Value   string
 }
 
-// paramRowsFor returns up to 3 deterministic valid-value rows for a
-// text-like input. The row table is intentionally short — Gherkin
-// Examples blocks bloat .feature files fast, and three rows already
-// surface 90% of the variation a typical input mishandles.
+// paramRowsFor returns deterministic valid-value rows for a text-like
+// input. The table covers the obvious-but-easy-to-miss variants per
+// input type — Achilles-style coverage without bloating .feature files
+// past readability.
+//
+// v0.42 expansion: each type now returns 6-8 rows including the value
+// classes our v0.40 audit flagged as missing (unicode-domain emails,
+// punycode urls, RTL/emoji/control chars in free text, negative /
+// float / boundary numbers).
 func paramRowsFor(i ast.FormInput) []paramRow {
 	switch i.Type {
 	case "email":
@@ -1031,36 +1045,55 @@ func paramRowsFor(i ast.FormInput) []paramRow {
 			{"typical", "jane@example.com"},
 			{"plus-alias", "jane+alias@example.com"},
 			{"subdomain", "user@mail.example.co.uk"},
+			{"unicode-domain", "user@例え.jp"},
+			{"ip-literal", "user@[192.0.2.1]"},
+			{"long-local", "very.long.local.part.that.is.still.valid@example.com"},
 		}
 	case "password":
 		return []paramRow{
 			{"min-len", "Pass1234"},
 			{"with-symbols", "Pa$$w0rd!"},
 			{"long-passphrase", "correct-horse-battery-staple-1"},
+			{"unicode", "Pässw0rd-Ümläut"},
+			{"max-len-boundary", "abcdefghijklmnopqrstuvwxyz0123456789ABCDEFG"},
 		}
 	case "tel":
 		return []paramRow{
 			{"us-e164", "+15551234567"},
 			{"uk-e164", "+442012345678"},
 			{"br-mobile", "+5511987654321"},
+			{"with-extension", "+15551234567 x123"},
+			{"with-spaces", "+1 555 123 4567"},
+			{"national", "(555) 123-4567"},
 		}
 	case "url":
 		return []paramRow{
 			{"https", "https://example.com"},
 			{"with-path", "https://example.com/docs/getting-started"},
 			{"with-query", "https://example.com/search?q=test"},
+			{"with-fragment", "https://example.com/page#section-2"},
+			{"punycode", "https://xn--exmple-cua.com"},
+			{"with-port", "https://example.com:8443/api"},
 		}
 	case "number":
 		return []paramRow{
 			{"zero", "0"},
 			{"typical", "42"},
 			{"large", "1000000"},
+			{"negative", "-1"},
+			{"float", "3.14159"},
+			{"boundary-min", "-2147483648"},
+			{"boundary-max", "2147483647"},
 		}
 	case "text", "search", "textarea":
 		return []paramRow{
 			{"short", "sample"},
 			{"with-spaces", "sample text with spaces"},
 			{"unicode", "café-niño-ümlaut"},
+			{"emoji", "hello 🎉 world 🌍"},
+			{"rtl-mark", "test ‏rtl‎ content"},
+			{"zero-width", "sample​‌‍text"},
+			{"with-quotes", "she said \"hello\" & 'goodbye'"},
 		}
 	}
 	return nil
