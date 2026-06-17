@@ -4,6 +4,37 @@ reviewqa's release-by-release history. v0.19 → v0.30 was the
 taxonomy-closure arc that took the framework from a single-Playwright
 happy-flow generator to a 10-layer deterministic test author.
 
+## v0.55 → v0.58 — taxonomy depth parity
+
+User audit: "we touched all of the categories but not in the same depth
+… ensure consistent level/depth for each category." Three layers
+shipped 1–2 tests per emission while API/UI/Non-functional shipped
+5–15. This arc closes the gap.
+
+- **v0.55 — Contract depth.** `pw_contract.tmpl` 1 → 9 tests per
+  endpoint (8 adversarial: wrong-method, oversized-query, invalid-json,
+  unicode, sqli, xss, null-byte, rapid-burst). `pw_graphql_stub.tmpl`
+  1 → 6 (empty-query, malformed, type-mismatch, deep-nested,
+  bare-GET). `pw_webhook_stub.tmpl` 1 → 6 (replay, expired timestamp,
+  wrong algorithm, truncated signature, tampered body). Path-only —
+  schema-aware semantic negatives deferred.
+- **v0.56 — Mobile depth.** `pw_mobile.tmpl` now iterates 4 devices
+  (iPhone 13, Pixel 5, iPad Pro 11, Galaxy S9+) × 2 orientations =
+  8 effective tests per page. `pw_touch.tmpl` adds pinch-zoom,
+  scroll-momentum, tap-then-rotate (5 gesture families total).
+- **v0.57 — Integration depth.** Four new per-kind scaffold templates
+  emit unconditionally per origin:
+  `pw_integration_{db,cache,obs,auth}_stub.tmpl`, each with 3
+  `test.skip()` blocks documenting the wire-up TODOs. Total: 5
+  integration stubs per origin (the v0.43 catch-all + 4 new), 15
+  skipped blocks per origin documenting concrete scenarios.
+- **v0.58 — Examples refresh + docs.** spritecloud-com-dgx 118 → 122
+  files (51 Scenarios, 16 `@llm-composed`); petstore-swagger-io-dgx
+  41 → 44 files with **108 contract-layer test blocks** (12 endpoints
+  × 9 tests each). `web/docs.html` taxonomy table gained a
+  "tests per emit" column; two new FAQ entries cover the depth-parity
+  story and how integration stubs activate.
+
 ## v0.40 — bug sentinels + v1.0.0-rc.2
 
 - `pw_sentinel.tmpl` — every "open" row in `tests/e2e/docs/findings.md`

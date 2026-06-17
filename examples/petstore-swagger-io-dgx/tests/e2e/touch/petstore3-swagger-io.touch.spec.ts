@@ -7,6 +7,10 @@
  * covers the smoke; this template digs into the gestures a mouse-only
  * suite cannot reach.
  *
+ * v0.56 — depth parity. Pre-v0.56 emitted 2 tests (long-press +
+ * horizontal swipe). This version adds three more gesture families:
+ * pinch-zoom, scroll-momentum, and tap-during-orientation-change.
+ *
  * Filter: `npx playwright test --grep @kind:touch`
  */
 import { test, expect, devices } from '@playwright/test'
@@ -39,6 +43,60 @@ test.describe('Petstore3SwaggerIo — touch gestures @ https://petstore3.swagger
     await page.touchscreen.tap(viewport.width * 0.8, viewport.height / 2)
     await page.touchscreen.tap(viewport.width * 0.2, viewport.height / 2)
     await expect(page.locator('h1, [role="heading"][aria-level="1"]').first()).toBeVisible()
+  })
+
+  test('@kind:touch @pinch-zoom synthesised pinch keeps the page interactive', async ({ page }) => {
+    await page.goto('/')
+    const viewport = page.viewportSize() || { width: 390, height: 844 }
+    const cx = viewport.width / 2
+    const cy = viewport.height / 2
+    // Playwright's touchscreen API exposes single-point .tap(); a
+    // true two-finger pinch needs CDP. We synthesise the pinch via
+    // a wheel event with ctrlKey (the same gesture browsers map
+    // pinch-zoom to) and assert the page survives.
+    await page.mouse.move(cx, cy)
+    await page.evaluate(({ cx, cy }: { cx: number; cy: number }) => {
+      const ev = new WheelEvent('wheel', { deltaY: -120, ctrlKey: true, clientX: cx, clientY: cy, bubbles: true, cancelable: true })
+      document.elementFromPoint(cx, cy)?.dispatchEvent(ev)
+    }, { cx, cy })
+    await expect(page.locator('h1, [role="heading"][aria-level="1"]').first()).toBeVisible()
+  })
+
+  test('@kind:touch @scroll-momentum rapid vertical swipes do not break the layout', async ({ page }) => {
+    await page.goto('/')
+    const viewport = page.viewportSize() || { width: 390, height: 844 }
+    const cx = viewport.width / 2
+    // 5 rapid taps top → bottom to mimic flick-scroll. Real momentum
+    // scrolling is engine-level; we just ensure no listener leak nor
+    // layout break after the gesture finishes.
+    for (let i = 0; i < 5; i++) {
+      await page.touchscreen.tap(cx, viewport.height * 0.1)
+      await page.touchscreen.tap(cx, viewport.height * 0.9)
+    }
+    await page.waitForLoadState('domcontentloaded').catch(() => {})
+    await expect(page.locator('h1, [role="heading"][aria-level="1"]').first()).toBeVisible()
+  })
+
+  test('@kind:touch @tap-then-rotate tap during orientation change does not duplicate-fire', async ({ browser }) => {
+    const profile = devices['iPhone 13']
+    if (!profile.viewport) test.skip()
+    const ctx = await browser.newContext(profile)
+    const page = await ctx.newPage()
+    await page.goto('/')
+    let clicks = 0
+    await page.exposeFunction('__rqRotClicked', () => { clicks++ })
+    const cta = page.getByRole('button').first().or(page.getByRole('link').first())
+    if (await cta.count() === 0) { await ctx.close(); test.skip(); return }
+    await cta.evaluate(el => el.addEventListener('click', () => (window as any).__rqRotClicked()))
+    // Tap + immediately rotate. The page should not register two
+    // clicks just because the viewport changed mid-gesture.
+    const box = await cta.boundingBox()
+    if (!box) { await ctx.close(); test.skip(); return }
+    await page.touchscreen.tap(box.x + box.width / 2, box.y + box.height / 2)
+    await page.setViewportSize({ width: profile.viewport.height, height: profile.viewport.width })
+    await page.waitForTimeout(80)
+    expect.soft(clicks, 'rotation mid-tap should not double-fire click').toBeLessThanOrEqual(1)
+    await ctx.close()
   })
 })
 

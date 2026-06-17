@@ -33,11 +33,13 @@ templates ship and are exercised by the test suite. See the section
 
 | | `spritecloud-com-dgx` (marketing site) | `petstore-swagger-io-dgx` (API service) |
 |---|---|---|
-| Files emitted | **118** | **41** |
-| Gherkin Scenarios | 50 (14 `@llm-composed`) | 0 (no UI journeys — API only) |
-| Contract layer | 0 (no OpenAPI surface) | **12 contract specs** from the OpenAPI 3 doc |
-| API layer | 1 form-based contract | 4 endpoint-based API specs |
-| UI / a11y / perf | 35+ specs across the crawled marketing pages | 1 per layer (SPA shell only) |
+| Files emitted | **122** | **44** |
+| Gherkin Scenarios | 51 (16 `@llm-composed`) | 0 (no UI journeys — API only) |
+| Contract layer | 0 (no OpenAPI surface) | **12 contract specs × 9 tests = 108 contract tests** (v0.55) |
+| API layer | 1 form-based contract (10 tests) | 4 endpoint-based API specs |
+| Integration layer | 5 stubs (api + db + cache + obs + auth) × 3 blocks each (v0.57) | same |
+| Mobile layer | 4 devices × 2 orientations = 8 tests per page (v0.56) | same |
+| UI / a11y / perf | ~15 sub-template tests per page across the 5 crawled marketing pages | 1 per layer (SPA shell only) |
 | Demonstrates | per-page edge-case depth + composer adding journey variants | Layer 4 / Contract — schema-driven test generation against a real OpenAPI 3 spec |
 
 Picking these two together gives you the **full 10-layer taxonomy** in two probes:
