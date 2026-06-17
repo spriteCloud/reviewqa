@@ -7,6 +7,56 @@ shipped the depth-parity arc (Contract, Integration, Mobile, A11y trio).
 v0.61–v0.62 are the live-execution + composer-validation arc — first
 real-site run + composer destination-DOM enforcement.
 
+## v0.80 — Onboard non-reviewqa projects + vanilla Playwright
+
+### Onboard any Playwright project
+`looksLikeReviewqaProject` (used by the switcher + sibling
+discovery) now accepts:
+- the original reviewqa layout (`tests/e2e/features/`,
+  `reviewqa.steps.ts`, stakeholder docs)
+- `playwright.config.{ts,js,mjs,cjs}` at the project root
+- `tests/`, `e2e/`, `playwright/`, `spec/`, `__tests__/` with any
+  `*.spec.{ts,js,mts,mjs}` or `*.test.{ts,js}` inside.
+
+The project switcher dropdown surfaces vanilla Playwright sibling
+projects alongside reviewqa-native ones.
+
+### Consume vanilla `*.spec.ts` in the UI
+- New `internal/serve/spec_parse.go` regex parser extracts
+  `test('…')` / `test.describe(…)` / `.only` / `.skip` /
+  `.fixme` / `it(…)` titles. No JS interpreter — pure regex over
+  source.
+- New `SpecRef` type alongside `FeatureRef`; `Project.Specs` is
+  a new field in `/api/project`.
+- Sidebar gets a `Tests` section under `Features` (hidden when
+  the project has none). Clicking a spec opens it with one
+  scenario-style card per test; ▶ Run shells the existing
+  `/api/run-scenario` path (bddgen is conditionally skipped when
+  `node_modules/.bin/bddgen` isn't installed, so vanilla projects
+  go straight to `npx playwright test --grep <name>`).
+- Edit + Chat are skipped for vanilla specs — those make sense on
+  Gherkin where the semantic structure is shallow; raw TS test
+  bodies aren't a one-shot LLM rewrite target.
+
+### UI polish (alongside)
+- Settings `Test connection` button is now diagnostic:
+  validates endpoint + model client-side, reports
+  "Pinging <endpoint>…" while in-flight, distinguishes between
+  HTTP failure, LLM "ok=false" replies, and network errors.
+  Disabled state during the call.
+- Toast restyled: bottom-right (was top-right), bottom-up slide
+  with cubic-bezier easing, inline SVG check / × / info icon,
+  bigger drop-shadow.
+- Chat button is no longer inert when the LLM is off — clicking
+  it shows a toast and opens Settings.
+
+### Tests
+Spec parser handles all three quote styles + 6 test modifier
+variants. New `TestParseSpecFile_ExtractsTitles`,
+`TestLoadSpecs_FindsFiles`,
+`TestLooksLikeReviewqaProject_VanillaPlaywright`,
+`TestLooksLikeReviewqaProject_SpecRootOnly`. 574 → 578 passing.
+
 ## v0.79.1 — Drop PRETTY/RAW toggle + UI copy trim
 
 Quick patch on top of v0.79.
