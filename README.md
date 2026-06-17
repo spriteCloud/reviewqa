@@ -31,7 +31,11 @@ v0.66 you can delete, edit, and append Scenarios from the UI; each edit
 is backed up under `tests/e2e/.reviewqa-history/`. v0.67 adds a 🔍 suggest
 button on each step — probe a destination URL and the UI ranks candidate
 Playwright locators against your hint (`getByRole`, `getByLabel`,
-`page.locator(...)`). AI-composed step bindings ship in v0.68.
+`page.locator(...)`). v0.68 wires an **AI compose** button into the
+Scenario editor: type free Gherkin, set a destination URL, and the LLM
+returns a Scenario whose steps match the registered patterns and whose
+assertions reference the real DOM. Falls back to a deterministic
+landing → navigate → heading-assert path when `REVIEWQA_LLM` is unset.
 
 ```bash
 reviewqa serve --workdir ./my-generated-suite
@@ -247,4 +251,4 @@ By submitting a pull request you agree to the
 [Contributor License Agreement](./CLA.md). The `cla-assistant` check on PRs
 will prompt you to sign if you haven't.
 
-For the release-by-release history (v0.19 → v0.67), see [`CHANGELOG.md`](./CHANGELOG.md).
+For the release-by-release history (v0.19 → v0.68), see [`CHANGELOG.md`](./CHANGELOG.md).

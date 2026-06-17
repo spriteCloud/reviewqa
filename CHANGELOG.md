@@ -7,6 +7,49 @@ shipped the depth-parity arc (Contract, Integration, Mobile, A11y trio).
 v0.61–v0.62 are the live-execution + composer-validation arc — first
 real-site run + composer destination-DOM enforcement.
 
+## v0.68 — reviewqa serve Phase D: AI compose step bindings
+
+Closes out the `reviewqa serve` arc. The Scenario editor gains an "AI
+compose" row — type a free-form description of the Scenario you want
+(natural language) and a destination URL, click Compose, and the
+binary probes the page's DOM and asks the LLM to produce a valid
+Scenario whose steps match the registered patterns and whose
+assertions reference real DOM elements.
+
+Backend:
+- `internal/serve/compose.go` — `ComposeSteps(ctx, in)` orchestrates
+  the probe + LLM call. The system prompt is composer-style but
+  narrowed: it instructs the model to output exactly one Scenario
+  using only the registered step patterns, with placeholders
+  substituted from the supplied DOM landmarks (title / headings /
+  links / forms / buttons).
+- `extractScenarioBlock` strips any preamble or trailing chatter the
+  model adds despite the strict prompt; the result is then validated
+  through the existing `validateScenarioBlock`.
+- Deterministic fallback when REVIEWQA_LLM is unset: emits a minimal
+  Scenario that opens the landing page, navigates to the destination
+  path, and asserts on the page's h1. Always parses cleanly.
+- New endpoint `POST /api/compose-steps` with a 90s context timeout
+  (LLM calls against local Ollama-shaped endpoints often need 20-30s).
+
+The endpoint respects the same REVIEWQA_LLM convention as
+`reviewqa probe`: `REVIEWQA_LLM=http://your-endpoint:11434` opts in;
+REVIEWQA_MODEL overrides the model; unset → deterministic mode.
+
+Frontend:
+- The Scenario editor modal now has a copper-tinted "🤖 AI compose"
+  row above the textarea. URL field pre-fills from the feature
+  narrative when it carries a bare URL. Status pill shows the model
+  used (or a fallback note) after each compose.
+
+Tests: 5 new in `internal/serve/compose_test.go` (deterministic H1
+extraction, fallback when no headings, block extraction strips
+preamble + chatter, scenario-name normalization, empty-input
+rejection). Full suite 539 / 539 green.
+
+This closes the four-phase v0.65–v0.68 serve roadmap. Future work
+(v0.69+) is iteration on UX from real usage, not new endpoints.
+
 ## v0.67 — reviewqa serve Phase C: locator suggestion from DOM
 
 Per-step locator suggestion. The UI surfaces a 🔍 button next to each
