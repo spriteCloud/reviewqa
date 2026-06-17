@@ -257,7 +257,7 @@ func TestRenderPlaywrightHappyFlow(t *testing.T) {
 	body := string(out[0].Content)
 	for _, want := range []string{
 		"test.describe('Counter page happy flow'",
-		"BASE + '/home'",
+		"await page.goto('/home')",
 		"full user journey (2 step(s))",
 		"// Step 1 — visit",
 		"getByTestId('counter-root')",
@@ -307,7 +307,7 @@ func TestRenderPlaywrightHappyFlow_FillsAndSubmits(t *testing.T) {
 	}
 	body := string(out[0].Content)
 	for _, want := range []string{
-		"BASE + '/login'",
+		"await page.goto('/login')",
 		".fill('test@example.com')",
 		".fill('Passw0rd!')",
 		"getByTestId('submit-btn').first().click()",
@@ -320,9 +320,11 @@ func TestRenderPlaywrightHappyFlow_FillsAndSubmits(t *testing.T) {
 }
 
 func TestRenderPlaywrightHappyFlow_AbsoluteURL(t *testing.T) {
-	// When PageURL is an absolute URL (probe mode), the template must NOT
-	// prefix BASE — emitting "BASE + 'https://…'" produces an unrunnable
-	// concatenation like 'http://localhost:3000https://www.spritecloud.com'.
+	// In v0.14.0+, an absolute probe URL is reduced to its path for
+	// page.goto() — the origin lives in playwright.config.ts as
+	// baseURL. The spec MUST NOT carry a hardcoded `TARGET` or
+	// `BASE + 'https://...'` (the old shape would have produced an
+	// unrunnable concatenation).
 	sym := ast.Symbol{
 		Kind: ast.KindComponent, Name: "WwwSpritecloudCom",
 		File: "https://www.spritecloud.com/", Language: "ts",
@@ -340,11 +342,17 @@ func TestRenderPlaywrightHappyFlow_AbsoluteURL(t *testing.T) {
 		t.Fatal(err)
 	}
 	body := string(out[0].Content)
-	if !strings.Contains(body, "const TARGET = 'https://www.spritecloud.com/'") {
-		t.Errorf("absolute URL not emitted directly:\n%s", body)
+	if !strings.Contains(body, "await page.goto('/')") {
+		t.Errorf("absolute URL not reduced to path:\n%s", body)
 	}
-	if strings.Contains(body, "BASE + 'https://") {
-		t.Errorf("template incorrectly concatenated BASE with absolute URL:\n%s", body)
+	for _, bad := range []string{
+		"const TARGET = 'https://",
+		"BASE + 'https://",
+		"const BASE = process.env.BASE_URL",
+	} {
+		if strings.Contains(body, bad) {
+			t.Errorf("v0.14 specs must not carry %q:\n%s", bad, body)
+		}
 	}
 }
 

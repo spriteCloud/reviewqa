@@ -7,6 +7,7 @@ import (
 	"bytes"
 	"embed"
 	"fmt"
+	"net/url"
 	"os"
 	"path"
 	"path/filepath"
@@ -126,6 +127,12 @@ func templateLocation(t plan.Template) (string, string) {
 		return "ts", "pw_e2e.tmpl"
 	case plan.TmplPlaywrightHappyFlow:
 		return "ts", "pw_happyflow.tmpl"
+	case plan.TmplPlaywrightFixtures:
+		return "ts", "pw_fixtures.tmpl"
+	case plan.TmplPlaywrightConfig:
+		return "ts", "pw_config.tmpl"
+	case plan.TmplPlaywrightReadme:
+		return "ts", "pw_readme.tmpl"
 	case plan.TmplPytestUnit:
 		return "py", "pytest_unit.tmpl"
 	case plan.TmplPytestAPI:
@@ -214,6 +221,34 @@ var funcs = template.FuncMap{
 	"firstRequiredInput":  firstRequiredInput,
 	"isAbsoluteURL": func(s string) bool {
 		return strings.HasPrefix(s, "http://") || strings.HasPrefix(s, "https://")
+	},
+	// landingPath returns the baseURL-relative path for the landing
+	// page.goto() call. For an absolute probe URL like
+	// "https://x.test/foo" we emit page.goto('/foo'); for the root we
+	// emit page.goto('/'). Quotes are included in the returned string
+	// so the template can emit it raw.
+	"landingPath": func(pageURL string) string {
+		u, err := url.Parse(pageURL)
+		if err != nil || u == nil {
+			return "'/'"
+		}
+		p := u.Path
+		if p == "" {
+			p = "/"
+		}
+		return fmt.Sprintf("'%s'", p)
+	},
+	// hasKnownFailurePattern reports whether the symbol carries one of
+	// the known-broken patterns reviewqa recognises (today: Webflow
+	// data-wait submit). When true, the template marks the test with
+	// test.fail() so CI doesn't burn on a known-broken spec.
+	"hasKnownFailurePattern": func(s ast.Symbol) bool {
+		for _, a := range s.Anchors {
+			if a.Tag == "submit" && a.CSS == "data-wait" {
+				return true
+			}
+		}
+		return false
 	},
 	"intentFor":         intentFor,
 	"locatorProvenance": locatorProvenance,
