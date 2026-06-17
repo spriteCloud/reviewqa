@@ -40,7 +40,13 @@ func FromEnv() Config {
 		OpenAIBaseURL:    firstNonEmpty(os.Getenv("OPENAI_BASE_URL"), "https://api.openai.com/v1"),
 		OpenAIAPIKey:     os.Getenv("OPENAI_API_KEY"),
 		Model:            firstNonEmpty(os.Getenv("REVIEWQA_MODEL"), "gpt-4o-mini"),
-		LLMTimeout:       envDuration("REVIEWQA_LLM_TIMEOUT", 20*time.Second),
+		// v0.48 — 20s was tight against a local-Ollama-on-DGX setup
+		// where responses arrived in 20-25s; we'd amputate ~50% of
+		// real-world calls. 60s gives slower hardware breathing room
+		// without unduly extending fast-LLM runs (those return well
+		// inside it anyway). Operators can still override via the
+		// env var.
+		LLMTimeout:       envDuration("REVIEWQA_LLM_TIMEOUT", 60*time.Second),
 		LLMTokenCap:      envInt("REVIEWQA_LLM_TOKEN_CAP", 600),
 		HealMode:         HealMode(firstNonEmpty(os.Getenv("REVIEWQA_HEAL_MODE"), string(HealOnFailure))),
 		AllowDiffToLLM:   os.Getenv("REVIEWQA_ALLOW_DIFF_TO_LLM") == "1",

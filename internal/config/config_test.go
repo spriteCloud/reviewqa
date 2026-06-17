@@ -23,8 +23,8 @@ func TestFromEnvDefaults(t *testing.T) {
 	if c.Model != "gpt-4o-mini" {
 		t.Errorf("Model default: %q", c.Model)
 	}
-	if c.LLMTimeout != 20*time.Second {
-		t.Errorf("LLMTimeout default: %v", c.LLMTimeout)
+	if c.LLMTimeout != 60*time.Second {
+		t.Errorf("LLMTimeout default (v0.48 bumped 20s→60s for slower local LLMs): %v", c.LLMTimeout)
 	}
 	if c.LLMTokenCap != 600 {
 		t.Errorf("LLMTokenCap default: %d", c.LLMTokenCap)

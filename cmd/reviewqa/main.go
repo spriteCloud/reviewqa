@@ -242,7 +242,14 @@ LLM scenario composer (OPTIONAL):
 
   REVIEWQA_LLM env var is the equivalent of --llm.
   REVIEWQA_MODEL overrides the model id (default: qwen3-coder-next:latest
-                 when --llm is set).`,
+                 when --llm is set).
+  REVIEWQA_LLM_TIMEOUT bounds each LLM call (default 60s — bump on
+                 slower hardware; e.g. 120s for a local model that
+                 takes longer to respond).
+  REVIEWQA_HUMANIZE=0 skips the per-file humanization pass while
+                 keeping the composer active. Useful when the
+                 generator is many specs deep and per-file LLM
+                 calls would saturate your wall-clock budget.`,
 		RunE: func(cmd *cobra.Command, _ []string) error {
 			cfg := config.FromEnv()
 			if len(urls) == 0 {
