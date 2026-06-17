@@ -1,6 +1,7 @@
 package ledger
 
 import (
+	"reflect"
 	"strings"
 	"testing"
 )
@@ -37,15 +38,15 @@ func TestFindingsFromReport_OnlyFailedTests(t *testing.T) {
 
 func TestSeverityForSpec(t *testing.T) {
 	cases := map[string]string{
-		"tests/e2e/x-convert.spec.ts":          "high",
-		"tests/e2e/x-contact-foo.spec.ts":      "high",
+		"tests/e2e/x-convert.spec.ts":            "high",
+		"tests/e2e/x-contact-foo.spec.ts":        "high",
 		"tests/e2e/x-authenticate-login.spec.ts": "high",
-		"tests/e2e/x-browse-blog.spec.ts":      "medium",
-		"tests/e2e/x-fuzz.spec.ts":             "medium",
-		"tests/e2e/x-exercise.spec.ts":         "medium",
-		"tests/e2e/x-explore-docs.spec.ts":     "low",
-		"tests/e2e/x-read-blog.spec.ts":        "low",
-		"tests/e2e/api/x-api.api.spec.ts":      "medium",
+		"tests/e2e/x-browse-blog.spec.ts":        "medium",
+		"tests/e2e/x-fuzz.spec.ts":               "medium",
+		"tests/e2e/x-exercise.spec.ts":           "medium",
+		"tests/e2e/x-explore-docs.spec.ts":       "low",
+		"tests/e2e/x-read-blog.spec.ts":          "low",
+		"tests/e2e/api/x-api.api.spec.ts":        "medium",
 		// v0.21: .feature paths must resolve the same severity.
 		"tests/e2e/features/x-convert.feature":      "high",
 		"tests/e2e/features/x-contact.feature":      "high",
