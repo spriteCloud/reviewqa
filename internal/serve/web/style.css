@@ -22,6 +22,19 @@
   --white:      #FFFFFF;
   --wm-blue:    #0090D0;
   --wm-gray:    #9DA5AE;
+  /* Status palette — used by Run verdicts, danger buttons, and
+   * step-validation messages. Centralised in v0.83 so the same
+   * red/green appears everywhere (was scattered hex literals). */
+  --ok-green:   #15803D;
+  --ok-soft:    #DCFCE7;
+  --fail-red:   #B91C1C;
+  --fail-soft:  #FEE2E2;
+  --bad-red:    #c0392b;
+  --bad-soft:   rgba(192, 57, 43, 0.06);
+  --bad-dark:   #6b2118;
+  --shadow-soft: 0 4px 14px rgba(15, 17, 23, 0.04);
+  --shadow-pop: 0 12px 32px rgba(15, 17, 23, 0.16);
+  --t-fast: .12s ease;
 }
 
 * { box-sizing: border-box; margin: 0; padding: 0; }
@@ -376,26 +389,26 @@ code, pre { font-family: 'Fira Code', ui-monospace, monospace; }
  * something that won't actually run. */
 .steps li.step-invalid {
   background: rgba(192, 57, 43, 0.045);
-  border-left: 2px solid #c0392b;
+  border-left: 2px solid var(--bad-red);
   padding: 5px 0 5px 10px;
   margin: 2px 0 2px -12px;
   border-radius: 0 4px 4px 0;
 }
-.steps li.step-invalid .kw { color: #c0392b; }
-.steps li.step-invalid .text { color: #6b2118; }
+.steps li.step-invalid .kw { color: var(--bad-red); }
+.steps li.step-invalid .text { color: var(--bad-dark); }
 .steps li.step-invalid::after {
   content: '· not a registered pattern';
   font-family: 'Fira Code', monospace;
   font-size: 10px;
   letter-spacing: 0.04em;
-  color: #c0392b;
+  color: var(--bad-red);
   margin-left: auto;
   padding-right: 12px;
   white-space: nowrap;
   align-self: center;
 }
-.steps li.step-invalid .step-suggest { color: #c0392b; }
-.steps li.step-invalid .step-suggest:hover { border-color: #c0392b; background: rgba(192, 57, 43, 0.06); }
+.steps li.step-invalid .step-suggest { color: var(--bad-red); }
+.steps li.step-invalid .step-suggest:hover { border-color: var(--bad-red); background: var(--bad-soft); }
 
 /* Friendly help line under the hint input in the suggest modal. */
 .locator-help {
@@ -421,8 +434,8 @@ code, pre { font-family: 'Fira Code', ui-monospace, monospace; }
   transition: border-color .12s ease, background .12s ease;
 }
 .btn-ghost:hover { border-color: var(--copper); color: var(--copper); }
-.btn-ghost.danger { color: #c0392b; }
-.btn-ghost.danger:hover { border-color: #c0392b; background: rgba(192, 57, 43, 0.06); }
+.btn-ghost.danger { color: var(--bad-red); }
+.btn-ghost.danger:hover { border-color: var(--bad-red); background: var(--bad-soft); }
 
 .btn-primary {
   font-family: 'Inter', sans-serif;
@@ -652,8 +665,8 @@ code, pre { font-family: 'Fira Code', ui-monospace, monospace; }
 }
 .editor:focus { outline: none; border-color: var(--copper); box-shadow: 0 0 0 3px var(--copper-soft); }
 .validate-msg { min-height: 18px; font-family: 'Fira Code', monospace; font-size: 12px; letter-spacing: 0.02em; }
-.validate-msg.ok { color: #2e7d32; }
-.validate-msg.err { color: #c0392b; }
+.validate-msg.ok { color: var(--ok-green); }
+.validate-msg.err { color: var(--bad-red); }
 .modal-actions { display: flex; justify-content: flex-end; align-items: center; gap: 10px; }
 
 /* AI COMPOSE row (sits inside the editor modal) */
@@ -758,16 +771,16 @@ code, pre { font-family: 'Fira Code', ui-monospace, monospace; }
   overflow-x: auto;
   white-space: nowrap;
 }
-.copied { color: #2e7d32; font-family: 'Fira Code', monospace; font-size: 11px; letter-spacing: 0.04em; }
+.copied { color: var(--ok-green); font-family: 'Fira Code', monospace; font-size: 11px; letter-spacing: 0.04em; }
 .meta { color: var(--mist); font-size: 12px; font-family: 'Fira Code', monospace; letter-spacing: 0.02em; }
 
 /* ERROR / EMPTY states */
 .error {
-  border-left: 3px solid #c0392b;
-  background: rgba(192, 57, 43, 0.06);
+  border-left: 3px solid var(--bad-red);
+  background: var(--bad-soft);
   padding: 14px 18px;
   border-radius: 0 6px 6px 0;
-  color: #c0392b;
+  color: var(--bad-red);
   font-size: 13px;
 }
 
@@ -1085,11 +1098,25 @@ code, pre { font-family: 'Fira Code', ui-monospace, monospace; }
 .run-btn.disabled { background: var(--mist); border-color: var(--mist); box-shadow: none; transform: none; }
 .run-btn:hover:not(.disabled) { box-shadow: 0 6px 16px rgba(192, 128, 90, 0.28); }
 
-/* RESPONSIVE — collapse the sidebar on narrow viewports. */
+/* RESPONSIVE — collapse the sidebar on narrow viewports. v0.83
+ * tightens the breakpoints: at <900 px sidebar collapses to a top
+ * drawer; at <720 px topbar collapses to a single line, content
+ * padding shrinks, scenario action row stays left-aligned. */
 @media (max-width: 900px) {
   .layout { grid-template-columns: 1fr; }
   .sidebar { border-right: 0; border-bottom: 1px solid var(--border-warm); max-height: 240px; }
   .content { padding: 24px; }
+}
+@media (max-width: 720px) {
+  .topbar { padding: 12px 18px; flex-wrap: wrap; gap: 12px; }
+  .topbar-product { font-size: 13px; }
+  .brand-project, .brand-badge { font-size: 11px; padding: 4px 9px; }
+  .pixel-rail { padding: 4px 18px 0; height: 18px; }
+  .pixel-rail span { width: 8px; }
+  .content { padding: 20px 14px 40px; }
+  .feature-header h1 { font-size: 24px; }
+  .scenario { padding: 14px 16px; }
+  .scenario-name { font-size: 15px; }
 }
 
 /* HOME view — welcome cover, project summary, probe form, capability shelf. */
