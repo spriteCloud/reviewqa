@@ -1,6 +1,7 @@
 package compat
 
 import (
+	"reflect"
 	"strings"
 	"testing"
 )
@@ -96,4 +97,25 @@ func TestOpenAPI_NoRegressionsWhenSchemasEqual(t *testing.T) {
 	if len(regs) != 0 {
 		t.Errorf("expected no regressions on identical schemas; got %+v", regs)
 	}
+}
+func TestAsyncAPI(t *testing.T) {
+	t.Run("happy path", func(t *testing.T) {
+		got, err := AsyncAPI(nil, nil)
+		if err != nil {
+			t.Fatalf("unexpected error: %v", err)
+		}
+		if reflect.DeepEqual(got, *new([]Regression)) {
+			t.Fatalf("got zero value: %#v", got)
+		}
+	})
+
+	t.Run("returns expected type", func(t *testing.T) {
+		got, err := AsyncAPI(nil, nil)
+		if err != nil {
+			t.Fatalf("unexpected error: %v", err)
+		}
+		if got, want := reflect.TypeOf(got), reflect.TypeOf(*new([]Regression)); got != want {
+			t.Fatalf("type = %v, want %v", got, want)
+		}
+	})
 }

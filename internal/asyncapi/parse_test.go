@@ -29,3 +29,10 @@ func TestParse_RejectsNonAsyncAPI(t *testing.T) {
 		t.Error("expected error on missing asyncapi: field")
 	}
 }
+func TestParse(t *testing.T) {
+	t.Run("happy path", func(t *testing.T) {
+		if err := Parse(nil); err != nil {
+			t.Fatalf("unexpected error: %v", err)
+		}
+	})
+}
