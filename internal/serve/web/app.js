@@ -49,6 +49,29 @@ function renderTags (tags) {
   return el('div', { class: 'tag-row' }, ...tags.map(t => el('span', { class: 'tag' }, t)))
 }
 
+function formatAgo (iso) {
+  if (!iso) return ''
+  const then = new Date(iso).getTime()
+  const now = Date.now()
+  let s = Math.max(0, Math.round((now - then) / 1000))
+  if (s < 60) return s + 's ago'
+  if (s < 3600) return Math.round(s / 60) + 'm ago'
+  if (s < 86400) return Math.round(s / 3600) + 'h ago'
+  return Math.round(s / 86400) + 'd ago'
+}
+
+function renderLastRunPill (lastRun) {
+  if (!lastRun) return el('span', { class: 'last-run-pill last-run-none', title: 'No run recorded yet' }, '○ not run')
+  const status = (lastRun.status || '').toLowerCase()
+  const cls = status === 'passed' ? 'last-run-pass'
+    : status === 'failed' ? 'last-run-fail'
+    : status === 'skipped' ? 'last-run-skip' : 'last-run-other'
+  const icon = status === 'passed' ? '✓' : status === 'failed' ? '✗' : status === 'skipped' ? '–' : '●'
+  const dur = lastRun.durationMs ? ` · ${(lastRun.durationMs / 1000).toFixed(1)}s` : ''
+  return el('span', { class: 'last-run-pill ' + cls, title: `Last run ${lastRun.at || ''}` },
+    `${icon} ${status} · ${formatAgo(lastRun.at)}${dur}`)
+}
+
 function scenarioToGherkin (sc) {
   const lines = []
   if (sc.tags && sc.tags.length) lines.push('  ' + sc.tags.join(' '))
@@ -104,7 +127,10 @@ function renderFeature (feature, gherkin) {
     const block = scenarioToGherkin(sc)
     const node = el('div', { class: 'scenario' },
       el('div', { class: 'scenario-head' },
-        el('div', { class: 'scenario-name' }, sc.name || '(unnamed)'),
+        el('div', { class: 'scenario-name-wrap' },
+          el('div', { class: 'scenario-name' }, sc.name || '(unnamed)'),
+          renderLastRunPill(sc.lastRun),
+        ),
         el('div', { class: 'scenario-actions' },
           el('button', {
             class: 'btn-primary run-btn' + (runStatus.ready ? '' : ' disabled'),
@@ -362,6 +388,27 @@ function openRunDrawer (feature, scenario) {
     lines.push(text)
   }
 
+  function renderStepResults (payload) {
+    // Build a panel above the terminal that shows ✓/✗ per Gherkin
+    // step. If a panel already exists for this scenario, replace it.
+    let existing = drawer.querySelector('.run-steps-panel')
+    if (existing) existing.remove()
+    const panel = el('div', { class: 'run-steps-panel' },
+      el('div', { class: 'label' }, `Per-step verdict · ${payload.scenario}`),
+      el('ol', { class: 'run-steps-list' }, ...(payload.steps || []).map(s => {
+        const cls = s.status === 'passed' ? 'pass' : s.status === 'failed' ? 'fail' : 'skip'
+        const icon = s.status === 'passed' ? '✓' : s.status === 'failed' ? '✗' : '–'
+        return el('li', { class: 'run-step-row run-step-' + cls, title: s.error || '' },
+          el('span', { class: 'run-step-icon' }, icon),
+          el('span', { class: 'run-step-title' }, s.title),
+          el('span', { class: 'run-step-dur' }, (s.durationMs || 0) + ' ms'),
+        )
+      })),
+    )
+    // Insert above the terminal panel.
+    terminal.parentNode.insertBefore(panel, terminal)
+  }
+
   drawer.appendChild(el('div', { class: 'run-head' },
     el('div', {},
       el('div', { class: 'label' }, 'Playwright run · ' + feature.path.split('/').pop()),
@@ -434,6 +481,8 @@ function openRunDrawer (feature, scenario) {
     try { payload = JSON.parse(data) } catch (_) { return }
     if (event === 'start') {
       appendLine('# started ' + payload.at, 'meta')
+    } else if (event === 'steps') {
+      renderStepResults(payload)
     } else if (event === 'line') {
       const t = payload.text || ''
       let kind = ''

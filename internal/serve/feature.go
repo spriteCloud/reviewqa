@@ -29,9 +29,10 @@ type Feature struct {
 
 // Scenario is one Scenario block inside a Feature.
 type Scenario struct {
-	Name  string   `json:"name"`
-	Tags  []string `json:"tags,omitempty"`
-	Steps []Step   `json:"steps"`
+	Name    string         `json:"name"`
+	Tags    []string       `json:"tags,omitempty"`
+	Steps   []Step         `json:"steps"`
+	LastRun *LastRunRecord `json:"lastRun,omitempty"`
 }
 
 // Step is one Given/When/Then/And/But line.

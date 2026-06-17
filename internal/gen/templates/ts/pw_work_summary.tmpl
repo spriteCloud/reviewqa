@@ -33,7 +33,7 @@
   body {
     font-family: 'Inter', system-ui, -apple-system, sans-serif;
     font-size: 14px;
-    line-height: 1.65;
+    line-height: 1.7;
     color: var(--graphite);
     background: var(--warm-white);
     -webkit-font-smoothing: antialiased;
@@ -54,12 +54,7 @@
     padding: 48px 56px 36px;
     position: relative;
   }
-  .cover-head {
-    display: flex;
-    justify-content: space-between;
-    align-items: flex-start;
-    margin-bottom: 28px;
-  }
+  .cover-head { display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 28px; }
   .cover .label {
     font-family: 'Fira Code', monospace;
     font-size: 11px;
@@ -99,14 +94,8 @@
   }
   .cover-meta .dot { color: rgba(255,255,255,0.4); }
 
-  /* PIXEL-RAIL — separator between cover and KPI strip. */
-  .pixel-rail {
-    background: var(--deep-water);
-    padding: 0 0 6px;
-    display: flex;
-    justify-content: center;
-    border-bottom: 1px solid rgba(255,255,255,0.06);
-  }
+  /* PIXEL-RAIL */
+  .pixel-rail { background: var(--deep-water); padding: 0 0 6px; display: flex; justify-content: center; border-bottom: 1px solid rgba(255,255,255,0.06); }
   .pixel-rail-inner { display: flex; align-items: flex-end; gap: 4px; height: 80px; }
   .pixel-rail span { display: block; width: 24px; }
   .pr-1  { height: 18px; background: #EDF1F7; }
@@ -125,12 +114,10 @@
   .pr-14 { height: 26px; background: #EDF1F7; }
   .pr-15 { height: 16px; background: #EDF1F7; }
 
-  /* MAIN CONTENT */
   main { padding: 48px 56px 64px; max-width: 1120px; margin: 0 auto; }
-
   .section { margin-top: 44px; }
   .section:first-child { margin-top: 0; }
-  .section-head { margin-bottom: 20px; }
+  .section-head { margin-bottom: 18px; }
   .section-head .label {
     font-family: 'Fira Code', monospace;
     font-size: 11px;
@@ -146,142 +133,164 @@
     letter-spacing: -0.02em;
     color: var(--deep-water);
     margin-top: 6px;
+    margin-bottom: 4px;
+  }
+  .section-head p.lede {
+    color: var(--graphite);
+    font-size: 14px;
+    line-height: 1.65;
+    max-width: 720px;
   }
 
-  /* KPI GRID */
-  .kpi-grid {
-    display: grid;
-    grid-template-columns: repeat(4, 1fr);
-    gap: 18px;
-  }
-  .kpi-card {
+  /* AT-A-GLANCE NARRATIVE CARD */
+  .glance {
     background: var(--white);
     border: 1px solid var(--border-warm);
+    border-left: 4px solid var(--copper);
     border-radius: 12px;
-    padding: 24px 22px;
+    padding: 26px 28px;
+    margin-bottom: 32px;
   }
-  .kpi-value {
-    font-family: 'Sora', sans-serif;
-    font-weight: 800;
-    font-size: 52px;
-    letter-spacing: -0.04em;
-    color: var(--deep-water);
-    line-height: 1;
-    margin-bottom: 10px;
-  }
-  .kpi-label {
-    font-family: 'Fira Code', monospace;
-    font-size: 10px;
-    font-weight: 500;
-    letter-spacing: 0.14em;
-    text-transform: uppercase;
-    color: var(--copper);
-  }
-
-  /* PRIORITY BAR */
-  .pri-bar {
-    width: 100%;
-    height: 22px;
-    background: var(--border-warm);
-    border-radius: 999px;
-    overflow: hidden;
-    display: flex;
-    border: 1px solid var(--border-warm);
-  }
-  .pri-bar span { display: block; height: 100%; }
-  .pri-legend {
-    display: flex;
-    flex-wrap: wrap;
-    gap: 24px;
-    margin-top: 14px;
+  .glance p {
     font-family: 'Inter', sans-serif;
-    font-size: 13px;
+    font-size: 15px;
+    line-height: 1.75;
     color: var(--graphite);
+    margin-top: 0;
   }
-  .pri-legend i {
-    display: inline-block;
-    width: 12px;
-    height: 12px;
-    border-radius: 3px;
-    margin-right: 8px;
-    vertical-align: middle;
-  }
+  .glance p + p { margin-top: 12px; }
+  .glance strong { color: var(--deep-water); font-weight: 600; }
+  .glance .num { color: var(--copper); font-family: 'Sora', sans-serif; font-weight: 700; }
 
-  /* TABLES */
-  table {
-    width: 100%;
-    border-collapse: collapse;
-    font-size: 13px;
+  /* COVERAGE MAP — 2x3 layer grid */
+  .coverage-grid {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 14px;
+  }
+  .layer-card {
     background: var(--white);
     border: 1px solid var(--border-warm);
     border-radius: 10px;
-    overflow: hidden;
+    padding: 18px 20px;
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
   }
-  thead th {
-    text-align: left;
-    padding: 11px 14px;
-    background: var(--copper-soft);
-    color: var(--copper);
+  .layer-card .layer-head {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 10px;
+  }
+  .layer-card h3 {
+    font-family: 'Sora', sans-serif;
+    font-weight: 600;
+    font-size: 16px;
+    letter-spacing: -0.01em;
+    color: var(--deep-water);
+  }
+  .layer-card .layer-desc {
+    color: var(--graphite);
+    font-size: 13px;
+    line-height: 1.55;
+  }
+  .pill-state {
     font-family: 'Fira Code', monospace;
-    font-size: 10px;
+    font-size: 9px;
     font-weight: 600;
     letter-spacing: 0.12em;
     text-transform: uppercase;
-    border-bottom: 1px solid var(--border-warm);
-  }
-  tbody td {
-    padding: 10px 14px;
-    border-bottom: 1px solid var(--border-warm);
-    color: var(--graphite);
-  }
-  tbody tr:last-child td { border-bottom: 0; }
-  tbody tr:hover { background: var(--copper-soft); }
-  tbody td code {
-    background: var(--copper-soft);
-    color: var(--deep-water);
-    padding: 1px 6px;
-    border-radius: 4px;
-    font-size: 12px;
-  }
-
-  /* STATUS PILLS — priority and similar. */
-  .pri {
-    display: inline-block;
-    font-family: 'Fira Code', monospace;
-    font-size: 10px;
-    font-weight: 600;
-    letter-spacing: 0.10em;
-    text-transform: uppercase;
-    padding: 3px 10px;
+    padding: 3px 9px;
     border-radius: 999px;
     border: 1px solid transparent;
+    white-space: nowrap;
   }
-  .pri-critical    { color: var(--bad-fg);  background: var(--bad-bg); }
-  .pri-standard    { color: var(--info-fg); background: var(--info-bg); }
-  .pri-nice-to-have { color: var(--mist); background: rgba(136, 153, 170, 0.16); }
+  .state-yes  { color: var(--ok-fg);  background: var(--ok-bg);  border-color: rgba(21,128,61,0.18); }
+  .state-stub { color: var(--copper); background: var(--copper-soft); border-color: rgba(192,128,90,0.20); }
+  .state-no   { color: var(--mist);   background: var(--warm-white); border-color: var(--border-warm); }
 
-  .placeholder { color: var(--mist); font-style: italic; padding: 14px 16px; background: var(--white); border: 1px dashed var(--border-warm); border-radius: 10px; }
+  /* PRIORITY BAR */
+  .pri-bar { width: 100%; height: 22px; background: var(--border-warm); border-radius: 999px; overflow: hidden; display: flex; border: 1px solid var(--border-warm); }
+  .pri-bar span { display: block; height: 100%; }
+  .pri-legend { display: flex; flex-wrap: wrap; gap: 24px; margin-top: 14px; font-family: 'Inter', sans-serif; font-size: 13px; color: var(--graphite); }
+  .pri-legend i { display: inline-block; width: 12px; height: 12px; border-radius: 3px; margin-right: 8px; vertical-align: middle; }
+
+  /* JOURNEY CARDS */
+  .journey-list { display: flex; flex-direction: column; gap: 12px; }
+  .journey-card {
+    background: var(--white);
+    border: 1px solid var(--border-warm);
+    border-radius: 10px;
+    padding: 18px 22px;
+    display: grid;
+    grid-template-columns: 110px 1fr auto;
+    gap: 18px;
+    align-items: center;
+  }
+  .journey-card .pri { font-family: 'Fira Code', monospace; font-size: 10px; font-weight: 600; letter-spacing: 0.10em; text-transform: uppercase; padding: 4px 10px; border-radius: 999px; text-align: center; }
+  .pri-critical { color: var(--bad-fg); background: var(--bad-bg); }
+  .pri-standard { color: var(--info-fg); background: var(--info-bg); }
+  .pri-nice-to-have { color: var(--mist); background: rgba(136,153,170,0.16); }
+  .journey-body { min-width: 0; }
+  .journey-kind {
+    font-family: 'Sora', sans-serif;
+    font-weight: 600;
+    font-size: 16px;
+    color: var(--deep-water);
+    text-transform: capitalize;
+    letter-spacing: -0.01em;
+    margin-bottom: 3px;
+  }
+  .journey-blurb { color: var(--graphite); font-size: 13.5px; line-height: 1.55; margin-bottom: 4px; }
+  .journey-meta { font-family: 'Fira Code', monospace; font-size: 11px; color: var(--mist); letter-spacing: 0.04em; }
+  .journey-meta code { color: var(--deep-water); }
+  .journey-steps {
+    font-family: 'Sora', sans-serif;
+    font-weight: 700;
+    font-size: 22px;
+    color: var(--copper);
+    text-align: center;
+    letter-spacing: -0.02em;
+    line-height: 1;
+  }
+  .journey-steps small { display: block; font-family: 'Fira Code', monospace; font-size: 9px; color: var(--mist); letter-spacing: 0.10em; text-transform: uppercase; margin-top: 4px; }
+
+  /* TABLE for crawled pages */
+  table { width: 100%; border-collapse: collapse; font-size: 13px; background: var(--white); border: 1px solid var(--border-warm); border-radius: 10px; overflow: hidden; }
+  thead th { text-align: left; padding: 11px 14px; background: var(--copper-soft); color: var(--copper); font-family: 'Fira Code', monospace; font-size: 10px; font-weight: 600; letter-spacing: 0.12em; text-transform: uppercase; border-bottom: 1px solid var(--border-warm); }
+  tbody td { padding: 10px 14px; border-bottom: 1px solid var(--border-warm); color: var(--graphite); }
+  tbody tr:last-child td { border-bottom: 0; }
+  tbody tr:hover { background: var(--copper-soft); }
+  tbody td code { background: var(--copper-soft); color: var(--deep-water); padding: 1px 6px; border-radius: 4px; font-size: 12px; }
+
+  /* NEXT STEPS CHECKLIST */
+  .next-steps { display: flex; flex-direction: column; gap: 12px; }
+  .next-step {
+    background: var(--white);
+    border: 1px solid var(--border-warm);
+    border-radius: 10px;
+    padding: 14px 18px;
+    display: grid;
+    grid-template-columns: 36px 1fr;
+    gap: 14px;
+    align-items: start;
+  }
+  .next-step .n { font-family: 'Sora', sans-serif; font-weight: 800; font-size: 22px; color: var(--copper); line-height: 1; letter-spacing: -0.03em; }
+  .next-step h4 { font-family: 'Sora', sans-serif; font-weight: 600; font-size: 15px; color: var(--deep-water); letter-spacing: -0.01em; margin-bottom: 4px; }
+  .next-step p { font-size: 13.5px; line-height: 1.55; color: var(--graphite); margin: 0; }
+  .next-step code { background: var(--copper-soft); color: var(--deep-water); padding: 1px 6px; border-radius: 4px; font-size: 12px; }
 
   /* FOOTER */
-  footer {
-    background: var(--ink);
-    color: rgba(255,255,255,0.6);
-    padding: 22px 56px;
-    margin-top: 56px;
-    font-family: 'Fira Code', monospace;
-    font-size: 11px;
-    letter-spacing: 0.04em;
-    display: flex;
-    flex-wrap: wrap;
-    justify-content: space-between;
-    align-items: center;
-    gap: 14px;
-  }
+  footer { background: var(--ink); color: rgba(255,255,255,0.6); padding: 22px 56px; margin-top: 56px; font-family: 'Fira Code', monospace; font-size: 11px; letter-spacing: 0.04em; display: flex; flex-wrap: wrap; justify-content: space-between; align-items: center; gap: 14px; }
   footer a { color: var(--copper); }
   footer code { color: rgba(255,255,255,0.85); }
 
   @media (max-width: 760px) {
-    .kpi-grid { grid-template-columns: repeat(2, 1fr); }
+    .coverage-grid { grid-template-columns: 1fr 1fr; }
+    .journey-card { grid-template-columns: 1fr; gap: 10px; }
+    .journey-card .pri { justify-self: start; }
+    .journey-steps { text-align: left; }
     .cover { padding: 32px 24px 24px; }
     main { padding: 32px 24px 48px; }
     footer { padding: 18px 24px; }
@@ -289,6 +298,13 @@
 </style>
 </head>
 <body>
+{{- $crit := countByPriority .Catalogue.Journeys "critical" }}
+{{- $std := countByPriority .Catalogue.Journeys "standard" }}
+{{- $nice := countByPriority .Catalogue.Journeys "nice-to-have" }}
+{{- $total := len .Catalogue.Journeys }}
+{{- $pages := len .Catalogue.Pages }}
+{{- $fuzz := len .Catalogue.Fuzz }}
+
   <header class="cover">
     <div class="cover-head">
       <span class="label">reviewqa · stakeholder summary</span>
@@ -300,7 +316,7 @@
       <span class="dot">·</span>
       <span class="pill">{{.Catalogue.CoverageMode}} coverage</span>
       <span class="dot">·</span>
-      <span>{{len .Catalogue.Pages}} pages · {{len .Catalogue.Journeys}} journeys · {{len .Catalogue.Fuzz}} fuzz specs</span>
+      <span>{{$pages}} pages · {{$total}} journeys · {{$fuzz}} fuzz specs</span>
     </div>
   </header>
 
@@ -316,30 +332,85 @@
 
   <main>
     <section class="section">
-      <div class="kpi-grid">
-        <div class="kpi-card">
-          <div class="kpi-value">{{len .Catalogue.Pages}}</div>
-          <div class="kpi-label">Pages crawled</div>
+      <div class="section-head">
+        <span class="label">At a glance</span>
+        <h2>What reviewqa did on this site.</h2>
+      </div>
+      <div class="glance">
+        <p>
+          reviewqa crawled <span class="num">{{$pages}}</span> pages on <strong>{{.Catalogue.Origin}}</strong>
+          and identified <span class="num">{{$total}}</span> user {{if eq $total 1}}journey{{else}}journeys{{end}}, classified by business priority.
+          {{- if gt $crit 0 }} <span class="num">{{$crit}}</span> {{if eq $crit 1}}is{{else}}are{{end}} <strong>critical</strong> &mdash; the suite is gated on these passing before every release.{{- end }}
+          {{- if gt $std 0 }} <span class="num">{{$std}}</span> {{if eq $std 1}}is{{else}}are{{end}} <strong>standard</strong> &mdash; nightly regression coverage.{{- end }}
+          {{- if gt $nice 0 }} <span class="num">{{$nice}}</span> {{if eq $nice 1}}is{{else}}are{{end}} <strong>nice-to-have</strong> &mdash; longer-tail flows worth keeping warm.{{- end }}
+        </p>
+        <p>
+          The emitted suite spans <strong>{{.Catalogue.CoverageMode}}</strong> coverage:
+          a Playwright + Gherkin journey suite (one .feature file per journey),
+          an accessibility trio on every crawled page (5 axe-core gates, 5 landmark checks, 5 keyboard gestures),
+          responsive / performance / security / health / observability quality specs,
+          a 4-device × 2-orientation mobile matrix, and
+          {{- if gt $fuzz 0 }} <span class="num">{{$fuzz}}</span> adversarial fuzz {{if eq $fuzz 1}}spec{{else}}specs{{end}} per form.{{- else }} adversarial fuzz specs (only emitted when a form is present).{{- end }}
+        </p>
+      </div>
+    </section>
+
+    <section class="section">
+      <div class="section-head">
+        <span class="label">Coverage map</span>
+        <h2>What test layers fired against this surface.</h2>
+        <p class="lede">Six layers can be exercised from a live-URL probe. Unit, Component, Backend, and Data require a PR diff and are not in scope for a probe-only run.</p>
+      </div>
+      <div class="coverage-grid">
+        <div class="layer-card">
+          <div class="layer-head">
+            <h3>UI</h3>
+            <span class="pill-state state-yes">exercised</span>
+          </div>
+          <div class="layer-desc">A11y trio (5+5+5 tests) on every crawled page, plus responsive / performance / visual / security / health / observability quality specs.</div>
         </div>
-        <div class="kpi-card">
-          <div class="kpi-value">{{len .Catalogue.Journeys}}</div>
-          <div class="kpi-label">Journeys identified</div>
+        <div class="layer-card">
+          <div class="layer-head">
+            <h3>API</h3>
+            {{- if .Catalogue.Journeys }}
+            <span class="pill-state state-yes">exercised</span>
+            {{- else }}
+            <span class="pill-state state-no">no surface</span>
+            {{- end }}
+          </div>
+          <div class="layer-desc">10 tests per discovered form (happy path + 9 adversarial negatives). When no form was discovered, this layer is dormant.</div>
         </div>
-        <div class="kpi-card">
-          <div class="kpi-value">{{countByPriority .Catalogue.Journeys "critical"}}</div>
-          <div class="kpi-label">Critical specs</div>
+        <div class="layer-card">
+          <div class="layer-head">
+            <h3>Contract</h3>
+            <span class="pill-state state-stub">always-attempt stubs</span>
+          </div>
+          <div class="layer-desc">OpenAPI / GraphQL / Webhook stubs always probed (6 tests per origin). When the site advertises a schema, full 9-tests-per-endpoint contract specs are emitted.</div>
         </div>
-        <div class="kpi-card">
-          <div class="kpi-value">{{len .Catalogue.Fuzz}}</div>
-          <div class="kpi-label">Fuzz specs</div>
+        <div class="layer-card">
+          <div class="layer-head">
+            <h3>Integration</h3>
+            <span class="pill-state state-stub">scaffold only</span>
+          </div>
+          <div class="layer-desc">5 scaffolds (api / db / cache / observability / auth) × 3 wireable blocks each. Tests skip until <code>reviewqa.yml</code> wires the backing resource.</div>
+        </div>
+        <div class="layer-card">
+          <div class="layer-head">
+            <h3>Mobile</h3>
+            <span class="pill-state state-yes">exercised</span>
+          </div>
+          <div class="layer-desc">4 devices (iPhone 13, Pixel 5, iPad Pro 11, Galaxy S9+) × 2 orientations on every crawled page, plus 5 touch-gesture families.</div>
+        </div>
+        <div class="layer-card">
+          <div class="layer-head">
+            <h3>Non-functional</h3>
+            <span class="pill-state state-yes">exercised</span>
+          </div>
+          <div class="layer-desc">17+ quality layers including network throttle, race conditions, storage, zoom, print, clipboard, http-chains, file-upload, history-depth, and locale-switch.</div>
         </div>
       </div>
     </section>
 
-    {{- $crit := countByPriority .Catalogue.Journeys "critical" }}
-    {{- $std := countByPriority .Catalogue.Journeys "standard" }}
-    {{- $nice := countByPriority .Catalogue.Journeys "nice-to-have" }}
-    {{- $total := len .Catalogue.Journeys }}
     <section class="section">
       <div class="section-head">
         <span class="label">Priority mix</span>
@@ -352,7 +423,7 @@
         <span style="width: {{percent $nice $total}}%; background: var(--mist)"></span>
       </div>
       {{- else }}
-      <div class="placeholder">No journeys identified on this probe.</div>
+      <div class="layer-card" style="border-style: dashed; color: var(--mist);">No journeys identified on this probe.</div>
       {{- end }}
       <div class="pri-legend">
         <span><i style="background: var(--bad-fg)"></i>critical ({{$crit}})</span>
@@ -365,29 +436,30 @@
     <section class="section">
       <div class="section-head">
         <span class="label">Journeys</span>
-        <h2>Feature files, kinds, priorities.</h2>
+        <h2>Each identified user journey, by priority.</h2>
+        <p class="lede">Steps = number of Given / When / Then lines in the journey's <code>.feature</code> file. Higher step count generally means a richer scenario; not necessarily a longer wall-clock run.</p>
       </div>
-      <table>
-        <thead><tr><th>Feature file</th><th>Kind</th><th>Priority</th><th>Steps</th></tr></thead>
-        <tbody>
-        {{- range $j := .Catalogue.Journeys }}
-          <tr>
-            <td><code>{{$j.OutPath}}</code></td>
-            <td><code>{{$j.Kind}}</code></td>
-            <td><span class="pri pri-{{$j.Priority}}">{{$j.Priority}}</span></td>
-            <td>{{len $j.Steps}}</td>
-          </tr>
-        {{- end }}
-        </tbody>
-      </table>
+      <div class="journey-list">
+      {{- range $j := .Catalogue.Journeys }}
+        <div class="journey-card">
+          <span class="pri pri-{{$j.Priority}}">{{$j.Priority}}</span>
+          <div class="journey-body">
+            <div class="journey-kind">{{$j.Kind}}</div>
+            <div class="journey-blurb">{{journeyKindBlurb $j.Kind}}.</div>
+            <div class="journey-meta">→ <code>{{$j.OutPath}}</code></div>
+          </div>
+          <div class="journey-steps">{{len $j.Steps}}<small>steps</small></div>
+        </div>
+      {{- end }}
+      </div>
     </section>
     {{- end }}
 
     {{- if .Catalogue.Pages }}
     <section class="section">
       <div class="section-head">
-        <span class="label">Pages</span>
-        <h2>What reviewqa crawled.</h2>
+        <span class="label">Pages crawled</span>
+        <h2>{{$pages}} pages reviewqa observed on this site.</h2>
       </div>
       <table>
         <thead><tr><th>URL</th><th>Title</th></tr></thead>
@@ -399,6 +471,50 @@
       </table>
     </section>
     {{- end }}
+
+    <section class="section">
+      <div class="section-head">
+        <span class="label">Recommended next steps</span>
+        <h2>How to put this suite to work.</h2>
+      </div>
+      <div class="next-steps">
+        <div class="next-step">
+          <span class="n">1</span>
+          <div>
+            <h4>Install dependencies</h4>
+            <p>Run <code>npm install</code> in this directory to pull <code>@playwright/test</code> and <code>playwright-bdd</code>, then <code>npx playwright install</code> to fetch the browser binaries.</p>
+          </div>
+        </div>
+        <div class="next-step">
+          <span class="n">2</span>
+          <div>
+            <h4>Execute the suite</h4>
+            <p><code>npx bddgen</code> generates the executable specs from the <code>.feature</code> files. Then <code>npx playwright test</code> runs the full suite. Tag-filter with <code>--grep @priority:critical</code> on every PR; nightly the full set.</p>
+          </div>
+        </div>
+        <div class="next-step">
+          <span class="n">3</span>
+          <div>
+            <h4>Triage failures</h4>
+            <p>Open <code>tests/e2e/docs/findings.md</code> after each run. <code>reviewqa ledger update --report playwright-report.json</code> deduplicates failures by (spec, test) and surfaces them risk-weighted by priority — survives across runs.</p>
+          </div>
+        </div>
+        <div class="next-step">
+          <span class="n">4</span>
+          <div>
+            <h4>Re-probe on change</h4>
+            <p>Re-run <code>reviewqa probe</code> after feature merges to track coverage drift — new pages and new forms get picked up automatically; removed surfaces drop out.</p>
+          </div>
+        </div>
+        <div class="next-step">
+          <span class="n">5</span>
+          <div>
+            <h4>Tailor in the browser</h4>
+            <p><code>reviewqa serve --workdir .</code> opens a local UI where stakeholders can delete journeys, refine Scenarios via chat, suggest locators from the live DOM, and run individual Scenarios — no IDE required.</p>
+          </div>
+        </div>
+      </div>
+    </section>
   </main>
 
   <footer>

@@ -917,6 +917,77 @@ code, pre { font-family: 'Fira Code', ui-monospace, monospace; }
   pointer-events: none;
 }
 
+/* LAST-RUN PILL — sits next to scenario name in the card. */
+.scenario-name-wrap {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  flex-wrap: wrap;
+}
+.last-run-pill {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  font-family: 'Fira Code', monospace;
+  font-size: 10px;
+  font-weight: 600;
+  letter-spacing: 0.04em;
+  padding: 3px 10px;
+  border-radius: 999px;
+  border: 1px solid transparent;
+  white-space: nowrap;
+}
+.last-run-pass { color: #15803D; background: #DCFCE7; border-color: rgba(21, 128, 61, 0.25); }
+.last-run-fail { color: #B91C1C; background: #FEE2E2; border-color: rgba(185, 28, 28, 0.25); }
+.last-run-skip { color: #A16207; background: #FEF9C3; border-color: rgba(161, 98, 7, 0.25); }
+.last-run-none { color: var(--mist); background: var(--warm-white); border-color: var(--border-warm); }
+.last-run-other { color: var(--copper); background: var(--copper-soft); border-color: rgba(192, 128, 90, 0.25); }
+
+/* RUN STEPS PANEL — appears above the terminal once the JSON
+ * reporter post-processes per-step verdicts. */
+.run-steps-panel {
+  background: var(--white);
+  border-bottom: 1px solid var(--border-warm);
+  padding: 12px 24px 14px;
+  max-height: 40vh;
+  overflow-y: auto;
+}
+.run-steps-panel .label { display: inline-block; margin-bottom: 8px; }
+.run-steps-list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+.run-step-row {
+  display: flex;
+  align-items: baseline;
+  gap: 12px;
+  padding: 6px 10px;
+  border-radius: 6px;
+  font-size: 13px;
+  border: 1px solid var(--border-warm);
+}
+.run-step-icon {
+  font-family: 'Fira Code', monospace;
+  font-weight: 700;
+  font-size: 13px;
+  flex: 0 0 18px;
+  text-align: center;
+}
+.run-step-title { flex: 1; min-width: 0; color: var(--graphite); font-family: 'Inter', sans-serif; }
+.run-step-dur { color: var(--mist); font-family: 'Fira Code', monospace; font-size: 11px; flex-shrink: 0; }
+.run-step-pass { background: #F0FDF4; border-color: rgba(21, 128, 61, 0.18); }
+.run-step-pass .run-step-icon { color: #15803D; }
+.run-step-fail { background: #FEF2F2; border-color: rgba(185, 28, 28, 0.22); }
+.run-step-fail .run-step-icon { color: #B91C1C; }
+.run-step-skip { background: var(--warm-white); border-color: var(--border-warm); }
+.run-step-skip .run-step-icon { color: var(--mist); }
+
 /* RUN DRAWER — bottom panel for ▶ Run scenario output. */
 .run-drawer {
   position: fixed;

@@ -529,6 +529,39 @@ var funcs = template.FuncMap{
 		}
 		return p
 	},
+	// journeyKindBlurb returns a stakeholder-friendly one-liner per
+	// journey kind. Used by the work-summary template to spell out
+	// what each journey actually exercises.
+	"journeyKindBlurb": func(kind string) string {
+		switch strings.ToLower(kind) {
+		case "convert":
+			return "users submit the lead / contact form"
+		case "contact":
+			return "users reach a support / contact channel"
+		case "browse":
+			return "users navigate marketing content"
+		case "read":
+			return "users consume long-form content"
+		case "explore":
+			return "users discover service or product pages"
+		case "research":
+			return "users compare options or read case studies"
+		case "authenticate":
+			return "users sign in to the application"
+		case "search":
+			return "users find content through site search"
+		case "exercise":
+			return "users complete an interactive task"
+		}
+		return "users complete a " + kind + " task"
+	},
+	// pickOneOrMany returns "is" when n == 1, otherwise "are".
+	"pickOneOrMany": func(n int) string {
+		if n == 1 {
+			return "is"
+		}
+		return "are"
+	},
 	// apiMethod normalises a form's method attribute to a Playwright
 	// request fixture verb. Empty / unknown methods fall back to "post"
 	// because that matches the dominant intent for forms with an action
