@@ -490,6 +490,7 @@ type Project struct {
 	Workdir  string       `json:"workdir"`
 	Version  string       `json:"version,omitempty"`
 	Features []FeatureRef `json:"features"`
+	Specs    []SpecRef    `json:"specs,omitempty"`
 	Docs     []DocRef     `json:"docs,omitempty"`
 	History  []DocRef     `json:"history,omitempty"`
 }
@@ -542,6 +543,11 @@ func loadProject(workdir string) Project {
 		}
 	}
 	sort.Slice(p.Features, func(i, j int) bool { return p.Features[i].Path < p.Features[j].Path })
+
+	// v0.80 — surface vanilla Playwright *.spec.{ts,js} alongside the
+	// reviewqa-native .feature files so existing projects can be
+	// onboarded into the UI without a reviewqa-style layout.
+	p.Specs = loadSpecs(workdir)
 
 	docsDir := filepath.Join(workdir, "tests", "e2e", "docs")
 	for _, d := range []struct{ name, kind, title string }{

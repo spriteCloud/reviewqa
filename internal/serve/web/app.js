@@ -2,6 +2,8 @@
 // Plain vanilla JS so the project keeps its no-build posture.
 
 const $featureList = document.querySelector('[data-feature-list]')
+const $specList = document.querySelector('[data-spec-list]')
+const $specsHeading = document.querySelector('[data-specs-heading]')
 const $docList = document.querySelector('[data-doc-list]')
 const $content = document.querySelector('[data-content]')
 const $projectName = document.querySelector('[data-project-name]')
@@ -142,9 +144,12 @@ function renderFeature (feature) {
             onclick: () => runStatus.ready && openRunDrawer(feature, sc),
           }, '▶ Run'),
           el('button', {
-            class: 'btn-ghost' + (llmStatus.enabled ? '' : ' disabled'),
-            title: llmStatus.enabled ? 'Chat with the LLM about this scenario' : 'Set REVIEWQA_LLM to enable',
-            onclick: () => llmStatus.enabled && openChat(feature, sc, block),
+            class: 'btn-ghost',
+            title: llmStatus.enabled ? 'Chat with the LLM about this scenario' : 'LLM is off — click to set it up',
+            onclick: () => {
+              if (llmStatus.enabled) openChat(feature, sc, block)
+              else { toast('Open Settings to enable LLM', 'info'); openSettings() }
+            },
           }, '💬 Chat'),
           el('button', { class: 'btn-ghost', onclick: () => openEditor(feature.path, sc.name, block, feature) }, 'Edit'),
           el('button', { class: 'btn-ghost danger', onclick: () => deleteScenario(feature.path, sc.name) }, 'Delete'),
@@ -758,6 +763,11 @@ function refreshSidebarSelection () {
   for (const li of $featureList.querySelectorAll('li')) {
     li.classList.toggle('active', li.dataset.path === activeFeature)
   }
+  if ($specList) {
+    for (const li of $specList.querySelectorAll('li')) {
+      li.classList.toggle('active', li.dataset.path === activeFeature)
+    }
+  }
   for (const li of $docList.querySelectorAll('li')) {
     li.classList.toggle('active', li.dataset.path === activeDoc)
   }
@@ -792,6 +802,8 @@ async function init () {
         ))
       }
     }
+
+    renderSpecList(project)
 
     $docList.replaceChildren()
     if (!project.docs || !project.docs.length) {
@@ -996,6 +1008,7 @@ async function reloadProject () {
         ))
       }
     }
+    renderSpecList(project)
     $docList.replaceChildren()
     if (!project.docs || !project.docs.length) {
       $docList.appendChild(el('li', { class: 'empty' }, '—'))
@@ -1010,6 +1023,53 @@ async function reloadProject () {
     renderHistoryList(project)
     refreshSidebarSelection()
   } catch (_) { /* non-fatal */ }
+}
+
+function renderSpecList (project) {
+  if (!$specList || !$specsHeading) return
+  $specList.replaceChildren()
+  const specs = project.specs || []
+  if (!specs.length) {
+    $specsHeading.setAttribute('hidden', '')
+    return
+  }
+  $specsHeading.removeAttribute('hidden')
+  for (const s of specs) {
+    const count = (s.tests || []).length
+    const meta = `${count} test${count === 1 ? '' : 's'}`
+    $specList.appendChild(el('li', { 'data-path': s.path, onclick: () => openSpec(s) },
+      el('div', {}, s.name || s.path.split('/').pop()),
+      el('span', { class: 'meta' }, meta),
+    ))
+  }
+}
+
+async function openSpec (spec) {
+  activeFeature = spec.path
+  activeDoc = null
+  activeHome = false
+  activeSettings = false
+  refreshSidebarSelection()
+  $content.replaceChildren(
+    el('div', { class: 'feature-header' },
+      el('h1', {}, spec.name),
+      el('div', { class: 'path' }, spec.path),
+    ),
+    ...(spec.tests || []).map(t => el('div', { class: 'scenario' },
+      el('div', { class: 'scenario-head' },
+        el('div', { class: 'scenario-name-wrap' },
+          el('div', { class: 'scenario-name' }, t.name),
+        ),
+        el('div', { class: 'scenario-actions' },
+          el('button', {
+            class: 'btn-primary run-btn' + (runStatus.ready ? '' : ' disabled'),
+            title: runStatus.ready ? 'Run via npx playwright test' : runStatus.message,
+            onclick: () => runStatus.ready && openRunDrawer({ path: spec.path, name: spec.name }, { name: t.name, steps: [] }),
+          }, '▶ Run'),
+        ),
+      ),
+    )),
+  )
 }
 
 function renderHistoryList (project) {
@@ -1074,28 +1134,48 @@ async function renderSettings () {
   const $saveBtn = el('button', { class: 'btn-primary', onclick: () => save() }, 'Save settings')
 
   async function testConnection () {
-    $status.textContent = 'Testing…'
+    const endpoint = $endpoint.value.trim()
+    if (!endpoint) {
+      $status.textContent = 'Enter an endpoint first.'
+      $status.className = 'home-probe-verdict fail'
+      return
+    }
+    if (!$model.value.trim()) {
+      $status.textContent = 'Enter a model name first.'
+      $status.className = 'home-probe-verdict fail'
+      return
+    }
+    $testBtn.disabled = true
+    const oldLabel = $testBtn.textContent
+    $testBtn.textContent = 'Testing…'
+    $status.textContent = `Pinging ${endpoint}…`
     $status.className = 'home-probe-verdict'
     try {
       const res = await fetchJSON('/api/llm-test', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
-          endpoint: $endpoint.value.trim(),
+          endpoint,
           model: $model.value.trim(),
           apiKey: $apiKey.value,
         }),
       })
       if (res.ok) {
-        $status.textContent = `Connection OK — model "${res.model}" replied: ${res.sample || '(empty)'}`
+        $status.textContent = `OK — ${res.model} replied "${res.sample || '(empty)'}"`
         $status.className = 'home-probe-verdict pass'
+        toast('LLM reachable', 'ok')
       } else {
-        $status.textContent = 'Connection failed: ' + (res.error || 'unknown')
+        $status.textContent = 'Failed: ' + (res.error || 'unknown')
         $status.className = 'home-probe-verdict fail'
+        toast('Test failed', 'fail')
       }
     } catch (err) {
-      $status.textContent = 'Test error: ' + err.message
+      $status.textContent = 'Network error: ' + err.message
       $status.className = 'home-probe-verdict fail'
+      toast('Network error', 'fail')
+    } finally {
+      $testBtn.disabled = false
+      $testBtn.textContent = oldLabel
     }
   }
 

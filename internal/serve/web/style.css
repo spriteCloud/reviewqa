@@ -1281,29 +1281,47 @@ code, pre { font-family: 'Fira Code', ui-monospace, monospace; }
   box-sizing: border-box;
 }
 
-/* TOAST — short ephemeral feedback (saved / probed / switched). */
+/* TOAST — short ephemeral feedback (saved / probed / switched).
+ * Stacks bottom-up when multiple fire; icon + text pair. */
 .toast {
   position: fixed;
-  top: 80px;
+  bottom: 24px;
   right: 24px;
   z-index: 9999;
+  display: inline-flex;
+  align-items: center;
+  gap: 10px;
   background: var(--deep-water);
   color: var(--white);
-  padding: 10px 16px;
-  border-radius: 8px;
+  padding: 12px 16px 12px 14px;
+  border-radius: 10px;
   font-family: 'Inter', sans-serif;
   font-size: 13px;
   font-weight: 500;
-  box-shadow: 0 8px 24px rgba(15, 17, 23, 0.18);
+  letter-spacing: -0.005em;
+  box-shadow: 0 12px 32px rgba(15, 17, 23, 0.22);
   opacity: 0;
-  transform: translateY(-8px);
-  transition: opacity .18s ease, transform .18s ease;
+  transform: translateY(8px) scale(0.98);
+  transition: opacity .18s ease, transform .22s cubic-bezier(.2,.8,.2,1);
   max-width: 380px;
 }
-.toast.show { opacity: 1; transform: translateY(0); }
+.toast.show { opacity: 1; transform: translateY(0) scale(1); }
+.toast::before {
+  content: '';
+  display: block;
+  width: 18px;
+  height: 18px;
+  flex-shrink: 0;
+  background-position: center;
+  background-repeat: no-repeat;
+  background-size: 18px 18px;
+}
 .toast-ok { background: #15803D; }
+.toast-ok::before  { background-image: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='white' stroke-width='3' stroke-linecap='round' stroke-linejoin='round'><polyline points='4 12 10 18 20 6'/></svg>"); }
 .toast-fail { background: #B91C1C; }
+.toast-fail::before { background-image: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='white' stroke-width='3' stroke-linecap='round' stroke-linejoin='round'><line x1='6' y1='6' x2='18' y2='18'/><line x1='18' y1='6' x2='6' y2='18'/></svg>"); }
 .toast-info { background: var(--deep-water); }
+.toast-info::before { background-image: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='white' stroke-width='3' stroke-linecap='round' stroke-linejoin='round'><line x1='12' y1='8' x2='12' y2='12'/><circle cx='12' cy='16' r='1.2' fill='white' stroke='none'/></svg>"); }
 
 /* PROJECT SWITCHER dropdown — anchored to the header brand pill. */
 .project-pill {
