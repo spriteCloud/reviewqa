@@ -849,16 +849,9 @@ window.__openSettings = openSettings
 
 async function renderHome () {
   const project = window.__project || { name: '', version: '', workdir: '', features: [], docs: [] }
-  const scenarioTotal = (project.features || []).reduce((acc, f) => acc + (f.scenarios || 0), 0)
-
-  const summary = el('div', { class: 'home-summary' },
-    summaryRow('workdir', project.workdir || '—'),
-    summaryRow('version', project.version ? `v${project.version}` : '—'),
-    summaryRow('features', String((project.features || []).length)),
-    summaryRow('scenarios', String(scenarioTotal)),
-    summaryRow('llm', llmStatus.enabled ? `${llmStatus.model} @ ${llmStatus.endpoint}` : 'off — set REVIEWQA_LLM to enable Chat'),
-    summaryRow('runtime', runStatus.ready ? 'ready (playwright installed)' : (runStatus.message || 'not ready')),
-  )
+  // (Project summary card removed — name/version live in the header
+  // pill and version chip; feature/scenario counts live in the
+  // sidebar; LLM/runtime status surface from Settings + run-preflight.)
 
   const $urlInput = el('input', { type: 'url', class: 'home-probe-input', placeholder: 'https://example.com', autocomplete: 'off' })
   const $coverage = el('select', { class: 'home-probe-coverage' },
@@ -975,10 +968,6 @@ async function renderHome () {
       el('h1', { class: 'home-title' }, 'Probe a URL. Or pick a feature.'),
       el('p', { class: 'home-sub' }, 'A local control room for the generated suite. Re-probe the site, run any scenario, chat-edit Gherkin, jump to the stakeholder docs.'),
     ),
-    el('section', { class: 'home-card' },
-      el('h2', { class: 'home-card-title' }, 'Project'),
-      summary,
-    ),
     el('section', { class: 'home-card home-probe-card' },
       el('h2', { class: 'home-card-title' }, 'Probe a URL'),
       el('p', { class: 'home-card-sub' }, 'Runs the same `reviewqa probe` your CLI does. New / updated features appear in the sidebar once it finishes.'),
@@ -990,13 +979,6 @@ async function renderHome () {
       el('h2', { class: 'home-card-title' }, 'What you can do from here'),
       shelf,
     ),
-  )
-}
-
-function summaryRow (label, value) {
-  return el('div', { class: 'home-summary-row' },
-    el('span', { class: 'home-summary-label' }, label),
-    el('span', { class: 'home-summary-value' }, value),
   )
 }
 
