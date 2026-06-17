@@ -265,6 +265,32 @@ func Handler(workdir string) http.Handler {
 		writeJSON(w, res)
 	})
 
+	mux.HandleFunc("/api/run-preflight", func(w http.ResponseWriter, r *http.Request) {
+		writeJSON(w, Preflight(workdir))
+	})
+
+	mux.HandleFunc("/api/run-scenario", func(w http.ResponseWriter, r *http.Request) {
+		if r.Method != http.MethodPost {
+			http.Error(w, "method not allowed", http.StatusMethodNotAllowed)
+			return
+		}
+		var req RunRequest
+		if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
+			http.Error(w, err.Error(), http.StatusBadRequest)
+			return
+		}
+		// No timeout on the request context — playwright runs can be
+		// long. The user can stop via the UI which closes the
+		// connection; r.Context().Done() will cancel the exec.
+		if _, err := RunScenarioStream(r.Context(), w, workdir, req.Feature, req.Scenario); err != nil {
+			// If headers haven't been flushed yet, surface the error
+			// as a JSON 400. After the stream has started, errors
+			// arrive as the final "done" event.
+			http.Error(w, err.Error(), http.StatusBadRequest)
+			return
+		}
+	})
+
 	mux.HandleFunc("/api/llm-status", func(w http.ResponseWriter, r *http.Request) {
 		cfg := llmConfigFromEnv()
 		enabled := cfg.OpenAIAPIKey != "" && cfg.Model != ""
