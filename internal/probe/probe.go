@@ -228,11 +228,64 @@ func RunAll(ctx context.Context, urls []string) ([]plan.Item, []error) {
 			continue
 		}
 		journeys := mindmap.IdentifyJourneys(m, 3)
+		if len(journeys) == 0 {
+			continue
+		}
+		// Companion items: a shared fixtures module, a playwright.config.ts,
+		// and a tests/e2e/README.md. Emitted once per probed origin so all
+		// per-journey specs in the same suite share a common test setup
+		// instead of duplicating the page-error tracking in every file.
+		items = append(items, companionItems(u, m)...)
 		for _, j := range journeys {
 			items = append(items, itemFromJourney(j, u))
 		}
 	}
 	return items, errs
+}
+
+// companionItems returns the suite-wide files reviewqa drops alongside the
+// per-journey specs: tests/e2e/_fixtures.ts, playwright.config.ts, and
+// tests/e2e/README.md. The PageURL on each item is the probed origin so
+// the templates can render baseURL defaults and a relevant README intro.
+func companionItems(sourceURL string, m *mindmap.Map) []plan.Item {
+	parsed, _ := url.Parse(sourceURL)
+	host := ""
+	if parsed != nil {
+		host = parsed.Hostname()
+	}
+	stub := ast.Symbol{
+		Name:     hostToName(host),
+		Kind:     ast.KindComponent,
+		File:     sourceURL,
+		Language: "ts",
+	}
+	originOnly := sourceURL
+	if parsed != nil {
+		originOnly = parsed.Scheme + "://" + parsed.Host
+	}
+	return []plan.Item{
+		{
+			Symbol:   stub,
+			Symbols:  []ast.Symbol{stub},
+			PageURL:  originOnly,
+			Template: plan.TmplPlaywrightFixtures,
+			OutPath:  "tests/e2e/_fixtures.ts",
+		},
+		{
+			Symbol:   stub,
+			Symbols:  []ast.Symbol{stub},
+			PageURL:  originOnly,
+			Template: plan.TmplPlaywrightConfig,
+			OutPath:  "playwright.config.ts",
+		},
+		{
+			Symbol:   stub,
+			Symbols:  []ast.Symbol{stub},
+			PageURL:  originOnly,
+			Template: plan.TmplPlaywrightReadme,
+			OutPath:  "tests/e2e/README.md",
+		},
+	}
 }
 
 // mindmapFetcher adapts probe.Fetch to the mindmap.Fetcher signature.

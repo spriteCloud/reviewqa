@@ -13,16 +13,19 @@ import (
 type Template string
 
 const (
-	TmplJestUnit           Template = "jest_unit"
-	TmplJestAPI            Template = "jest_api"
-	TmplPlaywrightE2E      Template = "pw_e2e"
+	TmplJestUnit            Template = "jest_unit"
+	TmplJestAPI             Template = "jest_api"
+	TmplPlaywrightE2E       Template = "pw_e2e"
 	TmplPlaywrightHappyFlow Template = "pw_happyflow"
-	TmplPytestUnit         Template = "pytest_unit"
-	TmplPytestAPI          Template = "pytest_api"
-	TmplGoUnit             Template = "gotest_unit"
-	TmplGoHTTPTest         Template = "gotest_httptest"
-	TmplJUnit5Unit         Template = "junit5_unit"
-	TmplJUnit5RestAssured  Template = "junit5_restassured"
+	TmplPlaywrightFixtures  Template = "pw_fixtures"
+	TmplPlaywrightConfig    Template = "pw_config"
+	TmplPlaywrightReadme    Template = "pw_readme"
+	TmplPytestUnit          Template = "pytest_unit"
+	TmplPytestAPI           Template = "pytest_api"
+	TmplGoUnit              Template = "gotest_unit"
+	TmplGoHTTPTest          Template = "gotest_httptest"
+	TmplJUnit5Unit          Template = "junit5_unit"
+	TmplJUnit5RestAssured   Template = "junit5_restassured"
 )
 
 type Item struct {

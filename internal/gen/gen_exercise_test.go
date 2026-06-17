@@ -96,26 +96,149 @@ func TestExerciseTemplate_Popup(t *testing.T) {
 	mustContain(t, out, "[role=\"listbox\"]")
 }
 
-func TestExerciseTemplate_PageErrorGuard(t *testing.T) {
-	// Every exercise spec should carry the shared pageerror tracking +
-	// afterEach assertion. Verified against a single search interaction.
+func TestExerciseTemplate_ImportsFromFixtures(t *testing.T) {
+	// v0.14.0: page-error tracking lives in the shared fixtures module.
+	// Every spec imports `test`/`expect` from `./_fixtures` instead of
+	// declaring the listener inline.
 	out := renderExercise(t, ast.Interaction{Kind: "search", InputType: "search"})
-	mustContain(t, out, "let pageErrors: string[]")
-	mustContain(t, out, "test.beforeEach(async ({ page }) =>")
-	mustContain(t, out, "page.on('pageerror'")
-	mustContain(t, out, "test.afterEach(()")
-	mustContain(t, out, "expect.soft(pageErrors")
+	mustContain(t, out, `import { test, expect } from './_fixtures'`)
+	// The 14-line inline beforeEach/afterEach block is gone.
+	if strings.Contains(out, "let pageErrors: string[]") {
+		t.Error("v0.14.0 specs must not declare pageErrors inline; that lives in _fixtures.ts now")
+	}
+	if strings.Contains(out, "page.on('pageerror'") {
+		t.Error("v0.14.0 specs must not install the pageerror listener inline")
+	}
 }
 
 func TestExerciseTemplate_NoRedundantGotoInEachTest(t *testing.T) {
-	// With v0.13.0's beforeEach refactor, individual test blocks must NOT
-	// repeat `await page.goto(TARGET)` — that was the per-test reload
-	// waste called out in the candid review.
+	// With v0.14.0's baseURL refactor, the beforeEach does
+	// `page.goto('/')` (or the landing path) — and individual test
+	// blocks must NOT repeat the goto.
 	out := renderExercise(t, ast.Interaction{Kind: "search", InputType: "search"})
-	// One goto for beforeEach is fine; >1 means we regressed.
-	if got := strings.Count(out, "page.goto(TARGET)"); got != 1 {
-		t.Errorf("expected exactly 1 page.goto(TARGET) (in beforeEach); got %d", got)
+	gotos := strings.Count(out, "await page.goto(")
+	if gotos != 1 {
+		t.Errorf("expected exactly 1 await page.goto (in beforeEach); got %d", gotos)
 	}
+}
+
+func TestCompanionTemplates_FixturesEmitsFixtureModule(t *testing.T) {
+	sym := ast.Symbol{Name: "X", Kind: ast.KindComponent, File: "https://x.test", Language: "ts"}
+	it := plan.Item{
+		Symbol:   sym,
+		Symbols:  []ast.Symbol{sym},
+		PageURL:  "https://x.test",
+		Template: plan.TmplPlaywrightFixtures,
+		OutPath:  "tests/e2e/_fixtures.ts",
+	}
+	out, err := Render([]plan.Item{it}, t.TempDir())
+	if err != nil {
+		t.Fatal(err)
+	}
+	body := string(out[0].Content)
+	mustContain(t, body, "import { test as base, expect } from '@playwright/test'")
+	mustContain(t, body, "export const test = base.extend")
+	mustContain(t, body, "page.on('pageerror'")
+	mustContain(t, body, "auto: true")
+	mustContain(t, body, "export { expect }")
+}
+
+func TestCompanionTemplates_ConfigEmitsBaseURLFromProbe(t *testing.T) {
+	sym := ast.Symbol{Name: "X", Kind: ast.KindComponent, File: "https://x.test", Language: "ts"}
+	it := plan.Item{
+		Symbol:   sym,
+		Symbols:  []ast.Symbol{sym},
+		PageURL:  "https://x.test",
+		Template: plan.TmplPlaywrightConfig,
+		OutPath:  "playwright.config.ts",
+	}
+	out, err := Render([]plan.Item{it}, t.TempDir())
+	if err != nil {
+		t.Fatal(err)
+	}
+	body := string(out[0].Content)
+	mustContain(t, body, "defineConfig")
+	mustContain(t, body, "process.env.BASE_URL ?? 'https://x.test'")
+	mustContain(t, body, "baseURL: BASE_URL")
+	mustContain(t, body, "testDir: './tests/e2e'")
+	mustContain(t, body, "trace: 'on-first-retry'")
+}
+
+func TestCompanionTemplates_ReadmeListsKindsAndFiles(t *testing.T) {
+	sym := ast.Symbol{Name: "X", Kind: ast.KindComponent, File: "https://x.test", Language: "ts"}
+	it := plan.Item{
+		Symbol:   sym,
+		Symbols:  []ast.Symbol{sym},
+		PageURL:  "https://x.test",
+		Template: plan.TmplPlaywrightReadme,
+		OutPath:  "tests/e2e/README.md",
+	}
+	out, err := Render([]plan.Item{it}, t.TempDir())
+	if err != nil {
+		t.Fatal(err)
+	}
+	body := string(out[0].Content)
+	mustContain(t, body, "Generated Playwright suite")
+	mustContain(t, body, "_fixtures.ts")
+	mustContain(t, body, "playwright.config.ts")
+	mustContain(t, body, "*-convert.spec.ts")
+	mustContain(t, body, "*-exercise.spec.ts")
+	mustContain(t, body, "BASE_URL")
+}
+
+func TestHappyFlowTemplate_TestFailWhenDataWaitSubmit(t *testing.T) {
+	// Webflow / similar pattern: input[type=submit] with data-wait attribute.
+	// Extractor stamps anchor.CSS = "data-wait"; template should emit
+	// test.fail() instead of plain test() for the journey.
+	sym := ast.Symbol{
+		Kind: ast.KindComponent, Name: "WwwSpritecloudCom",
+		File: "https://x.test/", Language: "ts",
+		HasForm: true,
+		Inputs:  []ast.FormInput{{Name: "email", Type: "email", Tag: "input", Required: true}},
+		Anchors: []ast.LocatorAnchor{
+			{TestID: "submit", Tag: "submit", CSS: "data-wait"},
+		},
+	}
+	it := plan.Item{
+		Symbol:      sym,
+		Symbols:     []ast.Symbol{sym},
+		PageURL:     "https://x.test/",
+		Template:    plan.TmplPlaywrightHappyFlow,
+		OutPath:     "tests/e2e/x.spec.ts",
+		JourneyKind: "convert",
+	}
+	out, err := Render([]plan.Item{it}, t.TempDir())
+	if err != nil {
+		t.Fatal(err)
+	}
+	body := string(out[0].Content)
+	mustContain(t, body, "test.fail(")
+	mustContain(t, body, "data-wait")
+}
+
+func TestHappyFlowTemplate_StepWrappingForChainedJourneys(t *testing.T) {
+	// Chained journey: multi-step research/browse/explore. Each step
+	// after Step 1 must be wrapped in test.step('label', async () => {})
+	// so the trace UI shows steps as a tree.
+	landing := ast.Symbol{Name: "X", Kind: ast.KindComponent, File: "https://x.test/", Language: "ts", PageTitle: "Home"}
+	step2 := ast.Symbol{
+		Name: "X", Kind: ast.KindComponent, File: "https://x.test/blog", Language: "ts",
+		PageTitle: "Blog", EnteredVia: "/blog",
+	}
+	it := plan.Item{
+		Symbol:      landing,
+		Symbols:     []ast.Symbol{landing, step2},
+		PageURL:     "https://x.test/",
+		Template:    plan.TmplPlaywrightHappyFlow,
+		OutPath:     "tests/e2e/x-browse.spec.ts",
+		JourneyKind: "browse",
+	}
+	out, err := Render([]plan.Item{it}, t.TempDir())
+	if err != nil {
+		t.Fatal(err)
+	}
+	body := string(out[0].Content)
+	mustContain(t, body, `await test.step('Step 2 — click "/blog"'`)
 }
 
 func mustContain(t *testing.T, haystack, needle string) {

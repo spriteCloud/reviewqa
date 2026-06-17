@@ -7,9 +7,45 @@ import (
 	"testing"
 
 	"github.com/reviewqa/reviewqa/internal/ast"
+	"github.com/reviewqa/reviewqa/internal/config"
 	"github.com/reviewqa/reviewqa/internal/gen"
 	"github.com/reviewqa/reviewqa/internal/heal"
 )
+
+func TestProbeBranchName_HostSlugForSingleURL(t *testing.T) {
+	cfg := config.Config{BranchPrefix: "reviewqa"}
+	tests := []struct {
+		urls []string
+		want string
+	}{
+		{[]string{"https://www.spritecloud.com"}, "reviewqa/probe-spritecloud-com"},
+		{[]string{"https://es.wikipedia.org/wiki/Madrid"}, "reviewqa/probe-es-wikipedia-org"},
+		{[]string{"http://localhost:18181/page"}, "reviewqa/probe-localhost:18181"},
+	}
+	for _, tc := range tests {
+		got := probeBranchName(cfg, tc.urls)
+		if got != tc.want {
+			t.Errorf("probeBranchName(%v) = %q; want %q", tc.urls, got, tc.want)
+		}
+	}
+}
+
+func TestProbeBranchName_TimestampFallbackForMultiOrMissing(t *testing.T) {
+	cfg := config.Config{BranchPrefix: "reviewqa"}
+	// Zero URLs → timestamp fallback
+	got := probeBranchName(cfg, nil)
+	if !strings.HasPrefix(got, "reviewqa/probe-") {
+		t.Errorf("expected reviewqa/probe- prefix; got %q", got)
+	}
+	if strings.Contains(got, "-com") || strings.Contains(got, "-org") {
+		t.Errorf("expected timestamp form, not host-slug; got %q", got)
+	}
+	// Multiple URLs → timestamp fallback (we don't pick one over the other)
+	got = probeBranchName(cfg, []string{"https://a.test", "https://b.test"})
+	if strings.Contains(got, "a-test") || strings.Contains(got, "b-test") {
+		t.Errorf("expected timestamp fallback for multi-URL; got %q", got)
+	}
+}
 
 func TestShortSHA(t *testing.T) {
 	if got := shortSHA("abcdef1234567890"); got != "abcdef1" {

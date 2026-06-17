@@ -4,6 +4,7 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
+	"net/url"
 	"os"
 	"os/signal"
 	"path/filepath"
@@ -204,7 +205,7 @@ func runGenerate(ctx context.Context, cfg config.Config) error {
 		return nil
 	}
 	if prInfo == nil {
-		return runGenerateStandalone(ctx, client, cfg, rendered)
+		return runGenerateStandalone(ctx, client, cfg, rendered, nonEmptyURLs(os.Getenv("REVIEWQA_TARGET_URLS")))
 	}
 	branch := fmt.Sprintf("%s/tests-pr-%d-%s", cfg.BranchPrefix, cfg.PRNumber, shortSHA(prInfo.HeadSHA))
 	body := genPRBody(prInfo, rendered)
@@ -225,8 +226,11 @@ func runGenerate(ctx context.Context, cfg config.Config) error {
 // runGenerateStandalone handles the no-PR path — only target URLs are
 // configured, so the diff fetch was skipped. We open a PR against main with
 // the probe-derived specs.
-func runGenerateStandalone(ctx context.Context, client *gh.Client, cfg config.Config, rendered []gen.Rendered) error {
-	branch := fmt.Sprintf("%s/probe-%s", cfg.BranchPrefix, time.Now().UTC().Format("20060102-150405"))
+func runGenerateStandalone(ctx context.Context, client *gh.Client, cfg config.Config, rendered []gen.Rendered, urls []string) error {
+	// Mirror probe-mode idempotency: derive the branch from the host of
+	// the first probed URL when one is available, so subsequent runs
+	// amend the same PR.
+	branch := probeBranchName(cfg, urls)
 	body := genPRBody(nil, rendered)
 	files := map[string][]byte{}
 	for _, r := range rendered {
@@ -242,6 +246,25 @@ func runGenerateStandalone(ctx context.Context, client *gh.Client, cfg config.Co
 	}
 	rlog.Info("opened probe PR (standalone)", "url", url)
 	return nil
+}
+
+// probeBranchName returns a stable host-derived branch name when exactly
+// one usable URL is available — so re-running the probe against the same
+// site amends the previous companion PR instead of opening a new one.
+// Falls back to a timestamp when the host can't be reliably extracted
+// (zero URLs, multiple URLs, malformed input).
+func probeBranchName(cfg config.Config, urls []string) string {
+	if len(urls) == 1 {
+		if u, err := url.Parse(strings.TrimSpace(urls[0])); err == nil && u.Host != "" {
+			slug := strings.ToLower(u.Host)
+			slug = strings.TrimPrefix(slug, "www.")
+			slug = strings.ReplaceAll(slug, ".", "-")
+			if slug != "" {
+				return fmt.Sprintf("%s/probe-%s", cfg.BranchPrefix, slug)
+			}
+		}
+	}
+	return fmt.Sprintf("%s/probe-%s", cfg.BranchPrefix, time.Now().UTC().Format("20060102-150405"))
 }
 
 // siblingPath inserts "_reviewqa" before the test suffix so the generated
@@ -300,7 +323,12 @@ func runProbe(ctx context.Context, cfg config.Config, urls []string) error {
 	}
 	prInfo := &prSummary{HeadBranch: defaultBaseBranch(cfg)}
 	files := applyExistingFileMerge(ctx, client, rendered, "HEAD")
-	branch := fmt.Sprintf("%s/probe-%s", cfg.BranchPrefix, time.Now().UTC().Format("20060102-150405"))
+	// Idempotent companion-PR branch name: one branch per probed host,
+	// not one per timestamp. OpenPR's existing same-branch-update path
+	// then amends the prior probe PR instead of opening a new one each
+	// run. Falls back to a timestamped name when no usable host can be
+	// extracted (multiple URLs, malformed input, etc).
+	branch := probeBranchName(cfg, urls)
 	url, err := client.OpenPR(ctx, gh.PROpts{
 		BaseBranch: prInfo.HeadBranch, NewBranch: branch,
 		Title: "reviewqa: probe-generated Playwright tests",

@@ -378,6 +378,16 @@ func ExtractHTMLAnchors(file string, content []byte) []ast.LocatorAnchor {
 					anchor.Name = strings.TrimSpace(btx[1])
 				}
 			}
+			// Webflow / similar frameworks ship submit buttons that disable
+			// themselves until JS validates the form. The `data-wait`
+			// attribute is the canonical signal. Stash that in CSS so
+			// downstream (the template's hasKnownFailurePattern helper) can
+			// mark the spec as test.fail() — Playwright's .fill() doesn't
+			// trigger the same blur/change events a real user would, so
+			// the click() will time out on the disabled submit.
+			if strings.Contains(attrs, "data-wait") {
+				anchor.CSS = "data-wait"
+			}
 			anchors = append(anchors, anchor)
 		}
 	}
