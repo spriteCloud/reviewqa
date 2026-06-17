@@ -37,3 +37,34 @@ Feature: WwwSpritecloudCom — research journey
     When I go back in the browser history
     Then the main heading reads "Test your software, not your reputation."
 
+  # ───────────────────────────────────────────────────────────────
+  # LLM-composed scenarios (model: qwen3-coder-next:latest)
+  # Filter out with `--grep-invert @llm-composed` for stricter CI runs.
+  # ───────────────────────────────────────────────────────────────
+
+  @journey:research @priority:standard @llm-composed @kind:edge @model:qwen3-coder-next-latest
+  Scenario: reload during form submission
+    Given I open the landing page
+    When I click the link to "/case-study-ecomm-platform"
+    When I reload the page
+    Then the page title contains "Case Study - eCommerce Platform"
+
+  @journey:research @priority:standard @llm-composed @kind:variant @model:qwen3-coder-next-latest
+  Scenario: open destination directly
+    When I navigate directly to "/case-study-ecomm-platform"
+    Then the page title contains "Case Study - eCommerce Platform"
+    Then the main heading reads "Performance Testing for an eCommerce Platform"
+
+  @journey:research @priority:standard @llm-composed @kind:edge @model:qwen3-coder-next-latest
+  Scenario: landing page reloads to self
+    Given I am on the landing page
+    When I reload the page
+    Then the main heading reads "Test your software, not your reputation."
+
+  @journey:research @priority:standard @llm-composed @kind:edge @model:qwen3-coder-next-latest
+  Scenario: submit form then reload without navigation
+    Given I open the landing page
+    When I submit the form without filling any required field
+    When I reload the page
+    Then no error message is shown in the form region
+

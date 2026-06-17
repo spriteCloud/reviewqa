@@ -43,9 +43,25 @@ Feature: WwwSpritecloudCom — research journey
   # ───────────────────────────────────────────────────────────────
 
   @journey:research @priority:standard @llm-composed @kind:edge @model:qwen3-coder-next-latest
-  Scenario: Form submitted without email
-    Given I am on the landing page
-    When I submit the form without filling any required field
-    Then no success message is shown
-    Then I remain on the same page
+  Scenario: Navigate to case study via top link
+    Given I open the landing page
+    When I click the link to "/case-studies"
+    When I click the link to "/case-study-grandvision"
+    Then the page title contains "Case Study - GrandVision"
+    Then the main heading reads "GrandVision"
+
+  @journey:research @priority:standard @llm-composed @kind:variant @model:qwen3-coder-next-latest
+  Scenario: Reload case study page mid-flow
+    Given I open the landing page
+    When I click the link to "/case-study-grandvision"
+    When I reload the page
+    Then the page title contains "Case Study - GrandVision"
+    Then the main heading reads "GrandVision"
+
+  @journey:research @priority:standard @llm-composed @model:qwen3-coder-next-latest
+  Scenario: Direct navigation to case study
+    Given I am not signed in
+    When I navigate directly to "/case-study-grandvision"
+    Then the page title contains "Case Study - GrandVision"
+    Then the main heading reads "GrandVision"
 

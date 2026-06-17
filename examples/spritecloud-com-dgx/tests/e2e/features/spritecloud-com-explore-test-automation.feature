@@ -44,3 +44,22 @@ Feature: WwwSpritecloudCom — explore journey
     And I go back in the browser history
     Then no error message is shown in the form region
 
+  # ───────────────────────────────────────────────────────────────
+  # LLM-composed scenarios (model: qwen3-coder-next:latest)
+  # Filter out with `--grep-invert @llm-composed` for stricter CI runs.
+  # ───────────────────────────────────────────────────────────────
+
+  @journey:explore @priority:nice-to-have @llm-composed @kind:edge @model:qwen3-coder-next-latest
+  Scenario: Submit form twice in rapid succession
+    Given I am on the landing page
+    When I submit the form twice in rapid succession
+    Then the form is not double-submitted
+
+  @journey:explore @priority:nice-to-have @llm-composed @kind:edge @model:qwen3-coder-next-latest
+  Scenario: Fill, submit, then reload mid-flow
+    Given I am on the landing page
+    When I enter "test@example.com" into the "email" field
+    Then the "email" field has the value "test@example.com"
+    When I reload the page
+    Then the "email" field has the value "test@example.com"
+

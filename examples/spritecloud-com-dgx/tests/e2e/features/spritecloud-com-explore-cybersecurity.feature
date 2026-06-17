@@ -44,3 +44,27 @@ Feature: WwwSpritecloudCom — explore journey
     And I go back in the browser history
     Then no error message is shown in the form region
 
+  # ───────────────────────────────────────────────────────────────
+  # LLM-composed scenarios (model: qwen3-coder-next:latest)
+  # Filter out with `--grep-invert @llm-composed` for stricter CI runs.
+  # ───────────────────────────────────────────────────────────────
+
+  @journey:explore @priority:nice-to-have @llm-composed @kind:happy @model:qwen3-coder-next-latest
+  Scenario: Navigate to cybersecurity page and verify title and heading
+    Given I open the landing page
+    When I click the link to "/cybersecurity"
+    Then the page title contains "Penetration Testing"
+    Then the main heading reads "Fully Tailored Cybersecurity."
+
+  @journey:explore @priority:nice-to-have @llm-composed @kind:edge @model:qwen3-coder-next-latest
+  Scenario: Direct navigation to cybersecurity page
+    Given I open the page "/cybersecurity"
+    Then the page title contains "Penetration Testing"
+    Then the main heading reads "Fully Tailored Cybersecurity."
+
+  @journey:explore @priority:nice-to-have @llm-composed @kind:edge @model:qwen3-coder-next-latest
+  Scenario: Reload cybersecurity page preserves heading
+    Given I open the page "/cybersecurity"
+    When I reload the page
+    Then the main heading reads "Fully Tailored Cybersecurity."
+
