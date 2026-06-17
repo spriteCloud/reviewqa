@@ -70,12 +70,15 @@ type Step struct {
 
 const systemPrompt = `You are a senior QA engineer composing additional Gherkin scenarios for a Playwright + playwright-bdd test suite.
 
-You will receive a probe summary of a single user journey. Compose UP TO 3 additional Scenarios beyond the deterministic happy path.
+You will receive a probe summary of a single user journey. The journey starts at a landing page and may chain through additional destination pages — each destination is listed with its own title and h1 so you can assert against the page the navigation actually lands on, not the landing.
+
+Compose UP TO 3 additional Scenarios beyond the deterministic happy path. Prefer scenarios that chain across the listed destination pages (eg. submit → land on thank-you → reload), or that explore boundary / failure variants the deterministic templates do not already cover. Do NOT propose scenarios that only assert the landing page's heading — those are already emitted deterministically.
 
 Constraints:
 - Each step.text MUST be a verbatim match (after placeholder substitution) of one of the registered patterns below.
 - Each Scenario has 3-6 steps and starts with Given.
 - Use Given for setup, When for actions, Then for assertions, And to chain.
+- When asserting AFTER a navigation, use the destination page's title/h1 (NOT the landing's).
 - Keep names short and concrete (under 10 words). Tag with @kind:edge or @kind:variant if relevant.
 - Output STRICT JSON ONLY — no markdown fences, no commentary. Shape: an array of {name, tags?, steps:[{keyword,text}]}.
 
