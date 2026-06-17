@@ -132,7 +132,7 @@ func compareSchema(path string, old, new_ []byte) (string, []plan.CompatRegressi
 }
 
 var (
-	version = "0.64"
+	version = "0.65"
 )
 
 func main() {
@@ -153,7 +153,7 @@ func newRoot() *cobra.Command {
 		SilenceErrors: true,
 		Version:       version,
 	}
-	root.AddCommand(newGenerateCmd(), newHealCmd(), newScanCmd(), newProbeCmd(), newPromptCmd(), newLedgerCmd(), newRunOnceCmd())
+	root.AddCommand(newGenerateCmd(), newHealCmd(), newScanCmd(), newProbeCmd(), newPromptCmd(), newLedgerCmd(), newRunOnceCmd(), newServeCmd())
 	return root
 }
 

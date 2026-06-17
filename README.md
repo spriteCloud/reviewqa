@@ -18,10 +18,22 @@ broken locators when they drift.
 
 ## See it on real sites
 
-Live output from the **v0.64 binary** is committed under [`examples/`](./examples/).
+Live output from the **v0.65 binary** is committed under [`examples/`](./examples/).
 Six reference probes covering a spread of site shapes; each is a complete,
 runnable Playwright + Gherkin project. Re-emit on every release via
 [`scripts/refresh-examples.sh`](./scripts/refresh-examples.sh).
+
+## Tailor the generated suite locally
+
+`reviewqa serve` opens a local browser UI for browsing the Features,
+Scenarios, and stakeholder docs of an existing project. Read-only in
+v0.65; editing, locator suggestion, and AI-composed step bindings ship
+in follow-up releases.
+
+```bash
+reviewqa serve --workdir ./my-generated-suite
+# Opens http://127.0.0.1:8765 in your default browser.
+```
 
 | Example | Site | Files | Pages w/ a11y | Notes |
 |---|---|---:|---:|---|
@@ -232,4 +244,4 @@ By submitting a pull request you agree to the
 [Contributor License Agreement](./CLA.md). The `cla-assistant` check on PRs
 will prompt you to sign if you haven't.
 
-For the release-by-release history (v0.19 → v0.64), see [`CHANGELOG.md`](./CHANGELOG.md).
+For the release-by-release history (v0.19 → v0.65), see [`CHANGELOG.md`](./CHANGELOG.md).
