@@ -50,16 +50,21 @@ Feature: WwwSpritecloudCom — explore journey
   # ───────────────────────────────────────────────────────────────
 
   @journey:explore @priority:nice-to-have @llm-composed @kind:edge @model:qwen3-coder-next-latest
-  Scenario: Submit form twice in rapid succession
+  Scenario: Reload after form submission
     Given I am on the landing page
-    When I submit the form twice in rapid succession
-    Then the form is not double-submitted
+    When I navigate directly to "/test-automation"
+    Then the page title contains "Test Automation"
+    Then the main heading reads "Expert Test Automation Services"
+    When I reload the page
+    Then the page title contains "Test Automation"
+    Then the main heading reads "Expert Test Automation Services"
 
   @journey:explore @priority:nice-to-have @llm-composed @kind:edge @model:qwen3-coder-next-latest
-  Scenario: Fill, submit, then reload mid-flow
+  Scenario: Submit form twice rapidly
     Given I am on the landing page
-    When I enter "test@example.com" into the "email" field
-    Then the "email" field has the value "test@example.com"
-    When I reload the page
-    Then the "email" field has the value "test@example.com"
+    When I open the menu
+    When I click the link to "/contact"
+    Then the page title contains "Contact"
+    When I submit the form twice in rapid succession
+    Then the form is not double-submitted
 

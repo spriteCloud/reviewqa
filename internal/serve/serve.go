@@ -107,6 +107,14 @@ func Handler(workdir string) http.Handler {
 		}
 		raw, _ := os.ReadFile(path)
 		feat.Path = rel
+		// Join in the last-run verdict (if any) per Scenario.
+		idx := LoadLastRunIndex(workdir)
+		for i := range feat.Scenarios {
+			if rec, ok := idx[feat.Scenarios[i].Name]; ok {
+				rec := rec
+				feat.Scenarios[i].LastRun = &rec
+			}
+		}
 		writeJSON(w, map[string]any{
 			"feature": feat,
 			"gherkin": string(raw),

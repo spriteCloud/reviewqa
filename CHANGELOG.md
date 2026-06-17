@@ -7,6 +7,92 @@ shipped the depth-parity arc (Contract, Integration, Mobile, A11y trio).
 v0.61–v0.62 are the live-execution + composer-validation arc — first
 real-site run + composer destination-DOM enforcement.
 
+## v0.75 — per-step results + Last-execution pills + Stakeholder Summary polish
+
+Three asks from the user after the v0.74 Run fix worked:
+1. Show each step's verdict, not just the overall test result —
+   "I want to evaluate if the chat-AI's last step worked".
+2. Stakeholder Summary still didn't bring value — restructure with
+   a stakeholder lens.
+3. Show the last-execution status on every Scenario card so the
+   verdict survives across reloads.
+
+### Per-step run results
+
+- `internal/serve/run.go` now passes `--reporter=line,json` with
+  `PLAYWRIGHT_JSON_OUTPUT_NAME=<runs-dir>/run-<ts>.json` so
+  Playwright writes the structured report alongside the streamed
+  line output. (Playwright 1.61's CLI rejects `--reporter=json:path`
+  — the env var is the supported escape hatch.)
+- After the run exits, `ParsePlaywrightJSON` walks
+  `suites[].specs[].tests[].results[].steps[]`. Only outer-most
+  steps whose title starts with a Gherkin keyword (Given / When /
+  Then / And / But) are kept — playwright-bdd wraps each Gherkin
+  step in `test.step()` and Playwright internals nest inside.
+- A final SSE chunk `event: steps` carries `{scenario, status,
+  durationMs, steps:[{title, status, durationMs, error}]}`.
+- Frontend renders a per-step panel above the streamed terminal:
+  ✓ green for passed, ✗ red for failed, – mist for skipped, with
+  durations and error tooltips.
+
+### Last-execution pill per Scenario
+
+- Every Run writes
+  `tests/e2e/.reviewqa-runs/last-run.json` — a flat map keyed by
+  Scenario name. `.reviewqa-runs/` is already gitignored from
+  v0.74.
+- `/api/feature` joins this on every request: `Scenario.LastRun
+  *LastRunRecord` is populated when an entry exists.
+- Each Scenario card shows a pill next to the name:
+  green "passed · 4.2s · 2m ago", red "failed · …", mist "not run"
+  when no record exists. Time formatted via a fresh `formatAgo`
+  helper.
+
+### Stakeholder Summary polish
+
+The Stakeholder Summary's structure was metadata-first (KPI big
+numbers, priority bar, tables). Real stakeholders read prose
+first — restructured the template (`pw_work_summary.tmpl`) around
+their questions:
+
+- **At a glance** — narrative card. Two paragraphs translating the
+  counts into prose ("reviewqa crawled N pages and identified M
+  journeys; K are critical — gated on every release; …"). Drops
+  the 4 KPI big-number boxes that v0.73 had.
+- **Coverage map** — a 2×3 grid of layer cards. Each layer (UI /
+  API / Contract / Integration / Mobile / Non-functional) gets a
+  status pill (`exercised` green, `scaffold only` copper, `no
+  surface` mist) and a one-line description of what reviewqa
+  generated for it.
+- **Priority mix** — kept; same visual.
+- **Journey cards** (NEW) — replaces the journey table. Each card
+  shows the priority pill, the kind (`convert`, `browse`, …), a
+  one-line stakeholder blurb derived from a new `journeyKindBlurb`
+  template func ("users submit the lead / contact form", "users
+  navigate marketing content", …), the .feature path, and a big
+  copper step count.
+- **Pages crawled** — kept as a table, moved below journeys.
+- **Recommended next steps** (NEW) — numbered checklist guiding
+  the stakeholder through install → execute → triage → re-probe →
+  tailor in the browser.
+
+The v0.73 brand polish (deep-water cover, pixel-rail, copper
+labels, Sora display) stays intact — only the section structure
+changes.
+
+### Examples + tests
+
+- All five summary-emitting examples re-emitted via
+  `scripts/refresh-examples.sh`.
+- 3 new tests in `internal/serve/run_test.go` (Playwright JSON
+  parsing extracts only Gherkin steps; last-run.json round-trip;
+  missing file → empty index).
+- `TestSummaryTemplate_RendersPriorityMix` token list updated
+  for the new section IDs.
+- Suite 556/556 green.
+
+main.go version 0.74 → 0.75.
+
 ## v0.74 — Run scenario: bddgen pre-step + drop stray feature arg
 
 The ▶ Run scenario flow shipped in v0.72 always returned "Error: No

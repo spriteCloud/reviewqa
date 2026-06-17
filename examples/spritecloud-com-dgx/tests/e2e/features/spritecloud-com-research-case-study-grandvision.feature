@@ -37,31 +37,3 @@ Feature: WwwSpritecloudCom — research journey
     When I go back in the browser history
     Then the main heading reads "Test your software, not your reputation."
 
-  # ───────────────────────────────────────────────────────────────
-  # LLM-composed scenarios (model: qwen3-coder-next:latest)
-  # Filter out with `--grep-invert @llm-composed` for stricter CI runs.
-  # ───────────────────────────────────────────────────────────────
-
-  @journey:research @priority:standard @llm-composed @kind:edge @model:qwen3-coder-next-latest
-  Scenario: Navigate to case study via top link
-    Given I open the landing page
-    When I click the link to "/case-studies"
-    When I click the link to "/case-study-grandvision"
-    Then the page title contains "Case Study - GrandVision"
-    Then the main heading reads "GrandVision"
-
-  @journey:research @priority:standard @llm-composed @kind:variant @model:qwen3-coder-next-latest
-  Scenario: Reload case study page mid-flow
-    Given I open the landing page
-    When I click the link to "/case-study-grandvision"
-    When I reload the page
-    Then the page title contains "Case Study - GrandVision"
-    Then the main heading reads "GrandVision"
-
-  @journey:research @priority:standard @llm-composed @model:qwen3-coder-next-latest
-  Scenario: Direct navigation to case study
-    Given I am not signed in
-    When I navigate directly to "/case-study-grandvision"
-    Then the page title contains "Case Study - GrandVision"
-    Then the main heading reads "GrandVision"
-
