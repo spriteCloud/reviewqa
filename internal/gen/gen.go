@@ -17,6 +17,7 @@ import (
 
 	"github.com/reviewqa/reviewqa/internal/ast"
 	"github.com/reviewqa/reviewqa/internal/log"
+	"github.com/reviewqa/reviewqa/internal/mindmap"
 	"github.com/reviewqa/reviewqa/internal/plan"
 )
 
@@ -37,6 +38,15 @@ type Rendered struct {
 func Render(items []plan.Item, workDir string) ([]Rendered, error) {
 	var out []Rendered
 	for _, it := range items {
+		// Raw-content pathway: gen.Render writes Item.RawContent verbatim
+		// without ever consulting a template. Used by the browser-mode DOM
+		// snapshot pipeline so probed HTML lands beside the specs without
+		// going through Go's text/template (which would escape it).
+		if it.Template == plan.TmplRaw {
+			out = append(out, Rendered{Path: it.OutPath, Content: it.RawContent, Symbol: it.Symbol})
+			log.Debug("emitted raw artifact", "path", it.OutPath, "bytes", len(it.RawContent))
+			continue
+		}
 		tmpl, err := load(it.Template)
 		if err != nil {
 			return nil, fmt.Errorf("load %s: %w", it.Template, err)
@@ -46,7 +56,18 @@ func Render(items []plan.Item, workDir string) ([]Rendered, error) {
 		if err := tmpl.Execute(&buf, data); err != nil {
 			return nil, fmt.Errorf("render %s for %s: %w", it.Template, it.Symbol.Name, err)
 		}
-		content, notes := annotateQualityReport(buf.Bytes(), it.Symbol)
+		// Quality report only makes sense for code-shaped templates that
+		// embed weak-locator markers. Skip for the catalogue / summary /
+		// steps templates — they're stakeholder docs, not specs.
+		var content []byte
+		var notes []string
+		switch it.Template {
+		case plan.TmplPlaywrightCatalogue, plan.TmplPlaywrightSummary,
+			plan.TmplPlaywrightSteps:
+			content = buf.Bytes()
+		default:
+			content, notes = annotateQualityReport(buf.Bytes(), it.Symbol)
+		}
 		out = append(out, Rendered{Path: it.OutPath, Content: content, Symbol: it.Symbol, QualityNotes: notes})
 		log.Debug("rendered scaffold", "template", it.Template, "symbol", it.Symbol.Name, "path", it.OutPath, "quality_notes", len(notes))
 	}
@@ -143,6 +164,12 @@ func templateLocation(t plan.Template) (string, string) {
 		return "ts", "pw_fuzz.tmpl"
 	case plan.TmplPlaywrightFeature:
 		return "ts", "pw_feature.tmpl"
+	case plan.TmplPlaywrightSteps:
+		return "ts", "pw_steps.tmpl"
+	case plan.TmplPlaywrightCatalogue:
+		return "ts", "pw_test_catalogue.tmpl"
+	case plan.TmplPlaywrightSummary:
+		return "ts", "pw_work_summary.tmpl"
 	case plan.TmplPytestUnit:
 		return "py", "pytest_unit.tmpl"
 	case plan.TmplPytestAPI:
@@ -387,6 +414,35 @@ var funcs = template.FuncMap{
 	},
 	"add":               func(a, b int) int { return a + b },
 	"sub":               func(a, b int) int { return a - b },
+	// journeyPriority resolves a journey-kind string to its priority bucket
+	// (critical / standard / nice-to-have). Used by the happyflow template
+	// to emit `@priority:<level>` tags alongside `@journey:<kind>`.
+	"journeyPriority": func(kind string) string {
+		return mindmap.JourneyPriority(mindmap.JourneyKind(kind))
+	},
+	// countByPriority counts how many journeys carry the given priority.
+	// Used by the work-summary template's priority-mix bar.
+	"countByPriority": func(js []plan.CatalogueJourney, level string) int {
+		n := 0
+		for _, j := range js {
+			if j.Priority == level {
+				n++
+			}
+		}
+		return n
+	},
+	// percent returns ceil(100 * n / d) capped at 100. Used to size the
+	// priority-mix bar segments in the work-summary HTML.
+	"percent": func(n, d int) int {
+		if d <= 0 {
+			return 0
+		}
+		p := (n * 100) / d
+		if p > 100 {
+			return 100
+		}
+		return p
+	},
 }
 
 // contentLocator builds a Playwright locator for a content-text anchor —
@@ -702,10 +758,14 @@ type renderData struct {
 	HappyArgs       string
 	SnakeName       string
 	Package         string
+	// Catalogue is the aggregated suite-level data the catalogue + summary
+	// templates render against. Nil for spec-shaped templates.
+	Catalogue *plan.Catalogue
 }
 
 func buildData(it plan.Item, workDir string) renderData {
 	d := renderData{Symbol: it.Symbol}
+	d.Catalogue = it.Catalogue
 	d.Symbols = it.Symbols
 	if len(d.Symbols) == 0 {
 		d.Symbols = []ast.Symbol{it.Symbol}

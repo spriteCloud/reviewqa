@@ -31,6 +31,7 @@ type browserPage struct {
 	HasForm      bool               `json:"hasForm"`
 	Inputs       []browserInput     `json:"inputs"`
 	Interactions []browserInteract  `json:"interactions"`
+	DOMHTML      string             `json:"domHTML"`
 }
 
 type browserLink struct {
@@ -150,6 +151,7 @@ func browserPageToMindmap(bp browserPage) *mindmap.Page {
 		URL:     bp.FinalURL,
 		Title:   strings.TrimSpace(bp.Title),
 		HasForm: bp.HasForm,
+		DOMHTML: bp.DOMHTML,
 	}
 
 	// Contents: title + h1 + h2 list.

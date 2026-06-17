@@ -38,6 +38,11 @@ type Page struct {
 	Meta         ast.MetaTags
 	HasForm      bool
 	Tags         []string // landing | form | list | detail | …
+	// DOMHTML is the post-JS-render outerHTML captured by the browser
+	// probe. Empty on the static-crawl path. Surfaced as
+	// tests/e2e/_dom/<slug>.html so reviewers can diff what the browser
+	// actually rendered without re-running the probe.
+	DOMHTML string
 }
 
 // Fetcher abstracts plan/probe's Fetch — injected so the mindmap package

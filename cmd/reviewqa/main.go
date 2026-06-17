@@ -151,6 +151,7 @@ func newProbeCmd() *cobra.Command {
 func newPromptCmd() *cobra.Command {
 	var urls []string
 	var dryRun bool
+	var evidence bool
 	cmd := &cobra.Command{
 		Use:   "prompt [text]",
 		Short: "Generate Playwright tests for a focused area expressed as a natural-language prompt.",
@@ -162,9 +163,14 @@ probe runs unfiltered with a warning. The probe layer is the same one
 the bare ` + "`probe`" + ` command uses; set REVIEWQA_BROWSER_PROBE=1 to
 drive Chromium when the target site is JS-rendered.
 
+With --evidence, the command writes the generated specs to disk, runs
+npx playwright test against them, and bundles the resulting
+playwright-report/ + test-results/ into tests/e2e/evidence-<timestamp>.zip
+so reviewers see "we ran it and here's what happened" in one artifact.
+
 Examples:
   reviewqa prompt "test the checkout flow" --url https://shop.example.com
-  reviewqa prompt "verify the contact form rejects invalid emails" --url https://x.com
+  reviewqa prompt "verify the contact form rejects invalid emails" --url https://x.com --evidence
   reviewqa prompt "explore the docs section" --url https://docs.x.com`,
 		Args: cobra.MinimumNArgs(1),
 		RunE: func(cmd *cobra.Command, args []string) error {
@@ -181,11 +187,15 @@ Examples:
 			cfg.DryRun = dryRun
 			filter := prompt.Parse(text)
 			rlog.Info("prompt parsed", "summary", filter.Describe())
+			if evidence {
+				return runPromptEvidence(cmd.Context(), cfg, urls, filter)
+			}
 			return runProbeWithFilter(cmd.Context(), cfg, urls, filter)
 		},
 	}
 	cmd.Flags().StringSliceVar(&urls, "url", nil, "URL to probe (repeatable; may also be set via REVIEWQA_TARGET_URLS env)")
 	cmd.Flags().BoolVar(&dryRun, "dry-run", false, "Print rendered spec(s) instead of opening a PR")
+	cmd.Flags().BoolVar(&evidence, "evidence", false, "Write specs to disk, run them, and bundle playwright-report/+test-results/ into a ZIP")
 	return cmd
 }
 

@@ -35,6 +35,27 @@ func JourneyExercisesForm(k JourneyKind) bool {
 	return false
 }
 
+// Priority bucket a journey kind falls into for stakeholder-facing
+// filtering. critical = revenue / identity flows (convert, contact, auth).
+// standard = evaluative flows that move buyers down the funnel (evaluate,
+// research, browse, discover, exercise). nice-to-have = surface coverage
+// (explore, read).
+//
+// Emitted by the happy-flow template as `@priority:<level>` tags so
+// consumers can run `npx playwright test --grep @priority:critical` for a
+// smoke-of-smokes pass before promoting a deploy.
+func JourneyPriority(k JourneyKind) string {
+	switch k {
+	case JourneyConvert, JourneyContact, JourneyAuthenticate:
+		return "critical"
+	case JourneyEvaluate, JourneyResearch, JourneyBrowse, JourneyDiscover, JourneyExercise:
+		return "standard"
+	case JourneyExplore, JourneyRead:
+		return "nice-to-have"
+	}
+	return "standard"
+}
+
 // journeyPriority orders kinds for dedup tie-breaking — higher priority
 // wins when two journeys terminate at the same page.
 var journeyPriority = map[JourneyKind]int{

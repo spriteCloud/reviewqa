@@ -25,6 +25,10 @@ const (
 	TmplPlaywrightCIFile    Template = "pw_ci_workflow"
 	TmplPlaywrightFuzz      Template = "pw_fuzz"
 	TmplPlaywrightFeature   Template = "pw_feature"
+	TmplPlaywrightSteps     Template = "pw_steps"
+	TmplPlaywrightCatalogue Template = "pw_test_catalogue"
+	TmplPlaywrightSummary   Template = "pw_work_summary"
+	TmplRaw                 Template = "raw" // sentinel: emit Item.RawContent verbatim
 	TmplPytestUnit          Template = "pytest_unit"
 	TmplPytestAPI           Template = "pytest_api"
 	TmplGoUnit              Template = "gotest_unit"
@@ -46,6 +50,49 @@ type Item struct {
 	// JourneyKind names the user goal this spec exercises (convert,
 	// browse, explore, read). Empty for non-journey items.
 	JourneyKind string
+	// Catalogue carries the aggregated suite-level data the catalogue +
+	// summary templates render. Populated only for those two templates.
+	Catalogue *Catalogue
+	// RawContent, when non-nil, is written to OutPath verbatim — the
+	// gen.Render template path is bypassed. Used by the browser-mode DOM
+	// snapshot pipeline (Template = TmplRaw).
+	RawContent []byte
+}
+
+// Catalogue is the suite-level data passed to the test-catalogue and
+// work-summary templates. Captures what was crawled, what journeys were
+// identified, and where each spec landed — without re-reading the
+// mindmap from the template.
+type Catalogue struct {
+	Origin      string             // probed origin (scheme://host)
+	GeneratedAt string             // RFC3339 timestamp; empty when unknown
+	Pages       []CataloguePage    // every page the crawler visited
+	Journeys    []CatalogueJourney // every journey identified
+	Fuzz        []CatalogueFuzz    // per-page fuzz specs
+}
+
+type CataloguePage struct {
+	URL   string
+	Title string
+	Tags  []string
+}
+
+type CatalogueJourney struct {
+	Kind     string
+	Priority string
+	OutPath  string // generated spec path (relative)
+	Steps    []CatalogueStep
+}
+
+type CatalogueStep struct {
+	URL        string
+	Title      string
+	EnteredVia string // empty for the first step (direct goto)
+}
+
+type CatalogueFuzz struct {
+	PageURL string
+	OutPath string
 }
 
 type Layout struct {

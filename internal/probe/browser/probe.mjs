@@ -125,6 +125,15 @@ async function collectPage(page, requestedURL) {
     await h.dispose()
   }
 
+  // Post-JS-render DOM snapshot — capped at 1 MiB so a single long page
+  // doesn't blow the JSON pipe. Writes to tests/e2e/_dom/<slug>.html on
+  // the Go side so reviewers can see what the browser actually rendered.
+  let domHTML = ''
+  try {
+    domHTML = await page.evaluate(() => document.documentElement.outerHTML)
+    if (domHTML.length > 1_048_576) domHTML = domHTML.slice(0, 1_048_576)
+  } catch { /* leave empty — caller skips emission */ }
+
   // Interactive components (the v0.12 exercise journey kinds).
   const interactions = await page.evaluate(() => {
     const out = []
@@ -164,6 +173,7 @@ async function collectPage(page, requestedURL) {
     hasForm,
     inputs,
     interactions,
+    domHTML,
   }
 }
 

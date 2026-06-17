@@ -316,9 +316,29 @@ func runAllImpl(ctx context.Context, urls []string, filter JourneyFilter) ([]pla
 		// and a tests/e2e/README.md. Emitted once per probed origin so all
 		// per-journey specs in the same suite share a common test setup
 		// instead of duplicating the page-error tracking in every file.
-		items = append(items, companionItems(u, m)...)
+		journeyItems := make([]plan.Item, 0, len(journeys))
 		for _, j := range journeys {
 			item := itemFromJourney(j, u)
+			journeyItems = append(journeyItems, item)
+		}
+		fuzzItems := make([]plan.Item, 0, 5)
+		fuzzEmitted := 0
+		for _, url := range m.Order {
+			if fuzzEmitted >= 5 {
+				break
+			}
+			page := m.Pages[url]
+			if !pageNeedsFuzz(page) {
+				continue
+			}
+			fuzzItems = append(fuzzItems, fuzzItemForPage(page, u))
+			fuzzEmitted++
+		}
+		// Catalogue + summary are companion items but need aggregated data
+		// from the journey list, so build them AFTER the journey items.
+		catalogue := buildCatalogue(u, m, journeyItems, fuzzItems)
+		items = append(items, companionItems(u, m, catalogue)...)
+		for _, item := range journeyItems {
 			items = append(items, item)
 			// Gherkin documentation sibling: same plan.Item shape, different
 			// template + .feature extension. The TS spec stays the source of
@@ -329,30 +349,119 @@ func runAllImpl(ctx context.Context, urls []string, filter JourneyFilter) ([]pla
 			featureItem.OutPath = featurePathFor(item.OutPath)
 			items = append(items, featureItem)
 		}
-		// Per-page fuzz specs: one per page that carries either text-like
-		// inputs OR interactive components. Bounded at 5 emissions total
-		// per probe so triage stays tractable on large sites.
-		fuzzEmitted := 0
-		for _, url := range m.Order {
-			if fuzzEmitted >= 5 {
-				break
-			}
-			page := m.Pages[url]
-			if !pageNeedsFuzz(page) {
-				continue
-			}
-			items = append(items, fuzzItemForPage(page, u))
-			fuzzEmitted++
-		}
+		items = append(items, fuzzItems...)
+		// Browser-mode DOM snapshots: emit one tests/e2e/_dom/<slug>.html
+		// per crawled page that carries captured HTML. Static crawl pages
+		// don't populate DOMHTML, so this is a no-op outside browser mode.
+		items = append(items, domSnapshotItems(u, m)...)
 	}
 	return items, errs
 }
 
+// buildCatalogue aggregates the suite-level data that the catalogue +
+// summary templates render against. Pulls page tags + titles from the
+// mindmap, priority + steps from the journey items.
+func buildCatalogue(sourceURL string, m *mindmap.Map, journeyItems, fuzzItems []plan.Item) *plan.Catalogue {
+	parsed, _ := url.Parse(sourceURL)
+	origin := sourceURL
+	if parsed != nil && parsed.Host != "" {
+		origin = parsed.Scheme + "://" + parsed.Host
+	}
+	cat := &plan.Catalogue{Origin: origin}
+	for _, pURL := range m.Order {
+		p := m.Pages[pURL]
+		cat.Pages = append(cat.Pages, plan.CataloguePage{
+			URL:   p.URL,
+			Title: p.Title,
+			Tags:  append([]string(nil), p.Tags...),
+		})
+	}
+	for _, it := range journeyItems {
+		steps := make([]plan.CatalogueStep, 0, len(it.Symbols))
+		for _, s := range it.Symbols {
+			steps = append(steps, plan.CatalogueStep{
+				URL:        s.AbsoluteURL,
+				Title:      s.PageTitle,
+				EnteredVia: s.EnteredVia,
+			})
+		}
+		cat.Journeys = append(cat.Journeys, plan.CatalogueJourney{
+			Kind:     it.JourneyKind,
+			Priority: mindmap.JourneyPriority(mindmap.JourneyKind(it.JourneyKind)),
+			OutPath:  it.OutPath,
+			Steps:    steps,
+		})
+	}
+	for _, it := range fuzzItems {
+		cat.Fuzz = append(cat.Fuzz, plan.CatalogueFuzz{
+			PageURL: it.PageURL,
+			OutPath: it.OutPath,
+		})
+	}
+	return cat
+}
+
+// domSnapshotItems emits one raw-content plan.Item per crawled page that
+// carries non-empty DOMHTML. Outpath is tests/e2e/_dom/<slug>.html. Lets
+// reviewers see what the browser actually rendered without re-running the
+// probe — and gives Playwright trace-viewer something to diff against.
+func domSnapshotItems(sourceURL string, m *mindmap.Map) []plan.Item {
+	var out []plan.Item
+	for _, pURL := range m.Order {
+		p := m.Pages[pURL]
+		if p == nil || p.DOMHTML == "" {
+			continue
+		}
+		stem := domSnapshotStem(p.URL)
+		stub := ast.Symbol{
+			Name:     hostToName(parseHost(p.URL)),
+			Kind:     ast.KindComponent,
+			File:     p.URL,
+			Language: "ts",
+		}
+		out = append(out, plan.Item{
+			Symbol:     stub,
+			Symbols:    []ast.Symbol{stub},
+			PageURL:    p.URL,
+			Template:   plan.TmplRaw,
+			OutPath:    "tests/e2e/_dom/" + stem + ".html",
+			RawContent: []byte(p.DOMHTML),
+		})
+	}
+	return out
+}
+
+// domSnapshotStem builds a filesystem-safe slug for a DOM snapshot
+// filename. Mirrors outPathStem/pathSlug so a snapshot's filename matches
+// the spec filename for the same page.
+func domSnapshotStem(pageURL string) string {
+	u, err := url.Parse(pageURL)
+	if err != nil || u == nil {
+		return "page"
+	}
+	host := strings.TrimPrefix(strings.ReplaceAll(u.Hostname(), ".", "-"), "www-")
+	slug := pathSlug(pageURL)
+	if slug == "" {
+		return host
+	}
+	return host + "-" + slug
+}
+
+func parseHost(rawURL string) string {
+	u, err := url.Parse(rawURL)
+	if err != nil || u == nil {
+		return ""
+	}
+	return u.Hostname()
+}
+
 // companionItems returns the suite-wide files reviewqa drops alongside the
-// per-journey specs: tests/e2e/_fixtures.ts, playwright.config.ts, and
-// tests/e2e/README.md. The PageURL on each item is the probed origin so
-// the templates can render baseURL defaults and a relevant README intro.
-func companionItems(sourceURL string, m *mindmap.Map) []plan.Item {
+// per-journey specs: tests/e2e/_fixtures.ts, playwright.config.ts,
+// tests/e2e/README.md, the Steps API helper, and (when a catalogue is
+// supplied) the stakeholder-facing test catalogue + work-summary deck.
+// The PageURL on each item is the probed origin so the templates can
+// render baseURL defaults and a relevant README intro.
+func companionItems(sourceURL string, m *mindmap.Map, cat *plan.Catalogue) []plan.Item {
 	parsed, _ := url.Parse(sourceURL)
 	host := ""
 	if parsed != nil {
@@ -368,7 +477,7 @@ func companionItems(sourceURL string, m *mindmap.Map) []plan.Item {
 	if parsed != nil {
 		originOnly = parsed.Scheme + "://" + parsed.Host
 	}
-	return []plan.Item{
+	items := []plan.Item{
 		{
 			Symbol:   stub,
 			Symbols:  []ast.Symbol{stub},
@@ -411,7 +520,35 @@ func companionItems(sourceURL string, m *mindmap.Map) []plan.Item {
 			Template: plan.TmplPlaywrightCIFile,
 			OutPath:  ".github/workflows/e2e.yml",
 		},
+		{
+			Symbol:   stub,
+			Symbols:  []ast.Symbol{stub},
+			PageURL:  originOnly,
+			Template: plan.TmplPlaywrightSteps,
+			OutPath:  "tests/e2e/lib/steps.ts",
+		},
 	}
+	if cat != nil {
+		items = append(items,
+			plan.Item{
+				Symbol:    stub,
+				Symbols:   []ast.Symbol{stub},
+				PageURL:   originOnly,
+				Template:  plan.TmplPlaywrightCatalogue,
+				OutPath:   "tests/e2e/docs/test-catalogue.md",
+				Catalogue: cat,
+			},
+			plan.Item{
+				Symbol:    stub,
+				Symbols:   []ast.Symbol{stub},
+				PageURL:   originOnly,
+				Template:  plan.TmplPlaywrightSummary,
+				OutPath:   "tests/e2e/docs/summary.html",
+				Catalogue: cat,
+			},
+		)
+	}
+	return items
 }
 
 // mindmapFetcher adapts probe.Fetch to the mindmap.Fetcher signature.
