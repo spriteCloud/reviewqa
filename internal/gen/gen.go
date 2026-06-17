@@ -233,6 +233,7 @@ var templateRegistry = map[plan.Template]templateLoc{
 	plan.TmplPlaywrightPrint:             {"ts", "pw_print.tmpl"},
 	plan.TmplPlaywrightClipboard:         {"ts", "pw_clipboard.tmpl"},
 	plan.TmplPlaywrightHTTPChains:        {"ts", "pw_http_chains.tmpl"},
+	plan.TmplPlaywrightIntegrationStub:   {"ts", "pw_integration_api_stub.tmpl"},
 	plan.TmplPytestUnit:                 {"py", "pytest_unit.tmpl"},
 	plan.TmplPytestAPI:                  {"py", "pytest_api.tmpl"},
 	plan.TmplGoUnit:                     {"go", "gotest_unit.tmpl"},

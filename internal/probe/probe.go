@@ -522,6 +522,10 @@ func qualityCompanions(sourceURL string, m *mindmap.Map, coverage CoverageMode) 
 		{plan.TmplPlaywrightHealth, "health"},
 		{plan.TmplPlaywrightObservability, "observability"},
 		{plan.TmplPlaywrightHTTPChains, "http-chains"},
+		// v0.43: integration scaffold — emits a skipped placeholder
+		// so the integration layer is represented in the catalogue
+		// even when the consumer has no reviewqa.yml.
+		{plan.TmplPlaywrightIntegrationStub, "integration"},
 	} {
 		out = append(out, plan.Item{
 			Symbol:   stub,
@@ -570,6 +574,11 @@ func qualityCompanions(sourceURL string, m *mindmap.Map, coverage CoverageMode) 
 			{plan.TmplPlaywrightZoom, "a11y", "zoom"},
 			{plan.TmplPlaywrightA11yPrefs, "a11y", "prefs"},
 			{plan.TmplPlaywrightPrint, "print", "print"},
+			// v0.43: Mobile (iPhone 13 emulation, touch) — was
+			// previously gated and never emitted by the probe. Restored
+			// as unconditional per-page so the suite covers mobile-web
+			// regressions out of the box.
+			{plan.TmplPlaywrightMobile, "mobile", "mobile"},
 		} {
 			out = append(out, plan.Item{
 				Symbol:   pageStub,
@@ -604,29 +613,42 @@ func qualityCompanions(sourceURL string, m *mindmap.Map, coverage CoverageMode) 
 		emitted++
 	}
 
-	// i18n: only when the landing page (or any page) advertises hreflang.
+	// i18n: prefer a page that advertises hreflang; fall back to the
+	// landing page so the spec always emits and exercises whatever
+	// translation surface (or absence thereof) the site has. v0.43
+	// drops the strict hreflang gate so a marketing site without
+	// hreflang siblings still gets a deterministic check that <html
+	// lang> is present and that no UI string is duplicated across
+	// locales.
+	var i18nPage *mindmap.Page
 	for _, pURL := range m.Order {
-		page := m.Pages[pURL]
-		if page == nil || len(page.Meta.Hreflang) == 0 {
+		p := m.Pages[pURL]
+		if p == nil {
 			continue
 		}
-		// Carry the hreflang map through Symbol.Meta so the template
-		// can range over it.
+		if len(p.Meta.Hreflang) > 0 {
+			i18nPage = p
+			break
+		}
+		if i18nPage == nil {
+			i18nPage = p // fallback: first crawled page
+		}
+	}
+	if i18nPage != nil {
 		i18nStub := ast.Symbol{
-			Name:     hostToName(parseHost(page.URL)),
+			Name:     hostToName(parseHost(i18nPage.URL)),
 			Kind:     ast.KindComponent,
-			File:     page.URL,
+			File:     i18nPage.URL,
 			Language: "ts",
-			Meta:     page.Meta,
+			Meta:     i18nPage.Meta,
 		}
 		out = append(out, plan.Item{
 			Symbol:   i18nStub,
 			Symbols:  []ast.Symbol{i18nStub},
-			PageURL:  page.URL,
+			PageURL:  i18nPage.URL,
 			Template: plan.TmplPlaywrightI18n,
 			OutPath:  "tests/e2e/i18n/" + originSlug + ".i18n.spec.ts",
 		})
-		break // one per origin is enough
 	}
 
 	return out

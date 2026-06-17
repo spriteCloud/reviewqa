@@ -54,7 +54,10 @@ func TestRunAll_EmitsQualityCompanions(t *testing.T) {
 	}
 }
 
-func TestRunAll_OmitsI18nWhenNoHreflang(t *testing.T) {
+// v0.43 — i18n now always emits with a fallback "html lang present" check
+// even on sites with no hreflang siblings. The old assertion (no spec
+// emitted) is no longer the desired contract.
+func TestRunAll_EmitsI18nFallbackWhenNoHreflang(t *testing.T) {
 	t.Setenv("REVIEWQA_PROBE_ALLOW_LOOPBACK", "1")
 	mux := http.NewServeMux()
 	mux.HandleFunc("/", func(w http.ResponseWriter, r *http.Request) {
@@ -71,9 +74,13 @@ func TestRunAll_OmitsI18nWhenNoHreflang(t *testing.T) {
 	defer srv.Close()
 
 	items, _ := RunAll(context.Background(), []string{srv.URL + "/"})
+	count := 0
 	for _, it := range items {
 		if it.Template == plan.TmplPlaywrightI18n {
-			t.Errorf("i18n spec emitted but no hreflang siblings present: %s", it.OutPath)
+			count++
 		}
+	}
+	if count != 1 {
+		t.Errorf("expected exactly 1 i18n fallback spec; got %d", count)
 	}
 }
