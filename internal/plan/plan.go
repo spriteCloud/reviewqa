@@ -118,6 +118,15 @@ const (
 	// gracefully when the candidate path 404s.
 	TmplPlaywrightGraphQLStub    Template = "pw_graphql_stub"
 	TmplPlaywrightWebhookStub    Template = "pw_webhook_stub"
+	// v0.57 — per-kind integration scaffolds. The catch-all
+	// pw_integration_api_stub from v0.43 stays for "any API"; these
+	// four fan out on specific response signals so the integration
+	// layer's depth (3 skipped tests each, kind-specific) matches
+	// the other deep layers.
+	TmplPlaywrightIntegrationDBStub    Template = "pw_integration_db_stub"
+	TmplPlaywrightIntegrationCacheStub Template = "pw_integration_cache_stub"
+	TmplPlaywrightIntegrationObsStub   Template = "pw_integration_obs_stub"
+	TmplPlaywrightIntegrationAuthStub  Template = "pw_integration_auth_stub"
 	TmplRaw                 Template = "raw" // sentinel: emit Item.RawContent verbatim
 	TmplPytestUnit          Template = "pytest_unit"
 	TmplPytestAPI           Template = "pytest_api"

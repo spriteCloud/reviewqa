@@ -553,6 +553,17 @@ func qualityCompanions(sourceURL string, m *mindmap.Map, coverage CoverageMode) 
 		// stubs skip gracefully when the candidate paths 404.
 		{plan.TmplPlaywrightGraphQLStub, "graphql"},
 		{plan.TmplPlaywrightWebhookStub, "webhook"},
+		// v0.57: per-kind integration scaffolds. Each ships 3
+		// `test.skip()` blocks specific to its backing resource
+		// kind. Pragmatic emission policy: unconditionally per
+		// origin (rather than gated by header sniffing) because
+		// they're scaffolds, not assertions — false positives cost
+		// one skipped file per origin and the catalogue benefit
+		// of seeing all four kinds documented outweighs the noise.
+		{plan.TmplPlaywrightIntegrationDBStub, "integration-db"},
+		{plan.TmplPlaywrightIntegrationCacheStub, "integration-cache"},
+		{plan.TmplPlaywrightIntegrationObsStub, "integration-obs"},
+		{plan.TmplPlaywrightIntegrationAuthStub, "integration-auth"},
 	} {
 		out = append(out, plan.Item{
 			Symbol:   stub,
