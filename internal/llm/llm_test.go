@@ -10,6 +10,7 @@ import (
 	"time"
 
 	"github.com/reviewqa/reviewqa/internal/config"
+	"reflect"
 )
 
 func TestHumanize_FallsBackOnStructureMismatch(t *testing.T) {
@@ -78,4 +79,25 @@ func TestDisabledWhenNoKey(t *testing.T) {
 	if c.Enabled() {
 		t.Error("should be disabled without api key")
 	}
+}
+func TestChat(t *testing.T) {
+	t.Run("happy path", func(t *testing.T) {
+		got, err := Chat(nil, "", "")
+		if err != nil {
+			t.Fatalf("unexpected error: %v", err)
+		}
+		if reflect.DeepEqual(got, *new(string)) {
+			t.Fatalf("got zero value: %#v", got)
+		}
+	})
+
+	t.Run("returns expected type", func(t *testing.T) {
+		got, err := Chat(nil, "", "")
+		if err != nil {
+			t.Fatalf("unexpected error: %v", err)
+		}
+		if got, want := reflect.TypeOf(got), reflect.TypeOf(*new(string)); got != want {
+			t.Fatalf("type = %v, want %v", got, want)
+		}
+	})
 }

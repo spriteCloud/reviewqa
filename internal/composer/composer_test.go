@@ -3,6 +3,7 @@ package composer
 import (
 	"context"
 	"errors"
+	"reflect"
 	"testing"
 )
 
@@ -126,4 +127,19 @@ func TestMatchesRegisteredPattern_ExactList(t *testing.T) {
 			t.Errorf("%q should NOT match", s)
 		}
 	}
+}
+func TestValidate(t *testing.T) {
+	t.Run("happy path", func(t *testing.T) {
+		got := Validate(nil)
+		if reflect.DeepEqual(got, *new([]ExtraScenario)) {
+			t.Fatalf("got zero value: %#v", got)
+		}
+	})
+
+	t.Run("returns expected type", func(t *testing.T) {
+		got := Validate(nil)
+		if got, want := reflect.TypeOf(got), reflect.TypeOf(*new([]ExtraScenario)); got != want {
+			t.Fatalf("type = %v, want %v", got, want)
+		}
+	})
 }
