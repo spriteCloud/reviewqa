@@ -4,6 +4,51 @@ reviewqa's release-by-release history. v0.19 → v0.30 was the
 taxonomy-closure arc that took the framework from a single-Playwright
 happy-flow generator to a 10-layer deterministic test author.
 
+## v0.59 — a11y trio uncapped + deepened (1+2+2 → 5+5+5)
+
+Two gaps the post-v0.58 audit surfaced:
+
+- **A11y emitted on only half the crawled pages.** The per-page
+  companions loop was capped at `coverage.FuzzCap()` (5 in standard
+  mode). On a 30-page spritecloud.com crawl only the first 5 pages
+  got the a11y trio (a11y / landmarks / keyboard). The other 25 were
+  blind spots — wrong for cheap companions like axe-core.
+- **A11y sub-templates themselves were shallow.** `pw_a11y` shipped
+  one axe smoke; `pw_a11y_landmarks` two structural checks; 
+  `pw_keyboard_nav` two interaction checks.
+
+`internal/probe/probe.go::qualityCompanions` now splits the per-page
+loop into two passes — Pass A (uncapped) emits the a11y trio on every
+crawled page; Pass B (capped) keeps the heavy companions (visual /
+perf / mobile multi-device / etc.) within budget.
+
+Each a11y template now ships 5 tests:
+
+  pw_a11y.tmpl                1 → 5
+    @smoke           axe WCAG 2a/2aa/21a/21aa — serious+critical = 0
+    @wcag-aa         WCAG 2.1 AA-only profile for targeted CI gates
+    @color-contrast  most-violated WCAG rule standalone
+    @aria-attrs      ARIA-attribute discipline (cat.aria rules)
+    @form-labels     every form input has a programmatic label
+
+  pw_a11y_landmarks.tmpl      2 → 5
+    @smoke               single main / h1 / ≥1 nav
+    @no-aria-hidden      no focusables inside aria-hidden subtrees
+    @heading-hierarchy   heading order is sequential (no h1→h3 skips)
+    @landmark-names      duplicate landmarks have accessible names
+    @skip-link           skip-to-content affordance (WCAG 2.4.1)
+
+  pw_keyboard_nav.tmpl        2 → 5
+    @smoke           Tab cycles through first 10 focusables
+    @focus-indicator  every focusable has a visible focus indicator
+    @escape-dismiss  Escape closes a dialog AND returns focus
+    @enter-space     Enter activates focused links/buttons
+    @no-trap         Tab past last focusable wraps or exits
+
+Effect on spritecloud-com-dgx: a11y subdir went 25 → 100 files
+(30 pages × 3 sub-templates × 5 tests = **450 a11y test blocks**).
+The example refresh + docs depth column reflect the new floor.
+
 ## v0.55 → v0.58 — taxonomy depth parity
 
 User audit: "we touched all of the categories but not in the same depth

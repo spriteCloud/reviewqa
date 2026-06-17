@@ -46,3 +46,31 @@ Feature: WwwSpritecloudCom — browse journey
     And I go back in the browser history
     Then no error message is shown in the form region
 
+  # ───────────────────────────────────────────────────────────────
+  # LLM-composed scenarios (model: qwen3-coder-next:latest)
+  # Filter out with `--grep-invert @llm-composed` for stricter CI runs.
+  # ───────────────────────────────────────────────────────────────
+
+  @journey:browse @priority:standard @llm-composed @kind:edge @model:qwen3-coder-next-latest
+  Scenario: Double form submission
+    Given I am on the landing page
+    When I navigate directly to "/contact"
+    When I submit the form twice in rapid succession
+    Then the form is not double-submitted
+
+  @journey:browse @priority:standard @llm-composed @kind:edge @model:qwen3-coder-next-latest
+  Scenario: Navigate to guides, then reload
+    Given I open the landing page
+    When I click the link to "/guides"
+    Then the page title contains "spriteCloud - Your Software Testing and QA partner"
+    When I reload the page
+    Then the page title contains "spriteCloud - Your Software Testing and QA partner"
+
+  @journey:browse @priority:standard @llm-composed @kind:edge @model:qwen3-coder-next-latest
+  Scenario: Navigate to about-us, go back
+    Given I am on the landing page
+    When I navigate directly to "/about-us"
+    Then the main heading reads "Testing is in our DNA."
+    When I go back in the browser history
+    Then the page title contains "spriteCloud - Test your software, not your reputation!"
+

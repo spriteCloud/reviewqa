@@ -50,29 +50,19 @@ Feature: WwwSpritecloudCom — read journey
   # ───────────────────────────────────────────────────────────────
 
   @journey:read @priority:nice-to-have @llm-composed @kind:edge @model:qwen3-coder-next-latest
-  Scenario: Navigate to style guide and reload
-    Given I open the landing page
-    When I click the link to "/style-guide"
-    Then the page title contains "Style Guide - Healix Webflow website HTML template"
-    Then the main heading reads "Aa"
-    When I reload the page
-    Then the page title contains "Style Guide - Healix Webflow website HTML template"
+  Scenario: Submit contact form twice rapidly
+    Given I am on the landing page
+    When I navigate directly to "/contact"
+    When I submit the form twice in rapid succession
+    Then the form is not double-submitted
+    Then I see the heading "Contact Us"
 
   @journey:read @priority:nice-to-have @llm-composed @kind:variant @model:qwen3-coder-next-latest
-  Scenario: Navigate to style guide twice in succession
+  Scenario: Reload page mid-form-fill
     Given I open the landing page
-    When I click the link to "/style-guide"
-    Then the page title contains "Style Guide - Healix Webflow website HTML template"
-    Then the main heading reads "Aa"
-    When I navigate directly to "/style-guide"
-    Then the main heading reads "Aa"
-
-  @journey:read @priority:nice-to-have @llm-composed @kind:edge @model:qwen3-coder-next-latest
-  Scenario: Go back from style guide to landing
-    Given I open the landing page
-    When I click the link to "/style-guide"
-    Then the page title contains "Style Guide - Healix Webflow website HTML template"
-    Then the main heading reads "Aa"
-    When I go back in the browser history
-    Then the page title contains "spriteCloud - Test your software, not your reputation!"
+    When I navigate directly to "/contact"
+    When I enter "John Doe" into the "Name" field
+    When I reload the page
+    Then I remain on the same page
+    Then the "Name" field has the value ""
 

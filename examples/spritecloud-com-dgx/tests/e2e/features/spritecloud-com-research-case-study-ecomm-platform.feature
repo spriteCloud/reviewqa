@@ -37,3 +37,35 @@ Feature: WwwSpritecloudCom — research journey
     When I go back in the browser history
     Then the main heading reads "Test your software, not your reputation."
 
+  # ───────────────────────────────────────────────────────────────
+  # LLM-composed scenarios (model: qwen3-coder-next:latest)
+  # Filter out with `--grep-invert @llm-composed` for stricter CI runs.
+  # ───────────────────────────────────────────────────────────────
+
+  @journey:research @priority:standard @llm-composed @kind:variant @model:qwen3-coder-next-latest
+  Scenario: Navigate to case study and reload
+    Given I open the landing page
+    When I click the link to "/case-studies"
+    When I click the link to "/case-study-ecomm-platform"
+    Then the page title contains "Case Study - eCommerce Platform"
+    Then the main heading reads "Performance Testing for an eCommerce Platform"
+    When I reload the page
+    Then the main heading reads "Performance Testing for an eCommerce Platform"
+
+  @journey:research @priority:standard @llm-composed @kind:edge @model:qwen3-coder-next-latest
+  Scenario: Back navigation from case study
+    Given I open the landing page
+    When I click the link to "/case-studies"
+    When I click the link to "/case-study-ecomm-platform"
+    Then the page title contains "Case Study - eCommerce Platform"
+    When I go back in the browser history
+    Then the page title contains "spriteCloud - Test your software, not your reputation!"
+
+  @journey:research @priority:standard @llm-composed @kind:variant @model:qwen3-coder-next-latest
+  Scenario: Direct URL reload preserves state
+    Given I open the page "/case-study-ecomm-platform"
+    Then the page title contains "Case Study - eCommerce Platform"
+    Then the main heading reads "Performance Testing for an eCommerce Platform"
+    When I reload the page
+    Then the main heading reads "Performance Testing for an eCommerce Platform"
+
