@@ -36,7 +36,11 @@ func TestParseSpecFile_ExtractsTitles(t *testing.T) {
 	if err != nil {
 		t.Fatalf("parse: %v", err)
 	}
-	wantNames := []string{"signup flow", "happy path", "focused", "flaky for now", "broken", "top-level test", "legacy mocha-style"}
+	// v0.84: parser drops describe() entries from the returned
+	// list (they're not runnable) and instead attaches the active
+	// describe to each test as Describe. The four child tests of
+	// `signup flow` carry it; top-level + alias don't.
+	wantNames := []string{"happy path", "focused", "flaky for now", "broken", "top-level test", "legacy mocha-style"}
 	if len(tests) != len(wantNames) {
 		t.Fatalf("got %d tests, want %d: %+v", len(tests), len(wantNames), tests)
 	}
@@ -44,6 +48,41 @@ func TestParseSpecFile_ExtractsTitles(t *testing.T) {
 		if tests[i].Name != w {
 			t.Errorf("[%d] name = %q, want %q", i, tests[i].Name, w)
 		}
+	}
+	// First 4 should carry the `signup flow` describe.
+	for i := 0; i < 4; i++ {
+		if tests[i].Describe != "signup flow" {
+			t.Errorf("[%d] %q: Describe = %q, want %q", i, tests[i].Name, tests[i].Describe, "signup flow")
+		}
+	}
+	if tests[4].Describe != "" || tests[5].Describe != "" {
+		t.Errorf("top-level tests should have empty Describe; got %q / %q", tests[4].Describe, tests[5].Describe)
+	}
+}
+
+// loadSpecs returns nil for reviewqa-generated workdirs so the
+// Tests sidebar section disappears for those projects.
+func TestLoadSpecs_SuppressedForReviewqaProject(t *testing.T) {
+	root := t.TempDir()
+	// reviewqa signature: a .feature file under tests/e2e/features.
+	featDir := filepath.Join(root, "tests", "e2e", "features")
+	if err := os.MkdirAll(featDir, 0o755); err != nil {
+		t.Fatal(err)
+	}
+	if err := os.WriteFile(filepath.Join(featDir, "demo.feature"), []byte("Feature: x\n"), 0o644); err != nil {
+		t.Fatal(err)
+	}
+	// AND a layer artifact .spec.ts that would otherwise surface.
+	a11yDir := filepath.Join(root, "tests", "e2e", "a11y")
+	if err := os.MkdirAll(a11yDir, 0o755); err != nil {
+		t.Fatal(err)
+	}
+	if err := os.WriteFile(filepath.Join(a11yDir, "demo.a11y.spec.ts"), []byte(`test('a11y check', async () => {})`), 0o644); err != nil {
+		t.Fatal(err)
+	}
+	got := loadSpecs(root)
+	if got != nil {
+		t.Errorf("expected nil for reviewqa project; got %+v", got)
 	}
 }
 
