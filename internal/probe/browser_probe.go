@@ -94,24 +94,28 @@ type browserResult struct {
 // error if `node` isn't available, the script bails out, or the JSON is
 // malformed — callers fall back to the static crawl on any failure.
 func runBrowserCrawl(ctx context.Context, origin string) (*mindmap.Map, []error) {
-	cwd, _ := os.Getwd()
-	scriptPath, cleanup, err := browser.WriteScript(cwd)
+	if _, err := exec.LookPath("node"); err != nil {
+		return nil, []error{fmt.Errorf("%w: `node` not found in PATH", browser.ErrBrowserUnavailable)}
+	}
+
+	runnerDir, err := browser.EnsureRunner(ctx)
+	if err != nil {
+		return nil, []error{err}
+	}
+
+	scriptPath, cleanup, err := browser.WriteScript(runnerDir)
 	if err != nil {
 		return nil, []error{err}
 	}
 	defer cleanup()
 
-	if _, err := exec.LookPath("node"); err != nil {
-		return nil, []error{errors.New("browser probe: `node` not found in PATH — falling back to static crawl")}
-	}
-
 	cmd := exec.CommandContext(ctx, "node", scriptPath, origin)
-	// Run from the consumer's project directory so node's module
-	// resolution walks up FROM THERE and finds @playwright/test in their
-	// node_modules. NODE_PATH is a secondary signal (covers monorepo
-	// hoisting); the primary is cmd.Dir.
-	cmd.Dir = cwd
-	cmd.Env = append(os.Environ(), "NODE_PATH="+filepath.Join(cwd, "node_modules"))
+	// Run from the shared runner so node's ESM resolver walks
+	// <runner>/.reviewqa-browser-probe-XXX → <runner> →
+	// <runner>/node_modules — which EnsureRunner just populated.
+	// Independent of where the probed project lives on disk.
+	cmd.Dir = runnerDir
+	cmd.Env = append(os.Environ(), "NODE_PATH="+filepath.Join(runnerDir, "node_modules"))
 	out, err := cmd.Output()
 	if err != nil {
 		stderr := ""

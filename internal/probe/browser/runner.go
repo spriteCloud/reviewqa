@@ -1,0 +1,160 @@
+package browser
+
+import (
+	"context"
+	"errors"
+	"fmt"
+	"os"
+	"os/exec"
+	"path/filepath"
+	"strings"
+	"sync"
+	"syscall"
+
+	"github.com/reviewqa/reviewqa/internal/log"
+)
+
+// ErrBrowserUnavailable is returned when the browser probe can't run
+// because its environment isn't usable: node missing from PATH, the
+// shared Playwright runner can't be installed (no network, no npm),
+// or the install completed but produced no @playwright/test. Callers
+// distinguish this from "browser ran but produced no pages" — the
+// former bails under BrowserAlways, the latter falls back to static.
+var ErrBrowserUnavailable = errors.New("browser probe: runner unavailable")
+
+const runnerSentinel = ".reviewqa-runner-ready"
+
+// RunnerDir returns the canonical Playwright runner cache root.
+// Honours XDG_CACHE_HOME for users who relocate caches; otherwise
+// uses ~/.cache/reviewqa/playwright-runner.
+func RunnerDir() string {
+	if base := strings.TrimSpace(os.Getenv("XDG_CACHE_HOME")); base != "" {
+		return filepath.Join(base, "reviewqa", "playwright-runner")
+	}
+	home, err := os.UserHomeDir()
+	if err != nil {
+		return filepath.Join(os.TempDir(), "reviewqa-playwright-runner")
+	}
+	return filepath.Join(home, ".cache", "reviewqa", "playwright-runner")
+}
+
+// ensureRunnerMu serialises concurrent EnsureRunner calls within the
+// same process. The flock on disk serialises across processes; the
+// in-process mutex saves the extra syscall round-trip and lets
+// goroutines share an already-installed runner without each one
+// taking the file lock.
+var ensureRunnerMu sync.Mutex
+
+// EnsureRunner guarantees the shared Playwright runner is installed
+// and ready. Idempotent: once the sentinel exists and
+// node_modules/@playwright/test resolves, returns immediately.
+//
+// First-time install runs `npm install @playwright/test` then
+// `npx playwright install chromium` inside RunnerDir(). Output is
+// streamed through log.Info so probe SSE viewers see progress.
+// Cross-process safety: an flock on .install.lock serialises
+// concurrent installs.
+//
+// Returns ErrBrowserUnavailable wrapped with the underlying cause
+// for any failure callers might want to surface to users.
+func EnsureRunner(ctx context.Context) (string, error) {
+	dir := RunnerDir()
+
+	ensureRunnerMu.Lock()
+	defer ensureRunnerMu.Unlock()
+
+	if runnerReady(dir) {
+		return dir, nil
+	}
+
+	if _, err := exec.LookPath("npm"); err != nil {
+		return dir, fmt.Errorf("%w: `npm` not found in PATH (install Node.js + npm)", ErrBrowserUnavailable)
+	}
+
+	if err := os.MkdirAll(dir, 0o755); err != nil {
+		return dir, fmt.Errorf("%w: create %s: %v", ErrBrowserUnavailable, dir, err)
+	}
+
+	lockPath := filepath.Join(dir, ".install.lock")
+	lock, err := os.OpenFile(lockPath, os.O_CREATE|os.O_RDWR, 0o600)
+	if err != nil {
+		return dir, fmt.Errorf("%w: open lock %s: %v", ErrBrowserUnavailable, lockPath, err)
+	}
+	defer lock.Close()
+	if err := syscall.Flock(int(lock.Fd()), syscall.LOCK_EX); err != nil {
+		return dir, fmt.Errorf("%w: flock %s: %v", ErrBrowserUnavailable, lockPath, err)
+	}
+	defer syscall.Flock(int(lock.Fd()), syscall.LOCK_UN)
+
+	// Re-check after acquiring the lock — another process may have
+	// finished the install while we were waiting.
+	if runnerReady(dir) {
+		return dir, nil
+	}
+
+	log.Info("playwright runner: installing once, ~30s (cached at "+dir+")", "dir", dir)
+
+	pkgPath := filepath.Join(dir, "package.json")
+	if _, err := os.Stat(pkgPath); err != nil {
+		body := []byte(`{"name":"reviewqa-playwright-runner","private":true,"version":"1.0.0"}` + "\n")
+		if werr := os.WriteFile(pkgPath, body, 0o600); werr != nil {
+			return dir, fmt.Errorf("%w: write %s: %v", ErrBrowserUnavailable, pkgPath, werr)
+		}
+	}
+
+	if err := runStream(ctx, dir, "npm", "install", "--no-audit", "--no-fund", "--silent", "@playwright/test"); err != nil {
+		return dir, fmt.Errorf("%w: npm install: %v", ErrBrowserUnavailable, err)
+	}
+	if err := runStream(ctx, dir, "npx", "--yes", "playwright", "install", "chromium"); err != nil {
+		return dir, fmt.Errorf("%w: playwright install chromium: %v", ErrBrowserUnavailable, err)
+	}
+
+	if !pkgInstalled(dir) {
+		return dir, fmt.Errorf("%w: @playwright/test missing after install in %s", ErrBrowserUnavailable, dir)
+	}
+	if err := os.WriteFile(filepath.Join(dir, runnerSentinel), []byte("ok\n"), 0o600); err != nil {
+		return dir, fmt.Errorf("%w: write sentinel: %v", ErrBrowserUnavailable, err)
+	}
+	return dir, nil
+}
+
+// runnerReady returns true when the sentinel exists AND the package
+// is still on disk. We check both because the sentinel could outlive
+// a partial `rm -rf node_modules` cleanup.
+func runnerReady(dir string) bool {
+	if _, err := os.Stat(filepath.Join(dir, runnerSentinel)); err != nil {
+		return false
+	}
+	return pkgInstalled(dir)
+}
+
+func pkgInstalled(dir string) bool {
+	pkgJSON := filepath.Join(dir, "node_modules", "@playwright", "test", "package.json")
+	_, err := os.Stat(pkgJSON)
+	return err == nil
+}
+
+// runStream invokes name+args in dir and pipes combined output to
+// log.Info line-by-line so SSE viewers see install progress. Returns
+// a clean error on non-zero exit including a 4KB tail of output for
+// diagnosis.
+func runStream(ctx context.Context, dir, name string, args ...string) error {
+	cmd := exec.CommandContext(ctx, name, args...)
+	cmd.Dir = dir
+	cmd.Stderr = nil
+	cmd.Stdout = nil
+	out, err := cmd.CombinedOutput()
+	if len(out) > 0 {
+		for _, line := range strings.Split(strings.TrimRight(string(out), "\n"), "\n") {
+			log.Info("playwright runner: " + line)
+		}
+	}
+	if err != nil {
+		tail := string(out)
+		if len(tail) > 4096 {
+			tail = tail[len(tail)-4096:]
+		}
+		return fmt.Errorf("%s %s: %v (tail: %s)", name, strings.Join(args, " "), err, strings.TrimSpace(tail))
+	}
+	return nil
+}

@@ -14,10 +14,11 @@ import (
 var probeScript []byte
 
 // WriteScript materialises probe.mjs into a subdirectory of baseDir and
-// returns the path. The directory is placed inside baseDir specifically
-// so Node's ESM resolver can walk UP and find @playwright/test in
-// baseDir/node_modules. A tempdir outside the project tree wouldn't have
-// access to those modules.
+// returns the path. Callers pass the shared Playwright runner dir
+// (see RunnerDir / EnsureRunner) so Node's ESM resolver walks UP from
+// the temp subdir and finds @playwright/test in
+// <runner>/node_modules — independent of where the probed project
+// lives on disk.
 //
 // Caller is responsible for cleanup via the returned cleanup func.
 func WriteScript(baseDir string) (path string, cleanup func(), err error) {
