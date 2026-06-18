@@ -7,6 +7,43 @@ shipped the depth-parity arc (Contract, Integration, Mobile, A11y trio).
 v0.61–v0.62 are the live-execution + composer-validation arc — first
 real-site run + composer destination-DOM enforcement.
 
+## v0.87 — Settings → probe subprocess + empty-dir reuse + discover-fallback
+
+Two user bugs from a v0.86 ing.nl probe, plus a safety-net for
+SPA-heavy sites.
+
+### Settings → probe subprocess env
+v0.77 wired Settings into the in-process serve handlers but the
+probe SUBPROCESS only inherited `os.Environ()`. Result: user
+toggles LLM ON, hits Probe, sees "llm humanization disabled (no
+OPENAI_API_KEY)".
+
+- New `probeSubprocessEnv()` translates Settings.LLM into the env
+  vars the probe CLI expects:
+  - `LLM.Endpoint` → `REVIEWQA_LLM`
+  - `LLM.Model` → `REVIEWQA_MODEL`
+  - `LLM.APIKey` → `OPENAI_API_KEY` (or `ollama` for keyless
+    local endpoints)
+  - `LLM.TimeoutSec` → `REVIEWQA_LLM_TIMEOUT`
+- `LLM.Enabled=false` explicitly zeroes `OPENAI_API_KEY`.
+- Settings appended AFTER `os.Environ()` so user-saved wins.
+
+### Empty-dir reuse
+v0.85 verification left an empty `~/reviewqa-projects/<brand>/`
+behind. v0.86's `reserveSiblingDir` refused to land in it (looked
+like a non-reviewqa squatter) and bumped to `<brand>-1/`. v0.87
+reuses empty candidate dirs — same shape as never-existed.
+
+### Discover-fallback journey
+ing.nl crawled (167 spec artifacts) but journey heuristics found
+zero — SPA, all the useful surfaces behind interactions. UI showed
+no Features. New `synthesiseFallbackJourneys` emits one
+`JourneyDiscover` (landing → first same-origin nav target) when
+no journeys came back but the landing page has ≥3 outbound links.
+Clear log line when even the fallback can't fire.
+
+6 new tests; 594 → 600 passing.
+
 ## v0.86 — Probe any website (WAF bypass + zero-item visibility)
 
 User probed `ing.nl` from the v0.85 UI and got no scenarios.
