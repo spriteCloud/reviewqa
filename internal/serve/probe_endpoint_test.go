@@ -1,11 +1,16 @@
 package serve
 
 import (
+	"context"
+	"fmt"
 	"net/http"
 	"net/http/httptest"
+	"os"
+	"os/exec"
 	"path/filepath"
 	"strings"
 	"testing"
+	"time"
 )
 
 func TestProbeEndpoint_RejectsMissingURL(t *testing.T) {
@@ -80,3 +85,48 @@ func TestProbeCwd_UsesWorkdirForOtherLayouts(t *testing.T) {
 		t.Errorf("probeCwd(%q) = %q, want workdir unchanged", workdir, got)
 	}
 }
+
+// Regression (v0.87.2): the probe subprocess must outlive a
+// request-context cancel. Earlier versions used exec.CommandContext;
+// when curl --max-time fired or the user closed the UI, the ctx
+// cancel SIGKILL'd the probe mid-pipeline, leaving 167 static
+// specs on disk but no .feature.
+//
+// We swap newProbeCmd to redirect spawns at a tiny sh script that
+// sleeps, writes a sentinel, then exits. ProbeStream is invoked
+// with a context cancelled immediately. The sentinel proves the
+// subprocess ran to completion.
+func TestProbeStream_SubprocessOutlivesRequestCancel(t *testing.T) {
+	root := fixtureProject(t)
+	workdir := filepath.Join(root, "tests", "e2e")
+
+	sentinel := filepath.Join(t.TempDir(), "probe-finished")
+	prev := newProbeCmd
+	t.Cleanup(func() { newProbeCmd = prev })
+	newProbeCmd = func(name string, args ...string) *exec.Cmd {
+		return exec.Command("sh", "-c", fmt.Sprintf("sleep 0.3 && echo probe done && touch %q", sentinel))
+	}
+
+	rec := &flushRecorder{ResponseRecorder: httptest.NewRecorder()}
+	ctx, cancel := context.WithCancel(context.Background())
+	cancel()
+
+	if _, err := ProbeStream(ctx, rec, workdir, ProbeRequest{URL: "https://example.com/"}); err != nil {
+		t.Fatalf("ProbeStream: %v", err)
+	}
+
+	deadline := time.Now().Add(2 * time.Second)
+	for time.Now().Before(deadline) {
+		if _, err := os.Stat(sentinel); err == nil {
+			return
+		}
+		time.Sleep(20 * time.Millisecond)
+	}
+	t.Fatalf("sentinel %q missing — subprocess was killed by ctx cancel", sentinel)
+}
+
+type flushRecorder struct {
+	*httptest.ResponseRecorder
+}
+
+func (f *flushRecorder) Flush() {}
