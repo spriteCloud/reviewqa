@@ -7,6 +7,27 @@ shipped the depth-parity arc (Contract, Integration, Mobile, A11y trio).
 v0.61–v0.62 are the live-execution + composer-validation arc — first
 real-site run + composer destination-DOM enforcement.
 
+## v0.87.2 — Probe subprocess outlives SSE client disconnect
+
+The v0.87.1 UI probe of ing.nl wrote all 167 static specs to
+`~/reviewqa-projects/ing/tests/e2e/…` but never produced a
+`.feature`. Root cause: `ProbeStream` built the subprocess with
+`exec.CommandContext(ctx, …)`, binding it to the HTTP request
+context. When curl `--max-time` fired (or the user closed the
+UI), the context cancel SIGKILL'd the probe mid-composer — after
+the static tier had rendered, before the Gherkin emit. Net
+effect from the user's seat: a populated `tests/` dir with no
+Feature in the sidebar.
+
+Fix: `ProbeStream` now spawns via plain `exec.Command`, so the
+probe runs to completion regardless of whether the SSE client is
+still listening. `streamCommand` keeps draining stdout (writes
+to a vanished client silently fail at the kernel) so the OS pipe
+never blocks the subprocess. The next UI load picks up the new
+project. Internally the spawn goes through a `newProbeCmd` hook
+so the regression test can pin the contract — a stub subprocess
+finishes after a deliberately-cancelled ctx.
+
 ## v0.87.1 — Humanize wall-clock budget + discover-fallback fix
 
 Two fixes that surfaced from a v0.87 ing.nl probe: it hung

@@ -31,6 +31,13 @@ var (
 
 const captureMax = 200
 
+// newProbeCmd builds the probe subprocess. NEVER uses
+// exec.CommandContext — the probe must outlive the HTTP request
+// context so an SSE client disconnect (curl --max-time, browser
+// closed) does not SIGKILL it mid-pipeline. Tests swap this to
+// redirect spawns at a stub.
+var newProbeCmd = exec.Command
+
 func resetCapture() {
 	captureMu.Lock()
 	captureLines = captureLines[:0]
@@ -141,7 +148,16 @@ func ProbeStream(ctx context.Context, w http.ResponseWriter, workdir string, req
 		"at":      time.Now().UTC().Format(time.RFC3339),
 	})
 
-	cmd := exec.CommandContext(ctx, exe, args...)
+	// v0.87.2: detach the probe subprocess from the request context.
+	// A client disconnect (browser closed, curl --max-time fired)
+	// closes the SSE stream — with exec.CommandContext that cancel
+	// SIGKILLs the probe mid-pipeline, dropping the .feature output
+	// even though 167 static specs already landed on disk. We want
+	// the probe to run to completion regardless; the next UI load
+	// picks up the new project. streamCommand keeps draining stdout
+	// (writes to a gone client silently fail at the kernel) so the
+	// OS pipe buffer never blocks the subprocess.
+	cmd := newProbeCmd(exe, args...)
 	cmd.Dir = cwd
 	cmd.Env = probeSubprocessEnv()
 	exitCode, err := streamCommand(ctx, w, flusher, cmd)
