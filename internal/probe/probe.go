@@ -458,10 +458,19 @@ func probeOneOrigin(ctx context.Context, u string, coverage CoverageMode, filter
 	}
 	journeys := identifyAndFilterJourneys(m, coverage, filter, u)
 	if len(journeys) == 0 {
-		// v0.52 — no journeys detected (SPA, API-only origin) but the
-		// crawler still has at least one page. Emit the contract +
-		// quality companions against that bare mindmap so the
-		// taxonomy isn't empty.
+		// v0.87 — try to synthesise at least one Gherkin journey
+		// from the landing page's nav links so the UI sidebar isn't
+		// empty for JS-heavy SPAs where the static journey
+		// heuristics don't fire. Falls back to log-and-emit-no-
+		// feature when the landing page itself is thin.
+		journeys = synthesiseFallbackJourneys(m, u)
+	}
+	if len(journeys) == 0 {
+		// v0.52 — no journeys detected (SPA, API-only origin) and
+		// not enough on the landing page to synthesise one. Emit
+		// the contract + quality companions against the bare
+		// mindmap so the taxonomy isn't empty.
+		log.Info("probe: no journeys identified; site is likely SPA-heavy or behind interactions", "url", u, "pages", len(m.Pages))
 		var items []plan.Item
 		items = append(items, qualityCompanions(u, m, coverage)...)
 		items = append(items, openAPIContractItems(ctx, u)...)
@@ -491,6 +500,76 @@ func probeOneOrigin(ctx context.Context, u string, coverage CoverageMode, filter
 	items = append(items, webhookContractItems(ctx, u)...)
 	items = append(items, domSnapshotItems(u, m)...)
 	return items, crawlErrs
+}
+
+// synthesiseFallbackJourneys is v0.87's safety net for SPA / JS-
+// heavy sites where the static journey heuristics (landing → list
+// → detail, landing → form, etc) don't fire. When the mindmap has
+// at least a landing page with a few outbound nav links, we
+// synthesise a single `JourneyDiscover`: landing → first
+// same-origin nav link. That gives the UI sidebar one
+// representative `.feature` instead of zero.
+//
+// Returns nil when the landing page is missing or has fewer than
+// 3 links (signal that the crawler got nothing useful — better to
+// be honest with the user than emit a near-empty Scenario).
+func synthesiseFallbackJourneys(m *mindmap.Map, originURL string) []mindmap.Journey {
+	if m == nil || len(m.Pages) == 0 {
+		return nil
+	}
+	// Pick the landing page the same way mindmap.landingPage does:
+	// prefer one tagged landing; fall back to the first crawl order.
+	var landing *mindmap.Page
+	for _, ord := range m.Order {
+		p := m.Pages[ord]
+		if p == nil {
+			continue
+		}
+		for _, t := range p.Tags {
+			if t == mindmap.TagLanding {
+				landing = p
+				break
+			}
+		}
+		if landing != nil {
+			break
+		}
+	}
+	if landing == nil && len(m.Order) > 0 {
+		landing = m.Pages[m.Order[0]]
+	}
+	if landing == nil || len(landing.Links) < 3 {
+		return nil
+	}
+	// Pick the first link that resolves to a same-origin page in
+	// the crawl. The detailed link ranker lives unexported in
+	// mindmap; for the fallback we just take the first visible
+	// candidate that's also in the crawl, which is good enough to
+	// emit a useful Scenario.
+	var target *mindmap.Page
+	var href string
+	for _, l := range landing.Links {
+		if l.Aria == "" {
+			continue
+		}
+		// l.Aria carries the href for browser-probe links.
+		if p, ok := m.Pages[l.Aria]; ok && p != nil && p.URL != landing.URL {
+			target = p
+			href = l.Aria
+			break
+		}
+	}
+	if target == nil {
+		return nil
+	}
+	log.Info("probe: synthesising discover-fallback journey from landing → first crawled link", "landing", landing.URL, "target", target.URL)
+	return []mindmap.Journey{{
+		Kind: mindmap.JourneyDiscover,
+		Steps: []mindmap.Step{
+			{Page: landing},
+			{Page: target, EnteredVia: href},
+		},
+	}}
 }
 
 // crawlOriginWithFallback orchestrates static vs browser crawl per

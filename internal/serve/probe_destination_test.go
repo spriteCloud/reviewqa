@@ -61,6 +61,24 @@ func TestPickProbeDestination_CollidesWithNonReviewqaDir(t *testing.T) {
 	}
 }
 
+// v0.87: An EMPTY squatter directory should be reused, not
+// bumped to a `-1` suffix. Covers the v0.85→v0.86 case where a
+// scratch-mode verification step left an empty
+// `~/reviewqa-projects/<brand>/` behind.
+func TestPickProbeDestination_EmptyDirIsReused(t *testing.T) {
+	parent := t.TempDir()
+	current := filepath.Join(parent, "spritecloud")
+	fixtureProjectAt(t, current)
+	emptyDest := filepath.Join(parent, "petstore3.swagger")
+	if err := os.MkdirAll(emptyDest, 0o755); err != nil {
+		t.Fatal(err)
+	}
+	got := pickProbeDestination(current, mustParseURL(t, "https://petstore3.swagger.io"))
+	if got != emptyDest {
+		t.Errorf("got %q, want %q (empty squatter should be reused)", got, emptyDest)
+	}
+}
+
 // A pre-existing reviewqa project for the same brand should
 // re-probe in place (no -1 suffix).
 func TestPickProbeDestination_CollidesWithReviewqaSibling(t *testing.T) {

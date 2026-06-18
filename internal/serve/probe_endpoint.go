@@ -143,7 +143,7 @@ func ProbeStream(ctx context.Context, w http.ResponseWriter, workdir string, req
 
 	cmd := exec.CommandContext(ctx, exe, args...)
 	cmd.Dir = cwd
-	cmd.Env = os.Environ()
+	cmd.Env = probeSubprocessEnv()
 	exitCode, err := streamCommand(ctx, w, flusher, cmd)
 
 	// Inspect the captured stdout lines to derive item count + a
@@ -225,6 +225,64 @@ func parseProbeOutcome(lines []string) (int, string) {
 		}
 	}
 	return count, reason
+}
+
+// probeSubprocessEnv returns the env the probe subprocess should
+// inherit, with the user's saved LLM settings translated into the
+// env vars `cmd/reviewqa/main.go::newProbeCmd` expects:
+//
+//   - LLM.Endpoint   → REVIEWQA_LLM (applyLLMOverride uses this)
+//   - LLM.Model      → REVIEWQA_MODEL
+//   - LLM.APIKey     → OPENAI_API_KEY (or "ollama" sentinel when
+//                      the endpoint is set but the key is blank,
+//                      matching llmConfigFromEnv)
+//   - LLM.TimeoutSec → REVIEWQA_LLM_TIMEOUT (Go duration string)
+//
+// LLM.Enabled=false zeroes OPENAI_API_KEY so the subprocess sees
+// the LLM as disabled regardless of the host env. v0.77's
+// llm_endpoint.go already did this for in-process callers; v0.87
+// extends the policy to the spawned probe.
+//
+// Settings are appended AFTER os.Environ() so a value the user
+// saved in Settings wins over whatever was inherited.
+func probeSubprocessEnv() []string {
+	env := append([]string(nil), os.Environ()...)
+	s, err := LoadSettings()
+	if err != nil {
+		return env
+	}
+	apply := func(k, v string) {
+		if v == "" {
+			// Replace the inherited entry with an empty value so
+			// the subprocess sees "disabled", not the host env.
+			env = append(env, k+"=")
+			return
+		}
+		env = append(env, k+"="+v)
+	}
+	if s.LLM.Enabled {
+		if s.LLM.Endpoint != "" {
+			apply("REVIEWQA_LLM", s.LLM.Endpoint)
+		}
+		if s.LLM.Model != "" {
+			apply("REVIEWQA_MODEL", s.LLM.Model)
+		}
+		switch {
+		case s.LLM.APIKey != "":
+			apply("OPENAI_API_KEY", s.LLM.APIKey)
+		case s.LLM.Endpoint != "":
+			// Keyless local Ollama path: same sentinel
+			// llmConfigFromEnv falls back to.
+			apply("OPENAI_API_KEY", "ollama")
+		}
+		if s.LLM.TimeoutSec > 0 {
+			apply("REVIEWQA_LLM_TIMEOUT", fmt.Sprintf("%ds", s.LLM.TimeoutSec))
+		}
+	} else if s.LLM.Endpoint != "" || s.LLM.APIKey != "" {
+		// User explicitly turned LLM OFF — strip the key.
+		apply("OPENAI_API_KEY", "")
+	}
+	return env
 }
 
 // probeCwd returns the directory the probe subprocess should run in
@@ -317,9 +375,14 @@ func reserveSiblingDir(parent, brand, fallback string) string {
 			candidate = filepath.Join(parent, brand+"-"+strconv.Itoa(i))
 			continue
 		}
-		// Exists as a dir. If it already looks like a reviewqa /
-		// Playwright project we re-probe in place; otherwise suffix.
+		// Exists as a dir. Reuse if it's a reviewqa project (re-
+		// probe in place) OR if it's empty (likely a residue from
+		// a prior aborted probe or scratch-mode warmup — safe to
+		// land into). Otherwise suffix.
 		if looksLikeReviewqaProject(candidate) {
+			return candidate
+		}
+		if entries, derr := os.ReadDir(candidate); derr == nil && len(entries) == 0 {
 			return candidate
 		}
 		candidate = filepath.Join(parent, brand+"-"+strconv.Itoa(i))
