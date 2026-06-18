@@ -7,6 +7,95 @@ shipped the depth-parity arc (Contract, Integration, Mobile, A11y trio).
 v0.61–v0.62 are the live-execution + composer-validation arc — first
 real-site run + composer destination-DOM enforcement.
 
+## v0.92.0 — Runnable scenarios + calculator-shape forms + Exercise capture
+
+Three fixes that compose. All site-agnostic — no built-in
+behaviour targets any specific brand or domain; the heuristics
+match generic shape patterns (URL words, input types, ARIA
+attributes).
+
+### 1. Runnable scenarios (the showstopper)
+
+A v0.91-generated scenario aborted at `bddgen` with
+`Missing step definitions: 1` because the humanize pass had
+rewritten a step value to include nested unescaped quotes:
+
+```
+When I enter "she said "hello" & 'goodbye'" into the
+     "Typ hier wat je wil vinden" field
+```
+
+Gherkin parsed the value as TWO `{string}` placeholders + the
+field name as a third — three params where the defined step
+has two. No step-def matched; the whole `.feature` aborted.
+
+Root cause: `Humanize`'s `structurePreserved` guard counts
+`import|describe|it(|test(` lines — none of which exist in a
+`.feature` file, so the guard is a no-op for Gherkin. The LLM
+could rewrite step values freely.
+
+Fix: new `composer.IsGherkinSafe(content)` validator. Every
+`Given/When/Then/And/But` line in the humanized output is
+checked against the existing registered step-pattern set
+(`composer.MatchesRegisteredPattern`). If any step fails, the
+humanize is rejected and the deterministic content lands on
+disk. `composer.LooksLikeFeatureFile` routes only `.feature`
+content through the gate; `.ts` files still use the existing
+structurePreserved check.
+
+### 2. Calculator-shape forms
+
+`isFormPage` used to require ≥1 input with `Required: true`.
+JS-validated forms (calculators, applications) have zero
+required attrs in the rendered DOM, so they emitted no
+JourneyConvert.
+
+`isFormPage` now accepts a calculator-shape fallback when
+`HasForm + hasSubmit`:
+
+- URL or title matches calculator/quote words in EN/NL/DE/FR/
+  ES/IT/PT (`bereken|calculat|simul|estimat|rechner|computar|
+  quote|premium`), OR
+- ≥2 numeric inputs (`number` / `range`).
+
+Search bars and newsletter signups won't match either gate.
+
+`fillValueFor` now consults a name-hint dictionary BEFORE the
+type-map fallback. Multi-language hints map field names/IDs/
+aria-labels to plausible values:
+
+- loan/amount/bedrag/montant/kredit → 250000
+- income/inkomen/salaris/salaire/gehalt → 4500
+- years/looptijd/laufzeit/durée/term → 30
+- rate/rente/zins/taux → 3.5
+- postcode/zip/plz/cap → 1011AB
+- first-name/voornaam/prénom/nombre → Alex
+- last-name/achternaam/surname/apellido → Tester
+- birthday/geboorte/naissance/nacimiento → 1990-01-01
+- message/bericht/nachricht/mensaje → "This is a test
+  message."
+
+The convert template (`pw_happyflow.tmpl`) now emits a
+result-panel visibility assertion after submit when
+`isCalculatorScenario` fires. Site-agnostic selector matches
+class/id/testid containing `result|uitkomst|ergebnis|résultat|
+resultado|risultato`, plus any `[aria-live]` region.
+
+### 3. Exercise capture broadened
+
+The browser probe used to look for the literal `[role="tab"]`,
+`<details>`, `<dialog>` shapes — modern frameworks (React Aria,
+MUI, Headless UI) rarely use these directly. Added:
+
+- `[aria-expanded]` → `kind=collapsible` (accordions, custom
+  tab implementations)
+- `button[aria-pressed]` → `kind=toggle`
+- `input[type="range"]` → `kind=slider`
+
+Capped at 80 captures per page. Plus a `log.Debug` line in
+`browserPageToMindmap` reporting captured counts so SSE viewers
+can diagnose pages where Exercise journeys still don't fire.
+
 ## v0.91.0 — Many-journey emission (auto-escalate + relaxed finders + role-button)
 
 The user's UI probe of ing.nl with `browser=auto`,

@@ -260,6 +260,12 @@ func browserPageToMindmap(bp browserPage) *mindmap.Page {
 			Controls:  ix.Controls,
 		})
 	}
+	// v0.92: log interaction counts so SSE viewers can see at a
+	// glance whether the broadened selectors caught anything. Quiet
+	// when the page has none.
+	if len(p.Interactions) > 0 {
+		log.Debug("browser probe: interactions captured", "url", p.URL, "count", len(p.Interactions))
+	}
 
 	p.Meta = ast.MetaTags{
 		Description:     bp.Meta.Description,

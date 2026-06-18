@@ -2,6 +2,7 @@ package mindmap
 
 import (
 	"net/url"
+	"regexp"
 	"strings"
 )
 
@@ -79,6 +80,20 @@ func isFormPage(p *Page) bool {
 	if !p.HasForm {
 		return false
 	}
+	hasSubmit := false
+	for _, a := range p.Anchors {
+		// v0.91: role-tagged submits count too. <div role="button">
+		// becomes an Anchor with Role="button"; combined with
+		// HasForm + a calculator/required-input signal, that's a
+		// legitimate submit even when the literal HTML tag is a div.
+		if a.Tag == "submit" || a.Role == "button" || a.Role == "submit" {
+			hasSubmit = true
+			break
+		}
+	}
+	if !hasSubmit {
+		return false
+	}
 	hasRequired := false
 	for _, i := range p.Inputs {
 		if i.Required {
@@ -86,18 +101,58 @@ func isFormPage(p *Page) bool {
 			break
 		}
 	}
-	hasSubmit := false
-	for _, a := range p.Anchors {
-		// v0.91: role-tagged submits count too. <div role="button">
-		// becomes an Anchor with Role="button"; combined with
-		// HasForm + ≥1 required input, that's a legitimate submit
-		// signal even when the literal HTML tag is a div.
-		if a.Tag == "submit" || a.Role == "button" || a.Role == "submit" {
-			hasSubmit = true
-			break
+	if hasRequired {
+		return true
+	}
+	// v0.92: calculator-shape fallback. Any site can render an
+	// interactive calculator (mortgage, loan, premium, BMI,
+	// shipping cost, etc.) with JS-side validation only — no
+	// `required` attrs survive into the rendered DOM. Recognise
+	// calculator shape via URL/title hints OR via ≥2 numeric
+	// inputs (number/range). Search bars and newsletter signups
+	// won't match either gate, so we don't over-emit.
+	if isCalculatorShape(p) {
+		return true
+	}
+	return false
+}
+
+// isCalculatorShape returns true when the page looks like an
+// interactive calculator. Two independent signals; either fires.
+// Site-agnostic — works on any URL whose path or title contains a
+// calculator/quote word in EN/NL/DE/ES/FR/IT/PT, or whose form has
+// ≥2 numeric inputs (the classic loan/mortgage/BMI shape).
+func isCalculatorShape(p *Page) bool {
+	if calcURLOrTitle(p) {
+		return true
+	}
+	numericInputs := 0
+	for _, in := range p.Inputs {
+		t := strings.ToLower(strings.TrimSpace(in.Type))
+		if t == "number" || t == "range" {
+			numericInputs++
+			if numericInputs >= 2 {
+				return true
+			}
 		}
 	}
-	return hasRequired && hasSubmit
+	return false
+}
+
+// reCalcHint matches calculator/quote keywords across major Western
+// European languages: bereken (NL), calcul* (EN/FR), simul* (multi),
+// estimat* (EN/FR), rechner (DE), computar (ES/PT), quote (EN),
+// premium (EN insurance). Add more roots here as we encounter them.
+var reCalcHint = regexp.MustCompile(`(?i)(bereken|calculat|simul|estimat|rechner|computar|quote|premium)`)
+
+func calcURLOrTitle(p *Page) bool {
+	if reCalcHint.MatchString(pathLower(p.URL)) {
+		return true
+	}
+	if reCalcHint.MatchString(strings.ToLower(p.Title)) {
+		return true
+	}
+	return false
 }
 
 // isListPage flags a page whose outbound same-origin links form an obvious

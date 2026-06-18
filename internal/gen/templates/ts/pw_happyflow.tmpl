@@ -222,6 +222,13 @@ test.describe('{{.Symbol.Name}}{{if .JourneyKind}} — {{.JourneyKind}} journey{
     // Scoped to the form region (not the whole page) so unrelated
     // marketing copy containing "error" / "failed" doesn't false-positive.
     await expect(page.locator('form, [role="form"]').first().locator('text=/error|failed/i')).toHaveCount(0)
+{{- if isCalculatorScenario $s }}
+    // v0.92: calculator-shape form — after submit, assert a result
+    // panel becomes visible. Site-agnostic selector: anything whose
+    // class/id/testid mentions result / uitkomst / ergebnis /
+    // résultat / resultado / risultato, or an aria-live region.
+    await expect(page.locator('[class*="result" i],[id*="result" i],[data-testid*="result" i],[class*="uitkomst" i],[class*="ergebnis" i],[class*="resultat" i],[class*="resultado" i],[class*="risultato" i],[aria-live]').first()).toBeVisible({ timeout: 10000 })
+{{- end }}
 {{- end }}
 {{- if eq $intent "content" }}
 {{- with firstClickable $s.Anchors }}{{ $a := index . 0 }}
