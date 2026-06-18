@@ -28,6 +28,7 @@ import (
 	"github.com/reviewqa/reviewqa/internal/mindmap"
 	"github.com/reviewqa/reviewqa/internal/openapi"
 	"github.com/reviewqa/reviewqa/internal/plan"
+	"github.com/reviewqa/reviewqa/internal/probe/browser"
 )
 
 // userAgent retained for back-compat with code outside this file
@@ -585,14 +586,30 @@ func synthesiseFallbackJourneys(m *mindmap.Map, originURL string) []mindmap.Jour
 //     run errors (Node missing, Chromium not installed, etc).
 //   - `auto`   → static first; if it returns zero pages AND the
 //     errors look like a WAF rejection, retry through the browser.
+// browserCrawler is the package-level seam tests use to stub the
+// Playwright sidecar without spinning up node. Production aliases
+// runBrowserCrawl directly.
+var browserCrawler = runBrowserCrawl
+
 func crawlOriginWithFallback(ctx context.Context, u string, fetcher mindmap.Fetcher, opts mindmap.Options, mode BrowserMode) (*mindmap.Map, []error) {
 	switch mode {
 	case BrowserNever:
 		return mindmap.Crawl(ctx, u, fetcher, opts)
 	case BrowserAlways:
-		m, errs := runBrowserCrawl(ctx, u)
+		m, errs := browserCrawler(ctx, u)
 		if m != nil && len(m.Pages) > 0 {
 			return m, errs
+		}
+		// v0.88: distinguish "runner couldn't start" from "browser
+		// ran but produced no pages". The former is an environment
+		// problem the user needs to see (node missing, npm install
+		// failed, no network on first install). The latter is a
+		// real crawl that came back empty — silent static fallback
+		// is still the right move there.
+		for _, e := range errs {
+			if errors.Is(e, browser.ErrBrowserUnavailable) {
+				return nil, errs
+			}
 		}
 		for _, e := range errs {
 			log.Warn("browser probe failed; falling back to static", "err", e)
@@ -617,7 +634,7 @@ func crawlOriginWithFallback(ctx context.Context, u string, fetcher mindmap.Fetc
 			return m, errs
 		}
 		log.Info("static probe came back empty / WAF-rejected; retrying via browser probe", "url", u)
-		bm, berrs := runBrowserCrawl(ctx, u)
+		bm, berrs := browserCrawler(ctx, u)
 		if bm != nil && len(bm.Pages) > 0 {
 			return bm, append(errs, berrs...)
 		}

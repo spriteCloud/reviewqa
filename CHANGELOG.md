@@ -7,6 +7,39 @@ shipped the depth-parity arc (Contract, Integration, Mobile, A11y trio).
 v0.61–v0.62 are the live-execution + composer-validation arc — first
 real-site run + composer destination-DOM enforcement.
 
+## v0.88.0 — Shared Playwright runner cache for browser probe
+
+`reviewqa probe --browser always` against any URL from a fresh
+destination (scratch-mode probes into `~/reviewqa-projects/<brand>/`,
+or any project that hasn't run `npm i -D @playwright/test`) used
+to fail Node ESM resolution:
+
+```
+Error [ERR_MODULE_NOT_FOUND]: Cannot find package '@playwright/test'
+imported from /home/oa/reviewqa-projects/ing/.reviewqa-browser-probe-XXX/probe.mjs
+```
+
+The probe then silently fell back to static — which for SPA-heavy
+sites yields one discover-fallback Feature, masking the failure.
+
+v0.88 introduces a shared runner cache at
+`$XDG_CACHE_HOME/reviewqa/playwright-runner/` (default
+`~/.cache/reviewqa/playwright-runner/`). On first browser probe,
+`reviewqa` runs `npm install @playwright/test` + `npx playwright
+install chromium` inside the cache (one-time, ~30s, output
+streamed through the SSE viewer so the user sees progress).
+Every subsequent probe runs from the cache — independent of the
+destination directory. Cross-process safety via flock on
+`.install.lock`.
+
+`--browser always` now distinguishes "runner couldn't start"
+from "browser ran but found nothing": the former (a typed
+`ErrBrowserUnavailable` sentinel from `internal/probe/browser`)
+propagates as an error so the user sees the underlying cause
+instead of silent degradation. A real crawl that returns zero
+pages still falls back to static, because that's a content
+signal, not an environment one.
+
 ## v0.87.2 — Probe subprocess outlives SSE client disconnect
 
 The v0.87.1 UI probe of ing.nl wrote all 167 static specs to
