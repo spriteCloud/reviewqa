@@ -14,6 +14,7 @@ import (
 	"github.com/reviewqa/reviewqa/internal/ast"
 	"github.com/reviewqa/reviewqa/internal/log"
 	"github.com/reviewqa/reviewqa/internal/mindmap"
+	"github.com/reviewqa/reviewqa/internal/plan"
 	"github.com/reviewqa/reviewqa/internal/probe/browser"
 )
 
@@ -92,11 +93,11 @@ type browserResult struct {
 // runBrowserCrawl executes the embedded sidecar script via `node` against
 // the given origin URL and returns a populated mindmap.Map. The engine
 // (chromium|firefox|webkit) selects which Playwright runtime to launch,
-// and stealth toggles playwright-extra + the stealth plugin in the
-// sidecar. Returns an error if `node` isn't available, the runner
-// can't be ensured for this engine, the script bails out, or the JSON
-// is malformed.
-func runBrowserCrawl(ctx context.Context, origin string, engine EngineMode, stealth bool) (*mindmap.Map, []error) {
+// stealth toggles playwright-extra + the stealth plugin, and opts
+// controls how wide/deep the BFS crawl goes. Returns an error if `node`
+// isn't available, the runner can't be ensured for this engine, the
+// script bails out, or the JSON is malformed.
+func runBrowserCrawl(ctx context.Context, origin string, engine EngineMode, stealth bool, opts mindmap.Options) (*mindmap.Map, []error) {
 	if _, err := exec.LookPath("node"); err != nil {
 		return nil, []error{fmt.Errorf("%w: `node` not found in PATH", browser.ErrBrowserUnavailable)}
 	}
@@ -120,7 +121,20 @@ func runBrowserCrawl(ctx context.Context, origin string, engine EngineMode, stea
 	if !stealth {
 		stealthVal = "off"
 	}
-	log.Info("browser probe: launching", "engine", string(engine), "stealth", stealthVal, "origin", origin)
+	// v0.90: thread coverage's page/depth budget into the browser
+	// sidecar. Previously the sidecar hard-capped at 20 pages /
+	// depth 3 regardless of --coverage, so `--coverage max` only
+	// affected the static crawl. Defaults stay in probe.mjs for
+	// backwards compat with direct node invocations.
+	maxPages := opts.MaxPages
+	if maxPages <= 0 {
+		maxPages = 20
+	}
+	maxDepth := opts.MaxDepth
+	if maxDepth <= 0 {
+		maxDepth = 3
+	}
+	log.Info("browser probe: launching", "engine", string(engine), "stealth", stealthVal, "maxPages", maxPages, "maxDepth", maxDepth, "origin", origin)
 
 	cmd := exec.CommandContext(ctx, "node", scriptPath, origin)
 	// Run from the shared runner so node's ESM resolver walks
@@ -132,6 +146,8 @@ func runBrowserCrawl(ctx context.Context, origin string, engine EngineMode, stea
 		"NODE_PATH="+filepath.Join(runnerDir, "node_modules"),
 		"REVIEWQA_ENGINE="+string(engine),
 		"REVIEWQA_STEALTH="+stealthVal,
+		fmt.Sprintf("REVIEWQA_MAX_PAGES=%d", maxPages),
+		fmt.Sprintf("REVIEWQA_MAX_DEPTH=%d", maxDepth),
 	)
 	out, err := cmd.Output()
 	if err != nil {
@@ -263,6 +279,18 @@ func browserPageToMindmap(bp browserPage) *mindmap.Page {
 			})
 		}
 		p.Forms = append(p.Forms, spec)
+	}
+
+	// v0.90: synthesise Anchors from the rendered DOM. The static
+	// crawl path runs ExtractHTMLAnchors over the raw HTML and stores
+	// the result on p.Anchors — that's what isFormPage looks at to
+	// find a `submit`-tagged anchor before flagging a form journey.
+	// The browser path was leaving p.Anchors nil, so form / contact /
+	// auth journey detection silently never fired on browser-probed
+	// pages (e.g. ing.nl's mortgage calculator). Run the same
+	// extractor over DOMHTML now that we have it.
+	if p.DOMHTML != "" {
+		p.Anchors = ast.DedupAnchors(plan.ExtractHTMLAnchors(p.URL, []byte(p.DOMHTML)))
 	}
 
 	// Tags: derive via the existing mindmap.TagPage path — but TagPage is

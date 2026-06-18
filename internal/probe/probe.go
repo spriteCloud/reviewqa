@@ -18,6 +18,7 @@ import (
 	"net/url"
 	"os"
 	"path/filepath"
+	"strconv"
 	"strings"
 	"time"
 
@@ -346,12 +347,18 @@ func (c CoverageMode) crawlOpts() mindmap.Options {
 }
 
 // JourneysPerKind returns the cap on journeys emitted per journey kind.
+// v0.90: CoverageMax now actually raises the cap (used to fall
+// through to the default 3 — same as standard, despite the name).
+// A WithMaxJourneys override on context still wins over the
+// coverage default.
 func (c CoverageMode) JourneysPerKind() int {
 	switch c {
 	case CoverageBreadth:
 		return 1
 	case CoverageDepth:
 		return 6
+	case CoverageMax:
+		return 12
 	}
 	return 3
 }
@@ -363,6 +370,8 @@ func (c CoverageMode) FuzzCap() int {
 		return 3
 	case CoverageDepth:
 		return 10
+	case CoverageMax:
+		return 15
 	}
 	return 5
 }
@@ -498,6 +507,41 @@ func stealthFromCtx(ctx context.Context) bool {
 	return true
 }
 
+type maxJourneysKey struct{}
+
+// WithMaxJourneys overrides the per-kind journey cap from coverage
+// mode. n <= 0 means "use the coverage default". Use this for
+// --max-journeys N when the user explicitly wants more (or fewer)
+// journeys per kind than the coverage default.
+func WithMaxJourneys(ctx context.Context, n int) context.Context {
+	return context.WithValue(ctx, maxJourneysKey{}, n)
+}
+
+func maxJourneysFromCtx(ctx context.Context) int {
+	if v, ok := ctx.Value(maxJourneysKey{}).(int); ok {
+		return v
+	}
+	return 0
+}
+
+// ParseMaxJourneys turns a flag value into a journey cap. Empty /
+// invalid / non-positive → 0, meaning "use the coverage default".
+// Honours REVIEWQA_MAX_JOURNEYS env override.
+func ParseMaxJourneys(s string) int {
+	v := strings.TrimSpace(s)
+	if v == "" {
+		v = strings.TrimSpace(os.Getenv("REVIEWQA_MAX_JOURNEYS"))
+	}
+	if v == "" {
+		return 0
+	}
+	n, err := strconv.Atoi(v)
+	if err != nil || n < 0 {
+		return 0
+	}
+	return n
+}
+
 func runAllImpl(ctx context.Context, urls []string, filter JourneyFilter, coverage CoverageMode) ([]plan.Item, []error) {
 	var items []plan.Item
 	var errs []error
@@ -540,7 +584,7 @@ func probeOneOrigin(ctx context.Context, u string, coverage CoverageMode, filter
 		items = append(items, webhookContractItems(ctx, u)...)
 		return items, crawlErrs
 	}
-	journeys := identifyAndFilterJourneys(m, coverage, filter, u)
+	journeys := identifyAndFilterJourneys(ctx, m, coverage, filter, u)
 	if len(journeys) == 0 {
 		// v0.87 — try to synthesise at least one Gherkin journey
 		// from the landing page's nav links so the UI sidebar isn't
@@ -683,7 +727,7 @@ func crawlOriginWithFallback(ctx context.Context, u string, fetcher mindmap.Fetc
 	case BrowserNever:
 		return mindmap.Crawl(ctx, u, fetcher, opts)
 	case BrowserAlways:
-		m, errs, allUnavailable := runBrowserCascade(ctx, u, engines, stealth)
+		m, errs, allUnavailable := runBrowserCascade(ctx, u, engines, stealth, opts)
 		if m != nil && len(m.Pages) > 0 {
 			return m, errs
 		}
@@ -719,7 +763,7 @@ func crawlOriginWithFallback(ctx context.Context, u string, fetcher mindmap.Fetc
 			return m, errs
 		}
 		log.Info("static probe came back empty / WAF-rejected; retrying via browser probe", "url", u)
-		bm, berrs, _ := runBrowserCascade(ctx, u, engines, stealth)
+		bm, berrs, _ := runBrowserCascade(ctx, u, engines, stealth, opts)
 		if bm != nil && len(bm.Pages) > 0 {
 			return bm, append(errs, berrs...)
 		}
@@ -744,11 +788,11 @@ func enginesFor(mode EngineMode) []EngineMode {
 // errored with ErrBrowserUnavailable — meaning no engine ever got
 // to even try the network — which BrowserAlways treats as a hard
 // failure rather than a content-signal fallback.
-func runBrowserCascade(ctx context.Context, u string, engines []EngineMode, stealth bool) (*mindmap.Map, []error, bool) {
+func runBrowserCascade(ctx context.Context, u string, engines []EngineMode, stealth bool, opts mindmap.Options) (*mindmap.Map, []error, bool) {
 	var allErrs []error
 	allUnavailable := true
 	for i, eng := range engines {
-		m, errs := browserCrawler(ctx, u, eng, stealth)
+		m, errs := browserCrawler(ctx, u, eng, stealth, opts)
 		allErrs = append(allErrs, errs...)
 		if m != nil && len(m.Pages) > 0 {
 			return m, allErrs, false
@@ -772,9 +816,15 @@ func runBrowserCascade(ctx context.Context, u string, engines []EngineMode, stea
 }
 
 // identifyAndFilterJourneys is the journey-discovery + prompt-filter
-// step, lifted out of the main loop for testability.
-func identifyAndFilterJourneys(m *mindmap.Map, coverage CoverageMode, filter JourneyFilter, u string) []mindmap.Journey {
-	journeys := mindmap.IdentifyJourneys(m, coverage.JourneysPerKind())
+// step, lifted out of the main loop for testability. v0.90: a
+// non-zero WithMaxJourneys override on ctx beats the coverage
+// default — that's how `--max-journeys N` wins over `--coverage max`.
+func identifyAndFilterJourneys(ctx context.Context, m *mindmap.Map, coverage CoverageMode, filter JourneyFilter, u string) []mindmap.Journey {
+	cap := coverage.JourneysPerKind()
+	if override := maxJourneysFromCtx(ctx); override > 0 {
+		cap = override
+	}
+	journeys := mindmap.IdentifyJourneys(m, cap)
 	if filter == nil || filter.IsEmpty() {
 		return journeys
 	}

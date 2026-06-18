@@ -82,6 +82,9 @@ type ProbeRequest struct {
 	// Stealth toggles playwright-extra + StealthPlugin for JS-layer
 	// bot-detection evasion. v0.89: on (default) / off.
 	Stealth string `json:"stealth,omitempty"`
+	// MaxJourneys overrides the per-kind journey cap. v0.90: empty
+	// = use coverage default; "N" caps at N per kind.
+	MaxJourneys string `json:"maxJourneys,omitempty"`
 }
 
 // ProbeStream invokes the reviewqa binary's `probe` subcommand and
@@ -144,6 +147,9 @@ func ProbeStream(ctx context.Context, w http.ResponseWriter, workdir string, req
 	}
 	if req.Stealth != "" {
 		args = append(args, "--stealth", req.Stealth)
+	}
+	if req.MaxJourneys != "" {
+		args = append(args, "--max-journeys", req.MaxJourneys)
 	}
 
 	flusher, ok := w.(http.Flusher)

@@ -7,6 +7,44 @@ shipped the depth-parity arc (Contract, Integration, Mobile, A11y trio).
 v0.61–v0.62 are the live-execution + composer-validation arc — first
 real-site run + composer destination-DOM enforcement.
 
+## v0.90.0 — Browser probe journey taxonomy + max-journeys knob
+
+A v0.89.0 probe of ing.nl yielded 3 Features (2 browse, 1
+discover-fallback) but no form journey — even though the
+mortgage calculator on the landing page is a real form with
+required inputs and a submit button. Three stacking issues
+surfaced:
+
+1. **Browser-probed pages had nil Anchors.** The static crawl
+   path runs `plan.ExtractHTMLAnchors` over each fetched HTML
+   and stores the result on `Page.Anchors` — that's what the
+   `isFormPage` heuristic scans for a `submit`-tagged anchor.
+   `browserPageToMindmap` forgot to populate Anchors, so the
+   submit check always returned false and form / contact / auth
+   journeys silently never fired on browser-probed sites.
+
+   Fix: run `ExtractHTMLAnchors` over the captured DOMHTML in
+   `browserPageToMindmap`. Form-class journeys now reach the
+   identifier.
+
+2. **`--coverage max` didn't actually raise the journey cap.**
+   `JourneysPerKind()` had no case for `CoverageMax` — it fell
+   through to the default 3 (same as standard). Mode raised
+   MaxPages to 120 but the journey ceiling stayed at standard.
+   Fix: explicit case returning 12 (and FuzzCap bumped to 15).
+
+3. **Browser sidecar didn't see coverage mode.** `probe.mjs`
+   read `REVIEWQA_MAX_PAGES` / `REVIEWQA_MAX_DEPTH` but the Go
+   side never set them, so the sidecar hard-capped at 20 pages
+   / depth 3 regardless of `--coverage max`'s 120/5 promise.
+   Fix: thread `mindmap.Options` into `runBrowserCrawl` and
+   pass the values via env.
+
+New knob: `--max-journeys N` (env `REVIEWQA_MAX_JOURNEYS`) overrides
+the per-kind cap from coverage mode. Empty = use coverage default;
+positive integer = force that cap. UI HOME card surfaces the
+input next to the engine / stealth selectors.
+
 ## v0.89.0 — Multi-engine browser probe + stealth (auto-cascade)
 
 v0.88.0 fixed Playwright ESM resolution, but the browser probe

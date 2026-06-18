@@ -20,7 +20,7 @@ import (
 func TestCrawlOriginWithFallback_AlwaysBailsOnUnavailable(t *testing.T) {
 	prev := browserCrawler
 	t.Cleanup(func() { browserCrawler = prev })
-	browserCrawler = func(ctx context.Context, u string, engine EngineMode, stealth bool) (*mindmap.Map, []error) {
+	browserCrawler = func(ctx context.Context, u string, engine EngineMode, stealth bool, opts mindmap.Options) (*mindmap.Map, []error) {
 		return nil, []error{fmt.Errorf("%w: node missing", browser.ErrBrowserUnavailable)}
 	}
 
@@ -51,7 +51,7 @@ func TestCrawlOriginWithFallback_AutoCascadeStopsAtFirstSuccess(t *testing.T) {
 	t.Cleanup(func() { browserCrawler = prev })
 
 	var calls []EngineMode
-	browserCrawler = func(ctx context.Context, u string, engine EngineMode, stealth bool) (*mindmap.Map, []error) {
+	browserCrawler = func(ctx context.Context, u string, engine EngineMode, stealth bool, opts mindmap.Options) (*mindmap.Map, []error) {
 		calls = append(calls, engine)
 		if engine == EngineFirefox {
 			return &mindmap.Map{
@@ -79,7 +79,7 @@ func TestCrawlOriginWithFallback_ExplicitEngineDoesNotCascade(t *testing.T) {
 	t.Cleanup(func() { browserCrawler = prev })
 
 	var calls []EngineMode
-	browserCrawler = func(ctx context.Context, u string, engine EngineMode, stealth bool) (*mindmap.Map, []error) {
+	browserCrawler = func(ctx context.Context, u string, engine EngineMode, stealth bool, opts mindmap.Options) (*mindmap.Map, []error) {
 		calls = append(calls, engine)
 		return &mindmap.Map{Origin: u, Pages: map[string]*mindmap.Page{}}, nil
 	}
@@ -98,7 +98,7 @@ func TestCrawlOriginWithFallback_ExplicitEngineDoesNotCascade(t *testing.T) {
 func TestCrawlOriginWithFallback_AlwaysFallsBackOnZeroPages(t *testing.T) {
 	prev := browserCrawler
 	t.Cleanup(func() { browserCrawler = prev })
-	browserCrawler = func(ctx context.Context, u string, engine EngineMode, stealth bool) (*mindmap.Map, []error) {
+	browserCrawler = func(ctx context.Context, u string, engine EngineMode, stealth bool, opts mindmap.Options) (*mindmap.Map, []error) {
 		// Empty mindmap with no Unavailable signal — a real browser
 		// crawl that just found nothing. Static fallback is correct.
 		return &mindmap.Map{Origin: u, Pages: map[string]*mindmap.Page{}}, nil

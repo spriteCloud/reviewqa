@@ -132,7 +132,7 @@ func compareSchema(path string, old, new_ []byte) (string, []plan.CompatRegressi
 }
 
 var (
-	version = "0.89.0"
+	version = "0.90.0"
 )
 
 func main() {
@@ -231,6 +231,7 @@ func newProbeCmd() *cobra.Command {
 	var browser string
 	var engine string
 	var stealth string
+	var maxJourneys string
 	cmd := &cobra.Command{
 		Use:   "probe",
 		Short: "Fetch live URL(s), generate a Playwright happy-flow per URL, open a PR.",
@@ -270,6 +271,7 @@ LLM scenario composer (OPTIONAL):
 			ctx := probe.WithBrowserMode(cmd.Context(), probe.ParseBrowserMode(browser))
 			ctx = probe.WithEngineMode(ctx, probe.ParseEngineMode(engine))
 			ctx = probe.WithStealth(ctx, probe.ParseStealth(stealth))
+			ctx = probe.WithMaxJourneys(ctx, probe.ParseMaxJourneys(maxJourneys))
 			return runProbe(ctx, cfg, urls, probe.ParseCoverage(coverage), local)
 		},
 	}
@@ -282,6 +284,7 @@ LLM scenario composer (OPTIONAL):
 	cmd.Flags().StringVar(&browser, "browser", "auto", "Browser-probe mode: auto (default; retry through Chromium when the static fetch is blocked by a WAF), always (always use Chromium), never (static only — for CI hosts without Node).")
 	cmd.Flags().StringVar(&engine, "engine", "auto", "Playwright engine: auto (cascade chromium→firefox→webkit, default), chromium, firefox, webkit. Each engine binary lazy-installs on first use (~150MB).")
 	cmd.Flags().StringVar(&stealth, "stealth", "on", "Stealth wrapping (playwright-extra + StealthPlugin) to defeat JS-layer bot detection: on (default), off.")
+	cmd.Flags().StringVar(&maxJourneys, "max-journeys", "", "Override the per-kind journey cap (default: coverage mode decides — breadth 1, standard 3, depth 6, max 12). Set to a positive integer to force a specific cap. Env: REVIEWQA_MAX_JOURNEYS.")
 	return cmd
 }
 
