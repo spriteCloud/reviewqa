@@ -919,6 +919,11 @@ async function renderHome () {
     el('option', { value: 'depth' }, 'depth'),
     el('option', { value: 'max' }, 'max'),
   )
+  const $browser = el('select', { class: 'home-probe-coverage', title: 'Browser-probe mode' },
+    el('option', { value: 'auto' }, 'browser: auto'),
+    el('option', { value: 'always' }, 'browser: always'),
+    el('option', { value: 'never' }, 'browser: never'),
+  )
   const $btn = el('button', { class: 'btn-primary home-probe-btn', onclick: () => startProbe() }, '▶ Probe')
   const $terminal = el('pre', { class: 'run-terminal home-probe-terminal' }, '$ awaiting probe…')
   const $verdict = el('div', { class: 'home-probe-verdict' })
@@ -946,7 +951,7 @@ async function renderHome () {
       const res = await fetch('/api/probe', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ url, coverage: $coverage.value }),
+        body: JSON.stringify({ url, coverage: $coverage.value, browser: $browser.value }),
         signal: ctrl.signal,
       })
       if (!res.ok || !res.body) {
@@ -986,9 +991,20 @@ async function renderHome () {
             $terminal.scrollTop = $terminal.scrollHeight
           } else if (evt === 'done') {
             const ok = !!payload.passed
-            $verdict.textContent = ok
-              ? `Probe succeeded (exit ${payload.exitCode})`
-              : `Probe failed (exit ${payload.exitCode})${payload.error ? ' — ' + payload.error : ''}`
+            const items = (typeof payload.itemCount === 'number') ? payload.itemCount : -1
+            let msg
+            if (ok) {
+              msg = items > 0
+                ? `Probe succeeded — ${items} item${items === 1 ? '' : 's'} generated.`
+                : `Probe succeeded (exit ${payload.exitCode}).`
+            } else {
+              const reason = payload.reason || payload.error || 'unknown'
+              msg = `Probe failed — ${reason}`
+              if ($browser.value !== 'always' && /waf|blocked|drop|forbidden/i.test(reason)) {
+                msg += '   (Tip: set "browser: always" and retry.)'
+              }
+            }
+            $verdict.textContent = msg
             $verdict.className = 'home-probe-verdict ' + (ok ? 'pass' : 'fail')
             toast(ok ? 'Done' : 'Probe failed', ok ? 'ok' : 'fail')
             if (ok) {
@@ -1060,7 +1076,7 @@ async function renderHome () {
     el('section', { class: 'home-card home-probe-card' },
       el('h2', { class: 'home-card-title' }, 'Probe a URL'),
       el('p', { class: 'home-card-sub' }, 'Tests appear in the sidebar when done.'),
-      el('div', { class: 'home-probe-row' }, $urlInput, $coverage, $btn),
+      el('div', { class: 'home-probe-row' }, $urlInput, $coverage, $browser, $btn),
       $terminal,
       $verdict,
     ),

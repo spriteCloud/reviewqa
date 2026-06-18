@@ -30,7 +30,12 @@ import (
 	"github.com/reviewqa/reviewqa/internal/plan"
 )
 
-const userAgent = "reviewqa-probe/1 (+https://github.com/spriteCloud/reviewqa)"
+// userAgent retained for back-compat with code outside this file
+// (graphql.go and webhook.go reference it). The fetch path uses
+// applyDefaultHeaders from headers.go, which sends a browser-
+// shaped UA + Sec-Fetch-* headers so we get past WAFs that
+// fingerprint by header shape.
+const userAgent = chromeUserAgent
 
 // Result is the outcome of a single Fetch.
 type Result struct {
@@ -54,10 +59,12 @@ func Fetch(ctx context.Context, target string) (*Result, error) {
 	if err != nil {
 		return nil, fmt.Errorf("probe: build request: %w", err)
 	}
-	req.Header.Set("User-Agent", userAgent)
-	// v0.52 — broadened Accept so OpenAPI/Swagger JSON endpoints
-	// don't 406 on us (petstore3.swagger.io did). We still prefer
-	// HTML for the crawl path; JSON/XML come second.
+	// v0.86 — set the full browser-shaped header set so WAFs that
+	// fingerprint by header shape (Akamai, Cloudflare Bot Manager)
+	// don't drop us at HTTP/2 protocol level.
+	applyDefaultHeaders(req)
+	// Re-broaden Accept after the default header pass so OpenAPI /
+	// Swagger JSON endpoints don't 406 on us (petstore3 did).
 	req.Header.Set("Accept", "text/html,application/xhtml+xml,application/json;q=0.9,application/yaml;q=0.8,*/*;q=0.5")
 	resp, err := client.Do(req)
 	if err != nil {
@@ -359,17 +366,65 @@ func (c CoverageMode) FuzzCap() int {
 	return 5
 }
 
+// BrowserMode picks how the crawler invokes the Playwright-backed
+// browser probe. `auto` is the v0.86 default: try the static
+// fetch first, fall back to the browser when the error matches
+// `looksLikeWAFRejection`. `always` skips the static attempt;
+// `never` keeps the old static-only behaviour for CI hosts
+// without Node + Chromium.
+type BrowserMode string
+
+const (
+	BrowserAuto   BrowserMode = "auto"
+	BrowserAlways BrowserMode = "always"
+	BrowserNever  BrowserMode = "never"
+)
+
+// ParseBrowserMode normalises a flag value, accepting empty
+// strings and the legacy REVIEWQA_BROWSER_PROBE=1 env override.
+func ParseBrowserMode(s string) BrowserMode {
+	switch strings.ToLower(strings.TrimSpace(s)) {
+	case "always":
+		return BrowserAlways
+	case "never":
+		return BrowserNever
+	default:
+		// Empty / "auto" / anything else.
+		if os.Getenv("REVIEWQA_BROWSER_PROBE") == "1" {
+			return BrowserAlways
+		}
+		return BrowserAuto
+	}
+}
+
+// browserModeKey is the context-attached BrowserMode override.
+// Set by RunAllWithBrowserMode; defaults to BrowserAuto.
+type browserModeKey struct{}
+
+// WithBrowserMode threads a BrowserMode through to the lower-
+// level crawl helpers via context.
+func WithBrowserMode(ctx context.Context, mode BrowserMode) context.Context {
+	return context.WithValue(ctx, browserModeKey{}, mode)
+}
+
+func browserModeFromCtx(ctx context.Context) BrowserMode {
+	if v, ok := ctx.Value(browserModeKey{}).(BrowserMode); ok && v != "" {
+		return v
+	}
+	return ParseBrowserMode("")
+}
+
 func runAllImpl(ctx context.Context, urls []string, filter JourneyFilter, coverage CoverageMode) ([]plan.Item, []error) {
 	var items []plan.Item
 	var errs []error
 	fetcher := mindmapFetcher(ctx)
-	useBrowser := os.Getenv("REVIEWQA_BROWSER_PROBE") == "1"
+	mode := browserModeFromCtx(ctx)
 	for _, raw := range urls {
 		u := strings.TrimSpace(raw)
 		if u == "" {
 			continue
 		}
-		urlItems, urlErrs := probeOneOrigin(ctx, u, coverage, filter, fetcher, useBrowser)
+		urlItems, urlErrs := probeOneOrigin(ctx, u, coverage, filter, fetcher, mode)
 		errs = append(errs, urlErrs...)
 		items = append(items, urlItems...)
 	}
@@ -379,7 +434,7 @@ func runAllImpl(ctx context.Context, urls []string, filter JourneyFilter, covera
 // probeOneOrigin is the per-URL fan-out, split out of runAllImpl to
 // keep cyclomatic complexity in check. Orchestrates crawl → journey
 // identification → filter → fan-out across the spec families.
-func probeOneOrigin(ctx context.Context, u string, coverage CoverageMode, filter JourneyFilter, fetcher mindmap.Fetcher, useBrowser bool) ([]plan.Item, []error) {
+func probeOneOrigin(ctx context.Context, u string, coverage CoverageMode, filter JourneyFilter, fetcher mindmap.Fetcher, mode BrowserMode) ([]plan.Item, []error) {
 	opts := coverage.crawlOpts()
 	// v0.41b — REVIEWQA_IGNORE_ROBOTS=1 lets the operator disable
 	// robots.txt Disallow honoring (eg. for an internal QA crawl of
@@ -388,7 +443,7 @@ func probeOneOrigin(ctx context.Context, u string, coverage CoverageMode, filter
 	if os.Getenv("REVIEWQA_IGNORE_ROBOTS") == "1" {
 		opts.IgnoreRobots = true
 	}
-	m, crawlErrs := crawlOriginWithFallback(ctx, u, fetcher, opts, useBrowser)
+	m, crawlErrs := crawlOriginWithFallback(ctx, u, fetcher, opts, mode)
 	if m == nil || len(m.Pages) == 0 {
 		// v0.52 — even when the spider gets zero pages back (SPA shell
 		// with no static HTML), the origin may still expose an
@@ -438,21 +493,56 @@ func probeOneOrigin(ctx context.Context, u string, coverage CoverageMode, filter
 	return items, crawlErrs
 }
 
-// crawlOriginWithFallback runs the browser crawl when requested and
-// falls back to the static crawl on any failure. Pure plumbing — no
-// item emission.
-func crawlOriginWithFallback(ctx context.Context, u string, fetcher mindmap.Fetcher, opts mindmap.Options, useBrowser bool) (*mindmap.Map, []error) {
-	if !useBrowser {
+// crawlOriginWithFallback orchestrates static vs browser crawl per
+// BrowserMode. v0.86 expanded `auto` to ALSO fall through to the
+// browser probe when the static error chain matches a WAF
+// signature — that catches sites like ing.nl that drop the
+// connection at HTTP/2 layer for non-browser clients.
+//
+//   - `never`  → static only (CI hosts without Chromium).
+//   - `always` → browser only; falls back to static if the browser
+//     run errors (Node missing, Chromium not installed, etc).
+//   - `auto`   → static first; if it returns zero pages AND the
+//     errors look like a WAF rejection, retry through the browser.
+func crawlOriginWithFallback(ctx context.Context, u string, fetcher mindmap.Fetcher, opts mindmap.Options, mode BrowserMode) (*mindmap.Map, []error) {
+	switch mode {
+	case BrowserNever:
 		return mindmap.Crawl(ctx, u, fetcher, opts)
+	case BrowserAlways:
+		m, errs := runBrowserCrawl(ctx, u)
+		if m != nil && len(m.Pages) > 0 {
+			return m, errs
+		}
+		for _, e := range errs {
+			log.Warn("browser probe failed; falling back to static", "err", e)
+		}
+		return mindmap.Crawl(ctx, u, fetcher, opts)
+	default: // BrowserAuto
+		m, errs := mindmap.Crawl(ctx, u, fetcher, opts)
+		if m != nil && len(m.Pages) > 0 {
+			return m, errs
+		}
+		// Decide whether to retry through the browser. If we have
+		// any error that looks like a WAF rejection — or we got
+		// zero pages with no errors at all (silent block) — retry.
+		retry := len(errs) == 0
+		for _, e := range errs {
+			if looksLikeWAFRejection(e) {
+				retry = true
+				break
+			}
+		}
+		if !retry {
+			return m, errs
+		}
+		log.Info("static probe came back empty / WAF-rejected; retrying via browser probe", "url", u)
+		bm, berrs := runBrowserCrawl(ctx, u)
+		if bm != nil && len(bm.Pages) > 0 {
+			return bm, append(errs, berrs...)
+		}
+		// Browser also failed — return whichever errs we collected.
+		return m, append(errs, berrs...)
 	}
-	m, errs := runBrowserCrawl(ctx, u)
-	if m != nil && len(m.Pages) > 0 {
-		return m, errs
-	}
-	for _, e := range errs {
-		log.Warn("browser probe failed; falling back to static", "err", e)
-	}
-	return mindmap.Crawl(ctx, u, fetcher, opts)
 }
 
 // identifyAndFilterJourneys is the journey-discovery + prompt-filter

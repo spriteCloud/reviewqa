@@ -132,7 +132,7 @@ func compareSchema(path string, old, new_ []byte) (string, []plan.CompatRegressi
 }
 
 var (
-	version = "0.85"
+	version = "0.86"
 )
 
 func main() {
@@ -228,6 +228,7 @@ func newProbeCmd() *cobra.Command {
 	var coverage string
 	var llm string
 	var ignoreRobots bool
+	var browser string
 	cmd := &cobra.Command{
 		Use:   "probe",
 		Short: "Fetch live URL(s), generate a Playwright happy-flow per URL, open a PR.",
@@ -264,7 +265,8 @@ LLM scenario composer (OPTIONAL):
 			cfg.DryRun = dryRun
 			applyLLMOverride(&cfg, llm)
 			applyIgnoreRobots(ignoreRobots)
-			return runProbe(cmd.Context(), cfg, urls, probe.ParseCoverage(coverage), local)
+			ctx := probe.WithBrowserMode(cmd.Context(), probe.ParseBrowserMode(browser))
+			return runProbe(ctx, cfg, urls, probe.ParseCoverage(coverage), local)
 		},
 	}
 	cmd.Flags().StringSliceVar(&urls, "url", nil, "URL to probe (repeatable; may also be set via REVIEWQA_TARGET_URLS env)")
@@ -273,6 +275,7 @@ LLM scenario composer (OPTIONAL):
 	cmd.Flags().StringVar(&coverage, "coverage", coverageDefault(), "Coverage mode: breadth | standard | depth | max (env: REVIEWQA_COVERAGE)")
 	cmd.Flags().StringVar(&llm, "llm", llmDefault(), "LLM scenario composer endpoint (e.g. http://100.82.34.115:11434). Local-only; never set in CI. (env: REVIEWQA_LLM)")
 	cmd.Flags().BoolVar(&ignoreRobots, "ignore-robots", false, "Crawl pages disallowed by robots.txt. Default OFF — only enable for QA of sites you own.")
+	cmd.Flags().StringVar(&browser, "browser", "auto", "Browser-probe mode: auto (default; retry through Chromium when the static fetch is blocked by a WAF), always (always use Chromium), never (static only — for CI hosts without Node).")
 	return cmd
 }
 
@@ -563,8 +566,18 @@ func finishProbe(ctx context.Context, cfg config.Config, urls []string, items []
 		rlog.Warn("probe url failed", "err", e)
 	}
 	if len(items) == 0 {
-		rlog.Info("probe: no items produced")
-		return nil
+		// v0.86: surface zero-item outcomes as failures so callers
+		// (the serve UI's /api/probe streamer in particular) can
+		// render a red verdict instead of silently reporting
+		// "Probe succeeded" with an empty sidebar.
+		hint := "site may be unreachable, blocked by a WAF, or has no crawlable content"
+		for _, e := range errs {
+			if probe.LooksLikeWAFRejection(e) {
+				hint = "site likely blocked us — try --browser=always for a real-browser crawl"
+				break
+			}
+		}
+		return fmt.Errorf("probe: no items produced (%s)", hint)
 	}
 	// v0.25: LLM scenario composer — strictly opt-in via --llm.
 	// Mutates feature items in-place to attach ExtraScenarios.
