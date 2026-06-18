@@ -18,6 +18,7 @@ import (
 	"sync"
 	"time"
 
+	"github.com/reviewqa/reviewqa/internal/composer"
 	"github.com/reviewqa/reviewqa/internal/config"
 	"github.com/reviewqa/reviewqa/internal/log"
 )
@@ -84,6 +85,18 @@ func (c *Client) Humanize(ctx context.Context, lang, symbolName string, content 
 	humanized := applyRewrites(content, parseRewrites(resp))
 	if !structurePreserved(lang, content, humanized) {
 		log.Warn("llm output failed structure check; falling back to deterministic", "symbol", symbolName, "lang", lang)
+		return content
+	}
+	// v0.92: .feature files have no `import|describe|it(|test(` shape,
+	// so structurePreserved is a no-op for Gherkin. Without a Gherkin-
+	// specific guard the LLM can rewrite a step value to include nested
+	// unescaped quotes — Gherkin then parses the step with the wrong
+	// {string} parameter count, no step-def binds, and bddgen aborts
+	// with "Missing step definitions". Guard: every Given/When/Then in
+	// the humanized output must still match a registered step-def
+	// pattern.
+	if composer.LooksLikeFeatureFile(humanized) && !composer.IsGherkinSafe(humanized) {
+		log.Warn("llm humanize produced unrunnable Gherkin; falling back to deterministic", "symbol", symbolName)
 		return content
 	}
 	log.Debug("llm humanize applied", "symbol", symbolName, "lang", lang)

@@ -205,6 +205,25 @@ async function collectPage(page, requestedURL) {
       if (el.getAttribute('role') === 'tab') return
       out.push({ kind: 'popup', text: (el.innerText || '').trim() })
     })
+    // v0.92: broaden capture for modern JS frameworks that rarely
+    // use the literal `role="tab"`/`<details>` patterns. Catches
+    // React Aria, MUI, Headless UI accordions/tabs/toggle buttons.
+    // Cap at 50 to bound noisy nav-heavy pages.
+    document.querySelectorAll('[aria-expanded]').forEach(el => {
+      if (out.length >= 80) return
+      // Skip already-covered patterns to avoid double-counting.
+      if (el.hasAttribute('data-toggle') || el.hasAttribute('data-bs-toggle')) return
+      if (el.getAttribute('role') === 'tab') return
+      out.push({ kind: 'collapsible', text: (el.innerText || '').trim().slice(0, 120), role: el.getAttribute('role') || '' })
+    })
+    document.querySelectorAll('button[aria-pressed]').forEach(el => {
+      if (out.length >= 80) return
+      out.push({ kind: 'toggle', text: (el.innerText || '').trim().slice(0, 120) })
+    })
+    document.querySelectorAll('input[type="range"]').forEach(el => {
+      if (out.length >= 80) return
+      out.push({ kind: 'slider', name: el.getAttribute('name') || '', inputType: 'range' })
+    })
     return out
   })
 

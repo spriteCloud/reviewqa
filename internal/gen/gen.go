@@ -11,6 +11,7 @@ import (
 	"os"
 	"path"
 	"path/filepath"
+	"regexp"
 	"sort"
 	"strings"
 	"text/template"
@@ -345,6 +346,7 @@ var funcs = template.FuncMap{
 	"firstRequiredInput":    firstRequiredInput,
 	"firstEmailInput":       firstEmailInput,
 	"firstOversizableInput": firstOversizableInput,
+	"isCalculatorScenario":  isCalculatorScenario,
 	"isAbsoluteURL": func(s string) bool {
 		return strings.HasPrefix(s, "http://") || strings.HasPrefix(s, "https://")
 	},
@@ -860,7 +862,17 @@ var fillByType = map[string]string{
 
 // fillValueFor returns a deterministic test value for a form input. The
 // value never reflects PR diff content — purely type/name-derived.
+//
+// v0.92: name-hint dictionary runs BEFORE the type-map fallback so
+// calculator-shape forms (loan amount, monthly income, term in years,
+// interest rate, deposit, postcode, birthday) get plausible values
+// instead of the generic "42" / "test". The hints match across EN/
+// NL/DE/FR/ES — site-agnostic; any insurance/loan/BMI/shipping
+// calculator that names its fields naturally gets reasonable input.
 func fillValueFor(i ast.FormInput) string {
+	if v, ok := fillByNameHint(i); ok {
+		return v
+	}
 	if v, ok := fillByType[i.Type]; ok {
 		return v
 	}
@@ -868,6 +880,47 @@ func fillValueFor(i ast.FormInput) string {
 		return i.Name + "-value"
 	}
 	return "test"
+}
+
+// nameHints maps a regex over input names/IDs/placeholders to a
+// realistic numeric/string value. Multi-language to cover non-English
+// sites — Dutch (NL), German (DE), French (FR), Spanish (ES), and
+// English (EN). Order matters: the FIRST match wins, so put narrower
+// hints (postcode) before broader ones (number-only).
+var nameHints = []struct {
+	pattern *regexp.Regexp
+	value   string
+}{
+	// Numeric calculator fields ----------------------------------
+	{regexp.MustCompile(`(?i)(loan|lening|prêt|kredit|prestamo|principal|bedrag|amount|montant|betrag|monto|importo)`), "250000"},
+	{regexp.MustCompile(`(?i)(income|inkomen|salaris|salaire|gehalt|stipendio|salario|earnings|verdienst)`), "4500"},
+	{regexp.MustCompile(`(?i)(deposit|aanbetaling|anzahlung|apport|deposito|inbreng|cash)`), "50000"},
+	{regexp.MustCompile(`(?i)(years|jaar|term|looptijd|laufzeit|durée|durata|plazo|tenure|months)`), "30"},
+	{regexp.MustCompile(`(?i)(rate|rente|zins|taux|tasso|tipo|interest|interesse)`), "3.5"},
+	{regexp.MustCompile(`(?i)(weight|gewicht|poids|peso)`), "75"},
+	{regexp.MustCompile(`(?i)(height|lengte|grootte|grootte|größe|taille|altura|altezza)`), "175"},
+	{regexp.MustCompile(`(?i)(age|leeftijd|alter|edad|età|âge)`), "35"},
+	// Text-ish fields ---------------------------------------------
+	{regexp.MustCompile(`(?i)(postcode|postal|zip|plz|cap|cep)`), "1011AB"},
+	{regexp.MustCompile(`(?i)(birthday|geboorte|geburt|naissance|nacimiento|nascita)`), "1990-01-01"},
+	{regexp.MustCompile(`(?i)(first.?name|voornaam|vorname|prénom|nombre|nome)`), "Alex"},
+	{regexp.MustCompile(`(?i)(last.?name|achternaam|nachname|surname|apellido|cognome)`), "Tester"},
+	{regexp.MustCompile(`(?i)(message|bericht|nachricht|mensaje|messaggio)`), "This is a test message."},
+}
+
+func fillByNameHint(i ast.FormInput) (string, bool) {
+	candidates := []string{i.Name, i.TestID, i.Aria, i.Placeholder}
+	for _, h := range nameHints {
+		for _, c := range candidates {
+			if c == "" {
+				continue
+			}
+			if h.pattern.MatchString(c) {
+				return h.value, true
+			}
+		}
+	}
+	return "", false
 }
 
 // inputLocator chooses the Playwright locator for a form input in priority
@@ -1045,6 +1098,35 @@ func intentFor(s ast.Symbol) string {
 
 // hasRequiredInput is true when any FormInput in the slice is marked
 // required. Used to gate the onSubmit validation scenario.
+// reCalcHint matches calculator/quote words in EN/NL/DE/FR/ES/IT/PT.
+// Site-agnostic — used by isCalculatorScenario in the template helper
+// chain. Kept private to gen; mindmap has its own copy of the same
+// pattern for tag-time decisions.
+var reCalcHint = regexp.MustCompile(`(?i)(bereken|calculat|simul|estimat|rechner|computar|quote|premium)`)
+
+// isCalculatorScenario returns true when a Symbol carries the shape
+// of an interactive calculator — page title hints OR ≥2 numeric
+// inputs. The template uses this to emit a result-panel visibility
+// assertion after submit. Generic across sites; any insurance,
+// mortgage, loan, BMI, or shipping calculator with naturally-named
+// fields fires.
+func isCalculatorScenario(s ast.Symbol) bool {
+	if reCalcHint.MatchString(strings.ToLower(s.PageTitle)) {
+		return true
+	}
+	numeric := 0
+	for _, in := range s.Inputs {
+		switch strings.ToLower(strings.TrimSpace(in.Type)) {
+		case "number", "range":
+			numeric++
+			if numeric >= 2 {
+				return true
+			}
+		}
+	}
+	return false
+}
+
 func hasRequiredInput(inputs []ast.FormInput) bool {
 	for _, i := range inputs {
 		if i.Required {
