@@ -7,6 +7,64 @@ shipped the depth-parity arc (Contract, Integration, Mobile, A11y trio).
 v0.61–v0.62 are the live-execution + composer-validation arc — first
 real-site run + composer destination-DOM enforcement.
 
+## v0.86 — Probe any website (WAF bypass + zero-item visibility)
+
+User probed `ing.nl` from the v0.85 UI and got no scenarios.
+Akamai/Cloudflare-style WAFs drop HTTP/2 streams from
+non-browser clients, the static probe got `stream ID 9;
+INTERNAL_ERROR`, no pages came back, the CLI exited 0 with the
+log line `"probe: no items produced"`, and the UI showed a green
+"Probe succeeded" with an empty sidebar. v0.86 fixes both halves.
+
+### Browser-shaped headers
+- New `internal/probe/headers.go` with `applyDefaultHeaders` —
+  Chrome-on-Linux UA + the full `Sec-Ch-Ua`, `Sec-Fetch-*`,
+  `Accept-Language`, `Upgrade-Insecure-Requests` set every
+  modern browser sends on a top-level navigation. Defeats
+  header-shape fingerprinting (the easy 80% of bot detection).
+- The real probe identity moves to a custom
+  `X-Reviewqa-Probe: reviewqa-probe/1 (+...)` header so honest
+  origins can still tell who we are.
+
+### `--browser` flag with auto-fallback
+- New flag on `reviewqa probe`: `--browser auto|always|never`.
+  Default `auto`.
+- `auto` tries the static fetch first; if pages came back, done.
+  If the static crawl returned zero pages AND any error matches
+  `looksLikeWAFRejection` (HTTP/2 `INTERNAL_ERROR`,
+  `connection reset by peer`, 403 / 429 / 503, TLS handshake
+  failures), it retries the URL through the Playwright-driven
+  browser probe (`internal/probe/browser/probe.mjs`). The
+  browser presents as real Chromium and gets through where the
+  static client can't.
+- `always` skips the static attempt; `never` keeps the legacy
+  static-only path (for CI hosts without Node/Chromium).
+- `REVIEWQA_BROWSER_PROBE=1` legacy env still works — maps to
+  `--browser=always`.
+
+### Zero-items now surface as failure
+- `finishProbe` returns a real error when the probe produced no
+  items. The CLI exits non-zero. The error message includes
+  context — "site likely blocked us — try --browser=always for a
+  real-browser crawl" when WAF signatures are detected.
+- `/api/probe` SSE `done` event gains `itemCount` + `reason`
+  fields. The endpoint scans the captured CLI stdout for
+  `probe: wrote local files count=N` / `probe: no items
+  produced` markers and surfaces them.
+- `streamCommand` keeps a 200-line ring buffer so the endpoint
+  can read post-run without re-piping.
+
+### UI: browser select + accurate verdict
+- HOME probe row gains a `browser: auto/always/never` select
+  alongside coverage.
+- Failed probes now show a red verdict with the reason. When the
+  failure looks like a WAF block and the user isn't already on
+  `always`, the verdict appends a tip to switch.
+- No auto-switch into an empty new project on failure.
+
+4 new tests (browser-shaped headers, WAF detector table,
+ParseBrowserMode + legacy env override). 590 → 594 passing.
+
 ## v0.85 — Scratch mode (launch the UI with no project)
 
 User: *"What if I want to start from scratch without any project

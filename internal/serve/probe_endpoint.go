@@ -12,10 +12,48 @@ import (
 	"path/filepath"
 	"strconv"
 	"strings"
+	"sync"
 	"time"
 
 	"github.com/reviewqa/reviewqa/internal/probe"
 )
+
+// capture holds the most recent stdout lines from the most recent
+// streamCommand invocation. The probe endpoint reads it post-run
+// to derive item count / verdict reason from log markers without
+// re-running the subprocess. Not concurrent-safe by design —
+// streamCommand is gated by acquireRun's per-workdir lock and the
+// probe endpoint is the only other reader.
+var (
+	captureMu    sync.Mutex
+	captureLines []string
+)
+
+const captureMax = 200
+
+func resetCapture() {
+	captureMu.Lock()
+	captureLines = captureLines[:0]
+	captureMu.Unlock()
+}
+
+func captureLine(line string) {
+	captureMu.Lock()
+	if len(captureLines) >= captureMax {
+		captureLines = append(captureLines[1:], line)
+	} else {
+		captureLines = append(captureLines, line)
+	}
+	captureMu.Unlock()
+}
+
+func lastStdoutLines() []string {
+	captureMu.Lock()
+	out := make([]string, len(captureLines))
+	copy(out, captureLines)
+	captureMu.Unlock()
+	return out
+}
 
 // ProbeRequest is the JSON body accepted by POST /api/probe.
 //
@@ -27,6 +65,9 @@ type ProbeRequest struct {
 	Coverage    string `json:"coverage,omitempty"`
 	JourneyKind string `json:"journeyKind,omitempty"`
 	LLM         string `json:"llm,omitempty"`
+	// Browser picks how the CLI invokes the browser probe.
+	// v0.86: auto / always / never. Empty defaults to auto.
+	Browser string `json:"browser,omitempty"`
 }
 
 // ProbeStream invokes the reviewqa binary's `probe` subcommand and
@@ -75,6 +116,15 @@ func ProbeStream(ctx context.Context, w http.ResponseWriter, workdir string, req
 	if req.LLM != "" {
 		args = append(args, "--llm", req.LLM)
 	}
+	// v0.86: pass through the browser-probe mode. The serve UI's
+	// user has Node + Playwright available so `auto` is the right
+	// default — it tries static first, then falls back to Chromium
+	// when the static client gets WAF-blocked.
+	browserMode := req.Browser
+	if browserMode == "" {
+		browserMode = "auto"
+	}
+	args = append(args, "--browser", browserMode)
 
 	flusher, ok := w.(http.Flusher)
 	if !ok {
@@ -95,22 +145,86 @@ func ProbeStream(ctx context.Context, w http.ResponseWriter, workdir string, req
 	cmd.Dir = cwd
 	cmd.Env = os.Environ()
 	exitCode, err := streamCommand(ctx, w, flusher, cmd)
+
+	// Inspect the captured stdout lines to derive item count + a
+	// short human reason for the verdict. The streamer tees into
+	// captureRecentLines (set up in streamCommand); we read that
+	// here via the package-scoped lastStdoutLines slice.
+	itemCount, reason := parseProbeOutcome(lastStdoutLines())
+
 	if err != nil {
 		writeEvent(w, flusher, "done", map[string]any{
-			"exitCode": -1,
-			"passed":   false,
-			"error":    err.Error(),
-			"at":       time.Now().UTC().Format(time.RFC3339),
+			"exitCode":  -1,
+			"passed":    false,
+			"itemCount": itemCount,
+			"reason":    firstNonEmpty(err.Error(), reason),
+			"error":     err.Error(),
+			"at":        time.Now().UTC().Format(time.RFC3339),
 		})
 		return -1, err
 	}
 
+	passed := exitCode == 0 && itemCount != 0
+	finalReason := reason
+	if !passed && finalReason == "" {
+		finalReason = "Probe finished with no items"
+	}
 	writeEvent(w, flusher, "done", map[string]any{
-		"exitCode": exitCode,
-		"passed":   exitCode == 0,
-		"at":       time.Now().UTC().Format(time.RFC3339),
+		"exitCode":  exitCode,
+		"passed":    passed,
+		"itemCount": itemCount,
+		"reason":    finalReason,
+		"at":        time.Now().UTC().Format(time.RFC3339),
 	})
 	return exitCode, nil
+}
+
+func firstNonEmpty(a, b string) string {
+	if a != "" {
+		return a
+	}
+	return b
+}
+
+// parseProbeOutcome scans the streamed CLI stdout for the markers
+// `probe: wrote local files` (success — followed by a count) and
+// `probe: no items produced` (failure). Returns the inferred item
+// count (-1 if unknown) and a short verdict line for the UI.
+func parseProbeOutcome(lines []string) (int, string) {
+	count := -1
+	reason := ""
+	for _, line := range lines {
+		low := strings.ToLower(line)
+		switch {
+		case strings.Contains(low, "probe: wrote local files"):
+			// log format: 'probe: wrote local files count=N workdir=...'
+			if i := strings.Index(line, "count="); i >= 0 {
+				rest := line[i+len("count="):]
+				j := 0
+				for j < len(rest) && rest[j] >= '0' && rest[j] <= '9' {
+					j++
+				}
+				if j > 0 {
+					n := 0
+					for k := 0; k < j; k++ {
+						n = n*10 + int(rest[k]-'0')
+					}
+					count = n
+				}
+			}
+		case strings.Contains(low, "probe: no items produced"):
+			count = 0
+			// Tail of the line is the parenthesised hint.
+			if i := strings.Index(line, "("); i >= 0 {
+				reason = strings.TrimSuffix(line[i+1:], ")")
+			} else {
+				reason = "Site unreachable or empty crawl"
+			}
+		case strings.Contains(low, "internal_error") && strings.Contains(low, "received from peer"):
+			reason = "Site dropped the connection (likely a WAF). Try --browser=always for a real-browser crawl."
+		}
+	}
+	return count, reason
 }
 
 // probeCwd returns the directory the probe subprocess should run in

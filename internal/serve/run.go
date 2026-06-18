@@ -303,6 +303,11 @@ type RunRequest struct {
 
 // streamCommand spawns cmd, pipes stdout+stderr, and writes each line
 // as a "line" SSE event. Returns the exit code; -1 on spawn errors.
+//
+// As of v0.86 the streamer ALSO captures the last 200 lines into a
+// package-scoped ring buffer (`lastStdoutLines`) so the probe
+// endpoint can parse them post-hoc for item counts / WAF
+// signatures without re-piping.
 func streamCommand(ctx context.Context, w http.ResponseWriter, flusher http.Flusher, cmd *exec.Cmd) (int, error) {
 	stdout, err := cmd.StdoutPipe()
 	if err != nil {
@@ -312,10 +317,13 @@ func streamCommand(ctx context.Context, w http.ResponseWriter, flusher http.Flus
 	if err := cmd.Start(); err != nil {
 		return -1, fmt.Errorf("start: %w", err)
 	}
+	resetCapture()
 	scanner := bufio.NewScanner(stdout)
 	scanner.Buffer(make([]byte, 0, 64<<10), 1<<20)
 	for scanner.Scan() {
-		writeEvent(w, flusher, "line", map[string]any{"text": scanner.Text()})
+		line := scanner.Text()
+		captureLine(line)
+		writeEvent(w, flusher, "line", map[string]any{"text": line})
 	}
 	_ = scanner.Err()
 	exitCode := 0
