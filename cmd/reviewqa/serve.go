@@ -24,15 +24,14 @@ func newServeCmd() *cobra.Command {
 		Use:   "serve",
 		Short: "Open a local browser UI for tailoring an existing reviewqa-generated project.",
 		Long: `Start a localhost HTTP server that loads a reviewqa-generated
-project (the kind ` + "`reviewqa probe`" + ` produces) and renders a
-read-only UI for browsing every Feature, Scenario, and step. Useful
-when you want to review the generated suite without diving into the
-IDE — sidebar lists each .feature file, click any to see its Scenarios
-rendered with brand styling. Stakeholder docs (catalogue, summary,
-findings) are surfaced alongside.
+project (or a vanilla Playwright project) and renders the UI for
+browsing, running, chat-editing and probing.
 
-This is Phase A of the serve workflow. Editing, locator suggestion,
-and AI-composed step bindings ship in follow-up releases.`,
+Scratch mode (v0.85): pass --workdir to a non-existent path (or
+just run from any empty directory) and the server boots with no
+project loaded. HOME shows the Probe + Import cards; once you
+probe a URL, the result lands in ~/reviewqa-projects/<brand>/ and
+the UI auto-switches into it.`,
 		RunE: func(cmd *cobra.Command, args []string) error {
 			ctx := cmd.Context()
 			return serve.Run(ctx, serve.Options{
