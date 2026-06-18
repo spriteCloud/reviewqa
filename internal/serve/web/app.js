@@ -1019,6 +1019,34 @@ async function renderHome () {
     shelfTile('🐞', 'Findings', 'Real failures from the last run.', () => openDocByKind('findings')),
   )
 
+  // Import card: paste a path to any existing Playwright project
+  // and switch into it. Same backend call the switcher dropdown
+  // uses; this is the obvious front-and-centre version.
+  const $importInput = el('input', { type: 'text', class: 'home-probe-input', placeholder: '/absolute/path/to/your/playwright-project', autocomplete: 'off' })
+  const $importBtn = el('button', { class: 'btn-primary home-probe-btn', onclick: () => doImport() }, 'Import')
+  const $importVerdict = el('div', { class: 'home-probe-verdict' })
+  async function doImport () {
+    const path = $importInput.value.trim()
+    if (!path) {
+      $importVerdict.textContent = 'Enter a path first.'
+      $importVerdict.className = 'home-probe-verdict fail'
+      return
+    }
+    $importBtn.disabled = true
+    try {
+      await switchTo(path)
+      $importVerdict.textContent = ''
+    } catch (err) {
+      $importVerdict.textContent = 'Import failed: ' + err.message
+      $importVerdict.className = 'home-probe-verdict fail'
+    } finally {
+      $importBtn.disabled = false
+    }
+  }
+  $importInput.addEventListener('keydown', e => {
+    if (e.key === 'Enter') { e.preventDefault(); doImport() }
+  })
+
   $content.replaceChildren(
     el('div', { class: 'home-cover' },
       el('span', { class: 'label' }, 'home'),
@@ -1031,6 +1059,12 @@ async function renderHome () {
       el('div', { class: 'home-probe-row' }, $urlInput, $coverage, $btn),
       $terminal,
       $verdict,
+    ),
+    el('section', { class: 'home-card' },
+      el('h2', { class: 'home-card-title' }, 'Import a project'),
+      el('p', { class: 'home-card-sub' }, 'Already have Playwright tests? Paste the folder path.'),
+      el('div', { class: 'home-probe-row' }, $importInput, $importBtn),
+      $importVerdict,
     ),
     el('section', { class: 'home-card' },
       el('h2', { class: 'home-card-title' }, 'What you can do'),
@@ -1118,26 +1152,48 @@ async function openSpec (spec) {
   activeHome = false
   activeSettings = false
   refreshSidebarSelection()
-  $content.replaceChildren(
-    el('div', { class: 'feature-header' },
-      el('h1', {}, spec.name),
-      el('div', { class: 'path' }, spec.path),
-    ),
-    ...(spec.tests || []).map(t => el('div', { class: 'scenario' },
-      el('div', { class: 'scenario-head' },
-        el('div', { class: 'scenario-name-wrap' },
-          el('div', { class: 'scenario-name' }, t.name),
+
+  const banner = renderRunPreflightBanner()
+
+  // Group tests by Describe so the layout reads like feature →
+  // scenarios. Tests with no describe land in a default group.
+  const groups = new Map()
+  for (const t of (spec.tests || [])) {
+    const key = t.describe || ''
+    if (!groups.has(key)) groups.set(key, [])
+    groups.get(key).push(t)
+  }
+
+  const nodes = []
+  nodes.push(el('div', { class: 'feature-header' },
+    el('h1', {}, spec.name),
+    el('div', { class: 'path' }, spec.path),
+  ))
+  if (banner) nodes.push(banner)
+
+  for (const [groupName, tests] of groups) {
+    if (groupName) {
+      nodes.push(el('h2', { class: 'spec-describe' }, groupName))
+    }
+    for (const t of tests) {
+      nodes.push(el('div', { class: 'scenario' },
+        el('div', { class: 'scenario-head' },
+          el('div', { class: 'scenario-name-wrap' },
+            el('div', { class: 'scenario-name' }, t.name),
+            renderLastRunPill(t.lastRun, t.name),
+          ),
+          el('div', { class: 'scenario-actions' },
+            el('button', {
+              class: 'btn-primary run-btn' + (runStatus.ready ? '' : ' disabled'),
+              title: runStatus.ready ? 'Run via npx playwright test' : runStatus.message,
+              onclick: () => runStatus.ready && openRunDrawer({ path: spec.path, name: spec.name }, { name: t.name, steps: [] }),
+            }, '▶ Run'),
+          ),
         ),
-        el('div', { class: 'scenario-actions' },
-          el('button', {
-            class: 'btn-primary run-btn' + (runStatus.ready ? '' : ' disabled'),
-            title: runStatus.ready ? 'Run via npx playwright test' : runStatus.message,
-            onclick: () => runStatus.ready && openRunDrawer({ path: spec.path, name: spec.name }, { name: t.name, steps: [] }),
-          }, '▶ Run'),
-        ),
-      ),
-    )),
-  )
+      ))
+    }
+  }
+  $content.replaceChildren(...nodes)
 }
 
 function renderHistoryList (project) {
@@ -1371,12 +1427,16 @@ async function openProjectMenu () {
     menu.appendChild(el('div', { class: 'project-menu-empty' }, 'No other projects yet.'))
   }
 
-  const $open = el('input', { type: 'text', placeholder: '/absolute/path/to/workdir', autocomplete: 'off' })
-  const $openBtn = el('button', { class: 'btn-ghost', onclick: () => switchTo($open.value.trim()) }, 'Open')
+  menu.appendChild(el('div', { class: 'project-menu-section' }, 'Import'))
+  const $open = el('input', { type: 'text', placeholder: '/absolute/path/to/project', autocomplete: 'off' })
+  const $openBtn = el('button', { class: 'btn-ghost', onclick: () => switchTo($open.value.trim()) }, 'Import')
   $open.addEventListener('keydown', e => {
     if (e.key === 'Enter') { e.preventDefault(); switchTo($open.value.trim()) }
   })
   menu.appendChild(el('div', { class: 'project-menu-open' }, $open, $openBtn))
+  // Auto-focus the input so a user opening the menu can type
+  // straight away.
+  setTimeout(() => $open.focus(), 0)
 
   const $trigger = document.querySelector('[data-project-trigger]')
   $trigger.parentNode.appendChild(menu)

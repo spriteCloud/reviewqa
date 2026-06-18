@@ -1308,6 +1308,21 @@ code, pre { font-family: 'Fira Code', ui-monospace, monospace; }
   box-sizing: border-box;
 }
 
+/* SPEC DESCRIBE — group heading inside the Tests view. Sits
+ * above a cluster of scenario cards, matching the visual rhythm
+ * of feature-header for the parent file. */
+.spec-describe {
+  font-family: 'Sora', sans-serif;
+  font-weight: 600;
+  font-size: 18px;
+  letter-spacing: -0.01em;
+  color: var(--deep-water);
+  margin: 24px 0 12px;
+  padding-bottom: 6px;
+  border-bottom: 1px dashed var(--border-warm);
+}
+.spec-describe:first-of-type { margin-top: 8px; }
+
 /* RUN HISTORY POPOVER — anchored to the scenario's last-run pill. */
 .last-run-pill-clickable { cursor: pointer; }
 .last-run-pill-clickable:hover { filter: brightness(.95); }

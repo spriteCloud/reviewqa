@@ -7,6 +7,42 @@ shipped the depth-parity arc (Contract, Integration, Mobile, A11y trio).
 v0.61–v0.62 are the live-execution + composer-validation arc — first
 real-site run + composer destination-DOM enforcement.
 
+## v0.84 — Hide Tests for reviewqa projects + HOME Import card + spec rendering parity
+
+Three fixes after looking at `examples/spritecloud-com-dgx`:
+
+### 1. Tests section suppressed for reviewqa projects
+v0.80's `loadSpecs` walked `tests/e2e/` recursively and surfaced
+all 222 reviewqa-emitted `*.spec.ts` layer artifacts (a11y,
+mobile, contract, security, network, perf, visual, …) as
+"Tests" — visually overwhelming AND incorrect (they're already
+covered by Run from the Gherkin Scenario view).
+- New `isReviewqaProject(workdir)` checks for any `.feature`
+  file or `tests/e2e/steps/reviewqa.steps.ts`. When either
+  exists, `loadSpecs` returns `nil`. The Tests sidebar
+  disappears.
+- Vanilla Playwright projects keep the Tests section.
+
+### 2. HOME Import card
+Front-and-centre import. New full-width "Import a project"
+card on HOME, under the Probe card. One labelled input + an
+Import button. Shells the same `POST /api/switch-project` the
+switcher dropdown uses. The dropdown's bottom input is also
+renamed "Import" and auto-focuses when the menu opens.
+
+### 3. Spec rendering parity with features
+When the Tests section IS visible, the per-spec page now reads
+like a feature page:
+- `parseSpecFile` tracks `test.describe()` source ranges via a
+  brace-counting scan so each test attaches the innermost
+  containing describe.
+- `openSpec` groups tests by Describe heading and renders each
+  as a scenario card — same last-run pill, Run button, chrome.
+- `loadSpecs` joins in `LoadLastRunIndex(workdir)` so the pill
+  surfaces immediately.
+
+584 → 585 passing.
+
 ## v0.83 — Design tokens + responsive polish + final docs
 
 End-of-arc release closing out the v0.80–v0.83 onboarding /
