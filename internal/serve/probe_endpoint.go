@@ -133,12 +133,37 @@ func probeCwd(workdir string) string {
 // dir named after `BrandFromOrigin(url)`, suffixing `-1`, `-2`, etc.
 // if a non-reviewqa dir already squats the slot.
 //
+// Scratch mode (v0.85): when the current workdir is empty or
+// doesn't exist on disk, we have no parent dir to plant a sibling
+// in. Fall back to a per-user projects root at
+// `~/reviewqa-projects/<brand>/` — same XDG-ish location pattern
+// as the settings file at `~/.config/reviewqa/serve.json`. Falls
+// back to cwd if the user's home dir can't be resolved.
+//
 // Created dirs are mkdir'd here so the probe subprocess has a cwd to
 // run in. The frontend reads the destination from the SSE `start`
 // event so it can /api/switch-project to the new dir on `done`.
 func pickProbeDestination(workdir string, u *url.URL) string {
-	current := probeCwd(workdir)
 	brand := probe.BrandFromHost(u.Host)
+	// Scratch mode: no current project; pick the user-level root.
+	if workdir == "" {
+		if home, err := os.UserHomeDir(); err == nil {
+			parent := filepath.Join(home, "reviewqa-projects")
+			return reserveSiblingDir(parent, brand, workdir)
+		}
+		// Last-resort fallback: cwd.
+		cwd, _ := os.Getwd()
+		return reserveSiblingDir(cwd, brand, workdir)
+	}
+	if info, err := os.Stat(workdir); err != nil || !info.IsDir() {
+		if home, err := os.UserHomeDir(); err == nil {
+			parent := filepath.Join(home, "reviewqa-projects")
+			return reserveSiblingDir(parent, brand, workdir)
+		}
+		cwd, _ := os.Getwd()
+		return reserveSiblingDir(cwd, brand, workdir)
+	}
+	current := probeCwd(workdir)
 	if brand == "" {
 		return current
 	}
@@ -147,7 +172,23 @@ func pickProbeDestination(workdir string, u *url.URL) string {
 		strings.HasPrefix(strings.ToLower(filepath.Base(current)), brand) {
 		return current
 	}
-	parent := filepath.Dir(current)
+	return reserveSiblingDir(filepath.Dir(current), brand, current)
+}
+
+// reserveSiblingDir picks a destination subdir of `parent` named
+// after `brand`. If `parent/brand` is free it's created and
+// returned. If a reviewqa-looking project already exists there we
+// re-probe in place. If a non-reviewqa dir (or non-dir file) is
+// squatting the slot, we suffix `-1`, `-2`, … until we find a free
+// or compatible slot. Returns `fallback` if anything fails (parent
+// can't be created, 100 collisions, etc).
+func reserveSiblingDir(parent, brand, fallback string) string {
+	if brand == "" {
+		return fallback
+	}
+	if err := os.MkdirAll(parent, 0o755); err != nil {
+		return fallback
+	}
 	candidate := filepath.Join(parent, brand)
 	for i := 1; i < 100; i++ {
 		info, err := os.Stat(candidate)
@@ -156,7 +197,7 @@ func pickProbeDestination(workdir string, u *url.URL) string {
 			if mkerr := os.MkdirAll(candidate, 0o755); mkerr == nil {
 				return candidate
 			}
-			return current
+			return fallback
 		}
 		if !info.IsDir() {
 			candidate = filepath.Join(parent, brand+"-"+strconv.Itoa(i))
@@ -169,7 +210,7 @@ func pickProbeDestination(workdir string, u *url.URL) string {
 		}
 		candidate = filepath.Join(parent, brand+"-"+strconv.Itoa(i))
 	}
-	return current
+	return fallback
 }
 
 // handleProbe is the http handler. Registered by Run as

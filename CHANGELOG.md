@@ -7,6 +7,44 @@ shipped the depth-parity arc (Contract, Integration, Mobile, A11y trio).
 v0.61–v0.62 are the live-execution + composer-validation arc — first
 real-site run + composer destination-DOM enforcement.
 
+## v0.85 — Scratch mode (launch the UI with no project)
+
+User: *"What if I want to start from scratch without any project
+loaded, probe and then automatically load the probed site?"*
+
+`reviewqa serve` used to hard-fail when the workdir didn't exist.
+Now it tolerates a missing path and opens the UI in scratch mode.
+
+- `Run()` no longer errors on a non-existent workdir. It logs
+  "starting in scratch mode" and boots normally.
+- `loadProject` marks the response with `scratch: true` when the
+  workdir is empty or doesn't exist on disk.
+- `pickProbeDestination` falls back to
+  `~/reviewqa-projects/<brand>/` in scratch mode. New
+  `reserveSiblingDir` helper factors the collision-safe branch
+  out from the v0.81 in-place path.
+- Frontend:
+  - Header pill reads "no project" when scratch.
+  - HOME hero copy adjusts: "Start with a URL. / No project
+    loaded. Probe a site to generate one, or import an existing
+    folder."
+  - Sidebar empty-state reads "Probe a URL to get started."
+  - Run-preflight banner suppressed in scratch mode.
+
+Auto-switch after probe was already wired by v0.81's SSE
+`start.workdir` field — no UI change there.
+
+**Usage:**
+
+```bash
+mkdir /tmp/fresh && cd /tmp/fresh
+/tmp/reviewqa serve --no-browser
+# Server boots; UI opens on HOME with Probe + Import.
+# Probe ing.nl → lands in ~/reviewqa-projects/ing/, UI switches in.
+```
+
+5 new tests; 585 → 590 passing.
+
 ## v0.84 — Hide Tests for reviewqa projects + HOME Import card + spec rendering parity
 
 Three fixes after looking at `examples/spritecloud-com-dgx`:

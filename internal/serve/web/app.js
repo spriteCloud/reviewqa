@@ -152,6 +152,9 @@ function scenarioToGherkin (sc) {
 
 function renderRunPreflightBanner () {
   if (runStatus.ready) return null
+  // Scratch mode: no project loaded — Run is meaningless until
+  // the user probes / imports something. Suppress the banner.
+  if (window.__project && window.__project.scratch) return null
   const workdir = (window.__project && window.__project.workdir) || ''
   const cmd = workdir ? `cd ${workdir} && npm install && npx playwright install` : 'npm install && npx playwright install'
   const copyBtn = el('button', { class: 'btn-ghost', onclick: async () => {
@@ -839,14 +842,14 @@ async function init () {
   try {
     const project = await fetchJSON('/api/project')
     window.__project = project
-    $projectName.textContent = project.name
+    $projectName.textContent = project.scratch ? 'no project' : project.name
     document.title = `reviewqa · ${project.name}`
     const $badge = document.querySelector('[data-brand-badge]')
     if ($badge && project.version) $badge.textContent = `v${project.version} · local`
 
     $featureList.replaceChildren()
     if (!project.features.length) {
-      $featureList.appendChild(el('li', { class: 'empty' }, 'No .feature files found'))
+      $featureList.appendChild(el('li', { class: 'empty' }, project.scratch ? 'Probe a URL to get started' : 'No .feature files found'))
     } else {
       for (const f of project.features) {
         const meta = `${f.scenarios} scenario${f.scenarios === 1 ? '' : 's'}${f.tags && f.tags.length ? ' · ' + f.tags.join(' ') : ''}`
@@ -1047,11 +1050,12 @@ async function renderHome () {
     if (e.key === 'Enter') { e.preventDefault(); doImport() }
   })
 
+  const isScratch = !!(window.__project && window.__project.scratch)
   $content.replaceChildren(
     el('div', { class: 'home-cover' },
       el('span', { class: 'label' }, 'home'),
-      el('h1', { class: 'home-title' }, 'Probe a URL or pick a feature.'),
-      el('p', { class: 'home-sub' }, 'Probe a site, run tests, edit with chat.'),
+      el('h1', { class: 'home-title' }, isScratch ? 'Start with a URL.' : 'Probe a URL or pick a feature.'),
+      el('p', { class: 'home-sub' }, isScratch ? 'No project loaded. Probe a site to generate one, or import an existing folder.' : 'Probe a site, run tests, edit with chat.'),
     ),
     el('section', { class: 'home-card home-probe-card' },
       el('h2', { class: 'home-card-title' }, 'Probe a URL'),
@@ -1100,7 +1104,7 @@ async function reloadProject () {
     window.__project = project
     $featureList.replaceChildren()
     if (!project.features.length) {
-      $featureList.appendChild(el('li', { class: 'empty' }, 'No .feature files found'))
+      $featureList.appendChild(el('li', { class: 'empty' }, project.scratch ? 'Probe a URL to get started' : 'No .feature files found'))
     } else {
       for (const f of project.features) {
         const meta = `${f.scenarios} scenario${f.scenarios === 1 ? '' : 's'}${f.tags && f.tags.length ? ' · ' + f.tags.join(' ') : ''}`

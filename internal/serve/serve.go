@@ -64,8 +64,14 @@ func Run(ctx context.Context, opts Options) error {
 	if err != nil {
 		return fmt.Errorf("serve: resolve workdir: %w", err)
 	}
-	if info, err := os.Stat(workdir); err != nil || !info.IsDir() {
-		return fmt.Errorf("serve: workdir %q is not a directory", workdir)
+	// v0.85 — scratch mode. If the resolved workdir doesn't exist
+	// (or isn't a directory), we keep going anyway. The UI opens on
+	// HOME with Probe + Import as the only meaningful affordances;
+	// disk readers tolerate a missing path and return empty results.
+	// A user launching `reviewqa serve` from an empty dir lands in
+	// scratch mode automatically.
+	if info, statErr := os.Stat(workdir); statErr != nil || !info.IsDir() {
+		opts.Logf("reviewqa serve: workdir %q not present — starting in scratch mode", workdir)
 	}
 	handler := Handler(workdir)
 	srv := &http.Server{
@@ -502,6 +508,7 @@ type Project struct {
 	Name     string       `json:"name"`
 	Workdir  string       `json:"workdir"`
 	Version  string       `json:"version,omitempty"`
+	Scratch  bool         `json:"scratch,omitempty"`
 	Features []FeatureRef `json:"features"`
 	Specs    []SpecRef    `json:"specs,omitempty"`
 	Docs     []DocRef     `json:"docs,omitempty"`
@@ -534,6 +541,13 @@ func loadProject(workdir string) Project {
 		Name:    filepath.Base(workdir),
 		Workdir: workdir,
 		Version: BinaryVersion,
+	}
+	// Scratch mode: empty path, or the path doesn't exist on disk.
+	// The frontend surfaces empty-state copy when Scratch is true.
+	if workdir == "" {
+		p.Scratch = true
+	} else if info, err := os.Stat(workdir); err != nil || !info.IsDir() {
+		p.Scratch = true
 	}
 	featuresDir := filepath.Join(workdir, "tests", "e2e", "features")
 	if entries, err := os.ReadDir(featuresDir); err == nil {
