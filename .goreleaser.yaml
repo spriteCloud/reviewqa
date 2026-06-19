@@ -12,15 +12,19 @@ builds:
     binary: quail
     env:
       - CGO_ENABLED=0
-    # ponytail: Windows skipped — internal/probe/browser/runner.go uses
-    # syscall.Flock (Unix-only). Quail targets Linux/macOS CI + dev; if
-    # Windows is ever in scope, port the lock helper behind a build tag.
     goos:
       - linux
       - darwin
+      - windows
     goarch:
       - amd64
       - arm64
+    ignore:
+      # quail: Windows arm64 demand is low; revisit if asked. The
+      # other Windows arch (amd64) builds cleanly via the build-tag
+      # split in internal/probe/browser/flock_{unix,windows}.go.
+      - goos: windows
+        goarch: arm64
     ldflags:
       - -s -w -X main.version={{ .Version }}
 
@@ -28,9 +32,17 @@ archives:
   - id: quail
     name_template: "quail_{{ .Os }}_{{ .Arch }}"
     format: tar.gz
+    format_overrides:
+      - goos: windows
+        format: zip
     files:
       - LICENSE
       - README.md
+      # Windows double-click launcher: starts `quail serve` and opens
+      # the default browser at http://127.0.0.1:8765/. Harmless ride-
+      # along on Unix archives.
+      - src: scripts/quail-serve.bat
+        dst: quail-serve.bat
 
 checksum:
   name_template: checksums.txt
