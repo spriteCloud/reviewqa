@@ -1,6 +1,10 @@
 package composer
 
-import "testing"
+import (
+	"testing"
+
+	"reflect"
+)
 
 const stepsFixture = `import { expect } from '@playwright/test'
 import { createBdd } from 'playwright-bdd'
@@ -60,9 +64,9 @@ func TestIsGherkinSafeAgainst(t *testing.T) {
 
 func TestPatternParamsEqual(t *testing.T) {
 	cases := []struct {
-		name     string
-		a, b     string
-		want     bool
+		name string
+		a, b string
+		want bool
 	}{
 		{"identical literal", "'I open the landing page'", "'I open the landing page'", true},
 		{"rephrased literal same arity", "'I am on the landing page'", "'I am on the home page'", true},
@@ -137,4 +141,19 @@ Then(/^the headline says "([^"]+)"$/, async ({ page }, text: string) => {
 			t.Errorf("handler hash changed for #%d after pattern-only rewrite: %q -> %q", i, a[i], c[i])
 		}
 	}
+}
+func TestHandlerHashes(t *testing.T) {
+	t.Run("happy path", func(t *testing.T) {
+		got := HandlerHashes(nil)
+		if reflect.DeepEqual(got, *new([]string)) {
+			t.Fatalf("got zero value: %#v", got)
+		}
+	})
+
+	t.Run("returns expected type", func(t *testing.T) {
+		got := HandlerHashes(nil)
+		if got, want := reflect.TypeOf(got), reflect.TypeOf(*new([]string)); got != want {
+			t.Fatalf("type = %v, want %v", got, want)
+		}
+	})
 }

@@ -107,3 +107,8 @@ func TestUniqueStepPhrases(t *testing.T) {
 		t.Fatalf("want 2 unique phrases (deduped across files), got %d: %v", len(got), got)
 	}
 }
+func TestHumanizeSuite(t *testing.T) {
+	t.Run("happy path", func(t *testing.T) {
+		HumanizeSuite(nil, "", nil, nil)
+	})
+}
