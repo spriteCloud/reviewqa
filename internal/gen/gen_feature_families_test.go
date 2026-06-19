@@ -5,8 +5,51 @@ import (
 	"testing"
 
 	"github.com/spriteCloud/quail/internal/ast"
+	"github.com/spriteCloud/quail/internal/composer"
 	"github.com/spriteCloud/quail/internal/plan"
 )
+
+// Param Outline + Examples rows must produce step text that
+// playwright-bdd's regex matcher can bind. Regression: v0.37
+// shipped a `with-quotes` row whose value contained literal `"`
+// chars; substituted into `When I enter "<value>"…` it produced
+// three `"` in the value span and bddgen rejected the file with
+// "Missing step definitions". composer.IsGherkinSafe already
+// detects the malformed shape — this test runs the deterministic
+// renderer's output through that same check so future template
+// edits can't reintroduce the class.
+func TestFeatureTemplate_ParamExamples_PassGherkinSafetyCheck(t *testing.T) {
+	landing := ast.Symbol{
+		Name: "X", Kind: ast.KindComponent, File: "https://x.test/", Language: "ts",
+		PageTitle: "Home",
+		HasForm:   true,
+		Inputs: []ast.FormInput{
+			// Pick a text-like input so paramRowsFor returns the
+			// `short / with-spaces / unicode / emoji / rtl-mark /
+			// zero-width / with-quotes` row set.
+			{Name: "q", Type: "text"},
+		},
+	}
+	it := plan.Item{
+		Symbol:      landing,
+		Symbols:     []ast.Symbol{landing},
+		PageURL:     "https://x.test/",
+		Template:    plan.TmplPlaywrightFeature,
+		OutPath:     "tests/e2e/features/x-convert.feature",
+		JourneyKind: "convert",
+	}
+	out, err := Render([]plan.Item{it}, t.TempDir())
+	if err != nil {
+		t.Fatal(err)
+	}
+	body := out[0].Content
+	if !strings.Contains(string(body), "@kind:param") {
+		t.Fatalf("expected @kind:param Scenario Outline in body:\n%s", body)
+	}
+	if !composer.IsGherkinSafe(body) {
+		t.Errorf("deterministic param Examples produced unsafe Gherkin (step quote-nesting):\n%s", body)
+	}
+}
 
 func TestFeatureTemplate_BoundaryAndRetryFamilies(t *testing.T) {
 	landing := ast.Symbol{

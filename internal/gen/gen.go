@@ -1248,7 +1248,11 @@ func paramRowsFor(i ast.FormInput) []paramRow {
 			{"emoji", "hello 🎉 world 🌍"},
 			{"rtl-mark", "test ‏rtl‎ content"},
 			{"zero-width", "sample​‌‍text"},
-			{"with-quotes", "she said \"hello\" & 'goodbye'"},
+			// quail: single-quotes only — the surrounding step span uses
+			// "..." quotes; nesting `"` here breaks playwright-bdd's
+			// {string} parser. Still exercises the "value contains
+			// quote chars" boundary.
+			{"with-quotes", "she said 'hello' & 'goodbye'"},
 		}
 	}
 	return nil
