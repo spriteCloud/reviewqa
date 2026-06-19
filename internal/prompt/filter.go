@@ -4,7 +4,7 @@ import (
 	"net/url"
 	"strings"
 
-	"github.com/reviewqa/reviewqa/internal/mindmap"
+	"github.com/spriteCloud/quail/internal/mindmap"
 )
 
 // Apply narrows the given journeys to those that match the filter.

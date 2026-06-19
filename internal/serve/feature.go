@@ -1,9 +1,9 @@
-// Package serve hosts the local browser UI for tailoring reviewqa-generated
-// projects (the `reviewqa serve` subcommand introduced in v0.65).
+// Package serve hosts the local browser UI for tailoring quail-generated
+// projects (the `quail serve` subcommand introduced in v0.65).
 //
 // feature.go is the parser side. It reads a .feature file and emits a
 // JSON-friendly shape (Feature → Scenarios → Steps). It is line-oriented
-// and intentionally minimal — reviewqa generates a narrow subset of
+// and intentionally minimal — quail generates a narrow subset of
 // Gherkin (Feature header, optional As/I want/So lines, Scenario blocks
 // with @tags + Given/When/Then/And/But steps). Tables, doc strings,
 // outlines, and rules are out of scope for Phase A and would be added
@@ -15,7 +15,7 @@ import (
 	"os"
 	"strings"
 
-	"github.com/reviewqa/reviewqa/internal/composer"
+	"github.com/spriteCloud/quail/internal/composer"
 )
 
 // Feature is the parsed shape of one .feature file.

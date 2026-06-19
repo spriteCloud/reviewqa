@@ -16,11 +16,11 @@ import (
 	"strings"
 	"text/template"
 
-	"github.com/reviewqa/reviewqa/internal/ast"
-	"github.com/reviewqa/reviewqa/internal/log"
-	"github.com/reviewqa/reviewqa/internal/mindmap"
-	"github.com/reviewqa/reviewqa/internal/plan"
-	"github.com/reviewqa/reviewqa/internal/probe"
+	"github.com/spriteCloud/quail/internal/ast"
+	"github.com/spriteCloud/quail/internal/log"
+	"github.com/spriteCloud/quail/internal/mindmap"
+	"github.com/spriteCloud/quail/internal/plan"
+	"github.com/spriteCloud/quail/internal/probe"
 )
 
 //go:embed all:templates
@@ -116,7 +116,7 @@ func annotateQualityReport(content []byte, sym ast.Symbol) ([]byte, []string) {
 		return content, nil
 	}
 	var b strings.Builder
-	b.WriteString("/* reviewqa quality report\n")
+	b.WriteString("/* quail quality report\n")
 	b.WriteString(" * Weak / missing locators on this page:\n")
 	for _, n := range notes {
 		fmt.Fprintf(&b, " *   - %s\n", n)
@@ -367,7 +367,7 @@ var funcs = template.FuncMap{
 		return fmt.Sprintf("'%s'", p)
 	},
 	// hasKnownFailurePattern reports whether the symbol carries one of
-	// the known-broken patterns reviewqa recognises (today: Webflow
+	// the known-broken patterns quail recognises (today: Webflow
 	// data-wait submit). When true, the template marks the test with
 	// test.fail() so CI doesn't burn on a known-broken spec.
 	"hasKnownFailurePattern": func(s ast.Symbol) bool {
@@ -1273,7 +1273,7 @@ type renderData struct {
 	// v0.25: LLM-composed scenarios for the feature template.
 	ExtraScenarios []plan.ExtraScenario
 	LLMModel       string
-	// v0.27: integration-test context (reviewqa.yml-derived).
+	// v0.27: integration-test context (quail.yml-derived).
 	Integration *plan.IntegrationCtx
 }
 

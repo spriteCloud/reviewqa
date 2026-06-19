@@ -1,7 +1,7 @@
-# reviewqa
+# quail
 
-[![GitHub Marketplace](https://img.shields.io/badge/Marketplace-reviewqa-1B365D?logo=github&logoColor=white&labelColor=0F1117)](https://github.com/marketplace/actions/reviewqa)
-[![Release](https://img.shields.io/github/v/release/spriteCloud/reviewqa?color=4B8BBE&labelColor=0F1117)](https://github.com/spriteCloud/reviewqa/releases)
+[![GitHub Marketplace](https://img.shields.io/badge/Marketplace-quail-1B365D?logo=github&logoColor=white&labelColor=0F1117)](https://github.com/marketplace/actions/quail)
+[![Release](https://img.shields.io/github/v/release/spriteCloud/quail?color=4B8BBE&labelColor=0F1117)](https://github.com/spriteCloud/quail/releases)
 [![License: AGPL-3.0](https://img.shields.io/badge/license-AGPL--3.0-C0805A?labelColor=0F1117)](./LICENSE)
 
 A small Go binary + GitHub Action that watches a PR (or a live URL), opens a
@@ -12,7 +12,7 @@ broken locators when they drift.
 - **Deterministic-first**: regex/AST/HTML extractors emit test scaffolds the
   same way every time. LLM-composed Scenarios are an OPT-IN second layer.
 - **10-layer taxonomy** out of the box: Unit, Component, API, Contract,
-  Integration, Backend, UI, Mobile, Data, Non-functional. See [docs](https://spritecloud.github.io/reviewqa/docs.html).
+  Integration, Backend, UI, Mobile, Data, Non-functional. See [docs](https://spritecloud.github.io/quail/docs.html).
 - **Inference is yours**: any OpenAI-compatible base URL (Ollama, vLLM,
   DGX-hosted vLLM, OpenAI).
 
@@ -25,10 +25,10 @@ runnable Playwright + Gherkin project. Re-emit on every release via
 
 ## Tailor the generated suite locally
 
-`reviewqa serve` opens a local browser UI for browsing AND editing the
+`quail serve` opens a local browser UI for browsing AND editing the
 Features, Scenarios, and stakeholder docs of an existing project. As of
 v0.66 you can delete, edit, and append Scenarios from the UI; each edit
-is backed up under `tests/e2e/.reviewqa-history/`. v0.67 adds a 🔍 suggest
+is backed up under `tests/e2e/.quail-history/`. v0.67 adds a 🔍 suggest
 button on each step — probe a destination URL and the UI ranks candidate
 Playwright locators against your hint. v0.68 wires an **AI compose**
 button into the editor: type free Gherkin, set a destination URL, and
@@ -44,19 +44,19 @@ and Apply the assistant's proposed update with one click.
   output as Server-Sent Events; per-step verdicts post-parsed from
   the JSON reporter; last-run pill persists across reloads.
 - **v0.76 — HOME view + probe from the UI.** Sidebar opens on a HOME
-  panel with a Probe form that shells out to `reviewqa probe --local`
+  panel with a Probe form that shells out to `quail probe --local`
   (no GitHub token needed) and streams stdout into a terminal panel.
   Project list auto-refreshes on success.
 - **v0.77 — Settings page.** Edits persist to
-  `~/.config/reviewqa/serve.json` (mode 0600) and take effect on the
+  `~/.config/quail/serve.json` (mode 0600) and take effect on the
   next API call. Toggle LLM on/off, set endpoint / model / API key /
   timeout (with a Test-connection button), set probe + run defaults.
 - **v0.78 — Project switcher + Stakeholder Summary rewrite + history.**
-  The header pill is now a dropdown that lists sibling reviewqa
+  The header pill is now a dropdown that lists sibling quail
   projects, plus a recents list and a free-form "Open path" input.
   Each probe writes timestamped copies to `tests/e2e/docs/history/`.
 - **v0.79.1 — UI verbosity sweep + dropped redundant PRETTY/RAW toggle.**
-- **v0.80 — Onboard non-reviewqa projects + vanilla Playwright.**
+- **v0.80 — Onboard non-quail projects + vanilla Playwright.**
   The switcher accepts any directory with a `playwright.config.{ts,js}`
   or a `*.spec.{ts,js}` under `tests/`, `e2e/`, `playwright/`. A new
   `Tests` sidebar section surfaces vanilla `test('…')` blocks alongside
@@ -71,7 +71,7 @@ and Apply the assistant's proposed update with one click.
   centralized, narrower-viewport rules tightened.
 
 ```bash
-reviewqa serve --workdir ./my-generated-suite
+quail serve --workdir ./my-generated-suite
 # Opens http://127.0.0.1:8765 in your default browser.
 ```
 
@@ -102,31 +102,31 @@ sites have no schema surface so they get the always-attempt stubs only.
 ```bash
 # Probe a live URL — generate the matrix-of-everything against the
 # pages the spider finds. No source code needed.
-reviewqa probe --url https://www.spritecloud.com
-reviewqa probe --url https://shop.example.com --coverage depth
+quail probe --url https://www.spritecloud.com
+quail probe --url https://shop.example.com --coverage depth
 
 # Focus on a specific journey kind via natural-language filter.
-reviewqa prompt "verify the checkout flow" --url https://shop.example.com
-reviewqa prompt "verify the contact form rejects bad emails" --url https://x.com --evidence
+quail prompt "verify the checkout flow" --url https://shop.example.com
+quail prompt "verify the contact form rejects bad emails" --url https://x.com --evidence
 
 # Generate from a PR diff — fan changed source code into per-aspect tests.
-reviewqa generate --pr 42
-reviewqa scan --pr 42                                   # dry-run first
+quail generate --pr 42
+quail scan --pr 42                                   # dry-run first
 
 # Run the generated suite once locally; --record updates the bug ledger
 # so the next probe emits a sentinel spec per failure.
-reviewqa run-once --record
+quail run-once --record
 
 # Repair broken Playwright locators on test failure.
-reviewqa heal --pr 42 --report playwright-report.json
+quail heal --pr 42 --report playwright-report.json
 
 # Merge fresh Playwright failures into tests/e2e/docs/findings.md by hand.
-reviewqa ledger update --report playwright-report.json
+quail ledger update --report playwright-report.json
 ```
 
 ## The 10-layer taxonomy
 
-Every test reviewqa emits maps to one of ten layers. Six of them
+Every test quail emits maps to one of ten layers. Six of them
 auto-emit on any live-URL probe; the other four trigger from PR-diff
 source code.
 
@@ -136,14 +136,14 @@ source code.
 | 2 | Component | PR diff touches a Kind=Component symbol | 3–5 |
 | 3 | API | HTML form OR OpenAPI endpoint | **10 per form** (1 happy + 9 negatives) |
 | 4 | Contract | OpenAPI/GraphQL/Webhook discovered OR always-attempt stubs | **9 per endpoint** |
-| 5 | Integration | Always-on scaffold (5 stubs × 3 blocks) + real Testcontainers via `reviewqa.yml` | 15 per origin |
+| 5 | Integration | Always-on scaffold (5 stubs × 3 blocks) + real Testcontainers via `quail.yml` | 15 per origin |
 | 6 | Backend | PR diff touches gRPC source | 1+ per method |
 | 7 | UI | Every probed page (a11y trio is uncapped) | a11y/landmarks/keyboard 5 each per page; rest ~1–3 |
 | 8 | Mobile | Every probed page (capped) | **8 per page** (4 devices × 2 orientations) |
 | 9 | Data | PR diff touches dbt / pandera / Great-Expectations | 1+ per schema |
 | 10 | Non-functional | Every probed page (mix of capped and uncapped) | ~17 templates, 1–3 tests each |
 
-Full reference + recipes: <https://spritecloud.github.io/reviewqa/docs.html>.
+Full reference + recipes: <https://spritecloud.github.io/quail/docs.html>.
 
 ## Subcommands
 
@@ -165,64 +165,64 @@ The full set; every var is read from the environment AND most have a CLI flag.
 
 | Var | Default | Purpose |
 |---|---|---|
-| `REVIEWQA_LLM` | (empty) | OpenAI-compatible endpoint. When set, the composer adds up to 5 `@llm-composed` Scenarios per journey. **Strictly local-only** — never set in public CI. |
-| `REVIEWQA_MODEL` | `gpt-4o-mini` | Model id. Auto-set to `qwen3-coder-next:latest` when `--llm` points at an Ollama-shaped endpoint. |
-| `REVIEWQA_LLM_LADDER` | (empty) | Comma-separated model fallbacks. |
-| `REVIEWQA_LLM_TIMEOUT` | `60s` *(since v0.48)* | Per-call timeout. Bump on slower local LLMs. |
-| `REVIEWQA_LLM_TOKEN_CAP` | `600` | Max output tokens per LLM call. |
-| `REVIEWQA_HUMANIZE` | (unset) | Set to `0` to skip per-file humanization while keeping composer active. |
-| `REVIEWQA_ALLOW_DIFF_TO_LLM` | `0` | Send PR diff to LLM; off by default. |
-| `REVIEWQA_GRAPHQL_ENDPOINT` | `/graphql` | Override stub introspection path. |
-| `REVIEWQA_WEBHOOK_ENDPOINT` | (empty) | Webhook receiver path to activate signed-POST checks. |
-| `REVIEWQA_WEBHOOK_SECRET` | (empty) | HMAC signing secret. |
+| `QUAIL_LLM` | (empty) | OpenAI-compatible endpoint. When set, the composer adds up to 5 `@llm-composed` Scenarios per journey. **Strictly local-only** — never set in public CI. |
+| `QUAIL_MODEL` | `gpt-4o-mini` | Model id. Auto-set to `qwen3-coder-next:latest` when `--llm` points at an Ollama-shaped endpoint. |
+| `QUAIL_LLM_LADDER` | (empty) | Comma-separated model fallbacks. |
+| `QUAIL_LLM_TIMEOUT` | `60s` *(since v0.48)* | Per-call timeout. Bump on slower local LLMs. |
+| `QUAIL_LLM_TOKEN_CAP` | `600` | Max output tokens per LLM call. |
+| `QUAIL_HUMANIZE` | (unset) | Set to `0` to skip per-file humanization while keeping composer active. |
+| `QUAIL_ALLOW_DIFF_TO_LLM` | `0` | Send PR diff to LLM; off by default. |
+| `QUAIL_GRAPHQL_ENDPOINT` | `/graphql` | Override stub introspection path. |
+| `QUAIL_WEBHOOK_ENDPOINT` | (empty) | Webhook receiver path to activate signed-POST checks. |
+| `QUAIL_WEBHOOK_SECRET` | (empty) | HMAC signing secret. |
 
 ### Probe / spider
 
 | Var | Default | Purpose |
 |---|---|---|
-| `REVIEWQA_TARGET_URLS` | — | Comma-separated URLs to probe (alternative to `--url`). |
-| `REVIEWQA_COVERAGE` | `standard` | `breadth` (8/2) · `standard` (30/3) · `depth` (75/5) · `max` (120/5). |
-| `REVIEWQA_BROWSER_PROBE` | (unset) | Set to `1` to drive Chromium (Playwright) instead of static HTML crawl. Required for SPAs. |
-| `REVIEWQA_IGNORE_ROBOTS` | (unset) | Set to `1` to crawl `robots.txt` Disallow paths. Default OFF; enable for QA of sites you own. |
-| `REVIEWQA_PROBE_ALLOW_LOOPBACK` | (unset) | `1` to bypass loopback/private-IP guard (tests only). |
+| `QUAIL_TARGET_URLS` | — | Comma-separated URLs to probe (alternative to `--url`). |
+| `QUAIL_COVERAGE` | `standard` | `breadth` (8/2) · `standard` (30/3) · `depth` (75/5) · `max` (120/5). |
+| `QUAIL_BROWSER_PROBE` | (unset) | Set to `1` to drive Chromium (Playwright) instead of static HTML crawl. Required for SPAs. |
+| `QUAIL_IGNORE_ROBOTS` | (unset) | Set to `1` to crawl `robots.txt` Disallow paths. Default OFF; enable for QA of sites you own. |
+| `QUAIL_PROBE_ALLOW_LOOPBACK` | (unset) | `1` to bypass loopback/private-IP guard (tests only). |
 
 ### CI / PR plumbing
 
 | Var | Default | Purpose |
 |---|---|---|
-| `GITHUB_TOKEN` / `REVIEWQA_GITHUB_TOKEN` | — | API auth |
+| `GITHUB_TOKEN` / `QUAIL_GITHUB_TOKEN` | — | API auth |
 | `GITHUB_REPOSITORY` | from event | `owner/name` |
-| `REVIEWQA_PR` | from event | PR number override |
-| `REVIEWQA_BRANCH_PREFIX` | `reviewqa` | Branch prefix for generated PRs |
-| `REVIEWQA_WORKDIR` | `.` | Repo working dir |
-| `REVIEWQA_LOG_LEVEL` | `info` | `debug` \| `info` \| `warn` \| `error` |
+| `QUAIL_PR` | from event | PR number override |
+| `QUAIL_BRANCH_PREFIX` | `quail` | Branch prefix for generated PRs |
+| `QUAIL_WORKDIR` | `.` | Repo working dir |
+| `QUAIL_LOG_LEVEL` | `info` | `debug` \| `info` \| `warn` \| `error` |
 
 ### Healing + framework conventions
 
 | Var | Default | Purpose |
 |---|---|---|
-| `REVIEWQA_HEAL_MODE` | `on-failure` | `on-failure` \| `proactive` \| `off` |
-| `REVIEWQA_PLAYWRIGHT_REPORT` | `playwright-report.json` | Report path |
-| `REVIEWQA_E2E_STYLE` | `auto` | `auto` · `per-component` · `page-flow` |
-| `REVIEWQA_PAGE_URLS` | — | JSON map of `{"source/path.tsx": "/route"}` for bespoke routing |
+| `QUAIL_HEAL_MODE` | `on-failure` | `on-failure` \| `proactive` \| `off` |
+| `QUAIL_PLAYWRIGHT_REPORT` | `playwright-report.json` | Report path |
+| `QUAIL_E2E_STYLE` | `auto` | `auto` · `per-component` · `page-flow` |
+| `QUAIL_PAGE_URLS` | — | JSON map of `{"source/path.tsx": "/route"}` for bespoke routing |
 
 ## Use in a workflow
 
 ```yaml
-name: reviewqa
+name: quail
 on: pull_request
 permissions:
   contents: write
   pull-requests: write
 jobs:
-  reviewqa:
+  quail:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
-      - uses: spriteCloud/reviewqa@v1
+      - uses: spriteCloud/quail@v1
         with:
           # Optional — leave empty to skip the LLM humanizer entirely.
-          openai-base-url: ${{ vars.REVIEWQA_LLM_URL }}
+          openai-base-url: ${{ vars.QUAIL_LLM_URL }}
           openai-api-key:  ${{ secrets.OPENAI_API_KEY }}
           model: qwen3-coder-next:latest
           heal-mode: on-failure
@@ -230,11 +230,11 @@ jobs:
 
 ### Probe-only mode (no diff needed)
 
-Drop this into `.github/workflows/reviewqa-probe.yml` of any repo to generate
+Drop this into `.github/workflows/quail-probe.yml` of any repo to generate
 Playwright tests against a live URL — no source code required:
 
 ```yaml
-name: reviewqa-probe
+name: quail-probe
 on:
   workflow_dispatch:
     inputs:
@@ -250,7 +250,7 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
-      - uses: spriteCloud/reviewqa@v1
+      - uses: spriteCloud/quail@v1
         with:
           target-urls: ${{ github.event.inputs.url }}
           run-generate: 'false'
@@ -266,15 +266,15 @@ The LLM is allowed to do exactly two things:
    structure-checked against the original (same imports, same number of
    `describe`/`it`/`test`) and falls back to the deterministic output on
    any mismatch.
-2. **Compose** (opt-in via `REVIEWQA_LLM`): propose up to 5 additional
+2. **Compose** (opt-in via `QUAIL_LLM`): propose up to 5 additional
    Gherkin Scenarios per journey, drawn ONLY from a registered step-pattern
    vocabulary. Invalid scenarios are dropped before the template renders.
 
-The PR diff is **never** sent to the LLM unless `REVIEWQA_ALLOW_DIFF_TO_LLM=1`.
+The PR diff is **never** sent to the LLM unless `QUAIL_ALLOW_DIFF_TO_LLM=1`.
 
 ## License
 
-reviewqa is dual-licensed:
+quail is dual-licensed:
 
 - **AGPL-3.0** for the community edition — see [`LICENSE`](./LICENSE).
 - **Commercial license** for organisations that cannot accept the AGPL — see

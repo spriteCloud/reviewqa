@@ -16,7 +16,7 @@ type ProjectListItem struct {
 }
 
 // ProjectsResponse is the GET /api/projects payload — the current
-// workdir plus its sibling reviewqa projects (auto-discovered from
+// workdir plus its sibling quail projects (auto-discovered from
 // the filesystem) and the recents list (persisted in Settings).
 type ProjectsResponse struct {
 	Current  ProjectListItem   `json:"current"`
@@ -42,7 +42,7 @@ func handleProjects(state *workdirState) http.HandlerFunc {
 
 // handleSwitchProject answers POST /api/switch-project with body
 // `{ path: "/abs/path" }`. Validates the path exists, looks like a
-// reviewqa project (or at least a directory), and mutates the
+// quail project (or at least a directory), and mutates the
 // shared state so the next request sees the new workdir. Also
 // pushes the path onto the recents list in Settings.
 func handleSwitchProject(state *workdirState) http.HandlerFunc {
@@ -83,25 +83,25 @@ func handleProbeWithState(state *workdirState) http.HandlerFunc {
 	}
 }
 
-// looksLikeReviewqaProject reports whether `dir` looks like a
-// reviewqa workdir OR a vanilla Playwright project. v0.80 broadened
+// looksLikeQuailProject reports whether `dir` looks like a
+// quail workdir OR a vanilla Playwright project. v0.80 broadened
 // the check so the switcher / sibling discovery can surface
 // pre-existing Playwright projects the user wants to onboard.
 //
 // Accepted signals (any one is enough):
-//   - the reviewqa layout (tests/e2e/features/, steps/reviewqa.steps.ts,
+//   - the quail layout (tests/e2e/features/, steps/quail.steps.ts,
 //     stakeholder docs)
 //   - playwright.config.{ts,js,mjs,cjs} at the dir root
 //   - any *.spec.{ts,js,mts,mjs}, *.test.{ts,js} under common
 //     Playwright dirs (tests/, e2e/, playwright/, spec/, __tests__/)
-func looksLikeReviewqaProject(dir string) bool {
-	reviewqaChecks := []string{
+func looksLikeQuailProject(dir string) bool {
+	quailChecks := []string{
 		filepath.Join(dir, "tests", "e2e", "features"),
-		filepath.Join(dir, "tests", "e2e", "steps", "reviewqa.steps.ts"),
+		filepath.Join(dir, "tests", "e2e", "steps", "quail.steps.ts"),
 		filepath.Join(dir, "tests", "e2e", "docs", "summary.html"),
 		filepath.Join(dir, "tests", "e2e", "docs", "test-catalogue.md"),
 	}
-	for _, p := range reviewqaChecks {
+	for _, p := range quailChecks {
 		if _, err := os.Stat(p); err == nil {
 			return true
 		}
@@ -175,7 +175,7 @@ func hasSpecFile(root string) bool {
 }
 
 // siblingProjects scans the parent of `current` for immediate-
-// sibling directories that look like reviewqa projects. Returns a
+// sibling directories that look like quail projects. Returns a
 // sorted list (by Name). The current dir itself is excluded.
 func siblingProjects(current string) []ProjectListItem {
 	parent := filepath.Dir(current)
@@ -195,7 +195,7 @@ func siblingProjects(current string) []ProjectListItem {
 		if full == current {
 			continue
 		}
-		if !looksLikeReviewqaProject(full) {
+		if !looksLikeQuailProject(full) {
 			continue
 		}
 		out = append(out, ProjectListItem{Name: filepath.Base(full), Path: full})

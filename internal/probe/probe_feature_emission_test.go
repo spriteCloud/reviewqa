@@ -7,14 +7,14 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/reviewqa/reviewqa/internal/plan"
+	"github.com/spriteCloud/quail/internal/plan"
 )
 
 // TestRunAll_EmitsFeatureFilesAndBDDSteps proves the v0.21 inversion:
 // journeys ship as .feature files (not .spec.ts) and the suite includes
 // the playwright-bdd step-definitions companion.
 func TestRunAll_EmitsFeatureFilesAndBDDSteps(t *testing.T) {
-	t.Setenv("REVIEWQA_PROBE_ALLOW_LOOPBACK", "1")
+	t.Setenv("QUAIL_PROBE_ALLOW_LOOPBACK", "1")
 	mux := http.NewServeMux()
 	mux.HandleFunc("/", func(w http.ResponseWriter, r *http.Request) {
 		if r.URL.Path != "/" {
@@ -87,7 +87,7 @@ func TestRunAll_EmitsFeatureFilesAndBDDSteps(t *testing.T) {
 			!strings.Contains(it.OutPath, "/integration-obs/") &&
 			!strings.Contains(it.OutPath, "/integration-auth/"):
 			gotSpecTs++
-		case it.OutPath == "tests/e2e/steps/reviewqa.steps.ts":
+		case it.OutPath == "tests/e2e/steps/quail.steps.ts":
 			gotStepsFile = true
 		}
 	}
@@ -98,6 +98,6 @@ func TestRunAll_EmitsFeatureFilesAndBDDSteps(t *testing.T) {
 		t.Errorf("v0.21 should NOT emit happy-flow .spec.ts files; got %d", gotSpecTs)
 	}
 	if !gotStepsFile {
-		t.Errorf("expected tests/e2e/steps/reviewqa.steps.ts companion to be emitted")
+		t.Errorf("expected tests/e2e/steps/quail.steps.ts companion to be emitted")
 	}
 }

@@ -73,7 +73,7 @@ func TestParseMaxJourneys(t *testing.T) {
 }
 
 func TestParseMaxJourneys_HonoursEnv(t *testing.T) {
-	t.Setenv("REVIEWQA_MAX_JOURNEYS", "7")
+	t.Setenv("QUAIL_MAX_JOURNEYS", "7")
 	if got := ParseMaxJourneys(""); got != 7 {
 		t.Errorf("env override: ParseMaxJourneys(\"\") = %d, want 7", got)
 	}

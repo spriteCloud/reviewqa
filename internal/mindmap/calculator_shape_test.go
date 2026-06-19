@@ -3,7 +3,7 @@ package mindmap
 import (
 	"testing"
 
-	"github.com/reviewqa/reviewqa/internal/ast"
+	"github.com/spriteCloud/quail/internal/ast"
 )
 
 // v0.92: a calculator-shape page emits TagForm even without any

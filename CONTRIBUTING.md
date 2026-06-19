@@ -1,4 +1,4 @@
-# Contributing to reviewqa
+# Contributing to quail
 
 Thanks for considering a contribution.
 
@@ -15,8 +15,8 @@ Thanks for considering a contribution.
 
 ## Reporting issues
 
-Open an issue at https://github.com/spriteCloud/reviewqa/issues with steps
-to reproduce, the version (`reviewqa --version`), and what you expected.
+Open an issue at https://github.com/spriteCloud/quail/issues with steps
+to reproduce, the version (`quail --version`), and what you expected.
 
 ## License
 

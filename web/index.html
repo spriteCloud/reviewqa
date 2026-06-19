@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>reviewqa — by spriteCloud</title>
+  <title>quail — by spriteCloud</title>
   <meta name="description" content="A Go binary + GitHub Action that watches a PR (or any URL) and opens a follow-up PR with Gherkin features (via playwright-bdd), API contract / GraphQL / webhook tests, visual regression baselines, accessibility / responsive / performance / security / health / observability specs, gRPC contracts from .proto diffs, a stakeholder catalogue, a bug-discovery ledger, and self-healing locators.">
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -249,15 +249,15 @@
         <a href="docs.html">Docs</a>
         <a href="#usage">Usage</a>
         <a href="#faq">FAQ</a>
-        <a href="https://github.com/spriteCloud/reviewqa">GitHub</a>
-        <a class="nav-cta" href="https://github.com/marketplace/actions/reviewqa" data-testid="nav-cta">Install action</a>
+        <a href="https://github.com/spriteCloud/quail">GitHub</a>
+        <a class="nav-cta" href="https://github.com/marketplace/actions/quail" data-testid="nav-cta">Install action</a>
       </div>
     </div>
   </nav>
 
   <header class="hero">
     <div class="container">
-      <span class="label">reviewqa · by spriteCloud</span>
+      <span class="label">quail · by spriteCloud</span>
       <h1 data-testid="hero-title">
         Pull request opens.<br>
         Tests <em>write themselves.</em>
@@ -271,8 +271,8 @@
         self-heal when the DOM drifts. One Go binary. <strong>v0.92.0</strong>.
       </p>
       <div class="cta-row">
-        <a class="btn btn-primary" href="https://github.com/marketplace/actions/reviewqa" data-testid="cta-install">Add to your repo</a>
-        <a class="btn btn-ghost" href="https://github.com/spriteCloud/reviewqa" data-testid="cta-github">View source</a>
+        <a class="btn btn-primary" href="https://github.com/marketplace/actions/quail" data-testid="cta-install">Add to your repo</a>
+        <a class="btn btn-ghost" href="https://github.com/spriteCloud/quail" data-testid="cta-github">View source</a>
       </div>
       <div class="pixel-bar" aria-hidden="true" data-testid="pixel-motif">
         <span class="pb-1"></span><span class="pb-2"></span><span class="pb-3"></span>
@@ -314,7 +314,7 @@
         <div class="card copper">
           <div class="num">05</div>
           <h3>Bug-discovery ledger</h3>
-          <p>Failed tests don't die in CI logs — <code>reviewqa ledger update</code> merges them into <code>findings.md</code>, deduped by (spec, test), risk-weighted by priority, surviving across runs.</p>
+          <p>Failed tests don't die in CI logs — <code>quail ledger update</code> merges them into <code>findings.md</code>, deduped by (spec, test), risk-weighted by priority, surviving across runs.</p>
         </div>
         <div class="card">
           <div class="num">06</div>
@@ -329,7 +329,7 @@
         <div class="card">
           <div class="num">08</div>
           <h3>gRPC contracts from .proto diffs</h3>
-          <p>Drop a <code>.proto</code> file in your PR and reviewqa emits per-RPC contract tests classified by streaming shape (unary / server-stream / client-stream / bidi) using <code>@grpc/grpc-js</code>.</p>
+          <p>Drop a <code>.proto</code> file in your PR and quail emits per-RPC contract tests classified by streaming shape (unary / server-stream / client-stream / bidi) using <code>@grpc/grpc-js</code>.</p>
         </div>
       </div>
     </div>
@@ -351,32 +351,32 @@
       <div class="grid" data-testid="examples-grid">
         <div class="card">
           <div class="num">01</div>
-          <h3><a href="https://github.com/spriteCloud/reviewqa/tree/main/examples/playwright-dev">playwright.dev</a></h3>
+          <h3><a href="https://github.com/spriteCloud/quail/tree/main/examples/playwright-dev">playwright.dev</a></h3>
           <p>SaaS docs, JS-heavy. <strong>183 files</strong> · 3 Gherkin journeys · 30 pages with the a11y trio · full v0.41+ template family (integration stubs, mobile matrix, network, edge cases).</p>
         </div>
         <div class="card copper">
           <div class="num">02</div>
-          <h3><a href="https://github.com/spriteCloud/reviewqa/tree/main/examples/gohugo-io">gohugo.io</a></h3>
+          <h3><a href="https://github.com/spriteCloud/quail/tree/main/examples/gohugo-io">gohugo.io</a></h3>
           <p>OSS marketing + content. <strong>196 files</strong> · 3 Gherkin · 30 pages with a11y trio.</p>
         </div>
         <div class="card">
           <div class="num">03</div>
-          <h3><a href="https://github.com/spriteCloud/reviewqa/tree/main/examples/books-toscrape-com">books.toscrape.com</a></h3>
+          <h3><a href="https://github.com/spriteCloud/quail/tree/main/examples/books-toscrape-com">books.toscrape.com</a></h3>
           <p>E-commerce list-and-detail. <strong>186 files</strong> · 3 Gherkin · 30 pages with a11y trio.</p>
         </div>
         <div class="card copper">
           <div class="num">04</div>
-          <h3><a href="https://github.com/spriteCloud/reviewqa/tree/main/examples/es-wikipedia-org-madrid">es.wikipedia.org / Madrid</a></h3>
+          <h3><a href="https://github.com/spriteCloud/quail/tree/main/examples/es-wikipedia-org-madrid">es.wikipedia.org / Madrid</a></h3>
           <p>Non-English content. <strong>201 files</strong> · 4 Gherkin · 30 pages with a11y trio.</p>
         </div>
         <div class="card">
           <div class="num">05</div>
-          <h3><a href="https://github.com/spriteCloud/reviewqa/tree/main/examples/spritecloud-com-dgx">spritecloud.com <span style="color:var(--copper);font-size:12px;">AI</span></a></h3>
+          <h3><a href="https://github.com/spriteCloud/quail/tree/main/examples/spritecloud-com-dgx">spritecloud.com <span style="color:var(--copper);font-size:12px;">AI</span></a></h3>
           <p>Marketing + lead-gen with the LLM composer enabled. <strong>197 files</strong> · 10 Gherkin · <strong>@llm-composed Scenarios</strong> on top of the deterministic baseline.</p>
         </div>
         <div class="card copper">
           <div class="num">06</div>
-          <h3><a href="https://github.com/spriteCloud/reviewqa/tree/main/examples/petstore-swagger-io-dgx">petstore.swagger.io <span style="color:var(--copper);font-size:12px;">AI</span></a></h3>
+          <h3><a href="https://github.com/spriteCloud/quail/tree/main/examples/petstore-swagger-io-dgx">petstore.swagger.io <span style="color:var(--copper);font-size:12px;">AI</span></a></h3>
           <p>API service with OpenAPI 3. <strong>46 files</strong> · <strong>12 Contract specs × 9 tests = 108 contract-layer assertions</strong> auto-derived from the OpenAPI doc. Lights up Layer 4 like no marketing site can.</p>
         </div>
       </div>
@@ -390,16 +390,16 @@
         <h2>Dial breadth vs. depth without forking the config.</h2>
       </div>
       <pre class="snippet" data-testid="coverage-snippet"><span class="c"># quick CI smoke (8 pages, 1 journey per kind, 3 fuzz specs)</span>
-reviewqa probe --url https://shop.example.com --coverage breadth
+quail probe --url https://shop.example.com --coverage breadth
 
 <span class="c"># default — current behaviour (20 pages, 3 journeys per kind, 5 fuzz)</span>
-reviewqa probe --url https://shop.example.com
+quail probe --url https://shop.example.com
 
 <span class="c"># high-stakes audit (50 pages, 6 journeys per kind, 10 fuzz)</span>
-reviewqa probe --url https://shop.example.com --coverage depth
+quail probe --url https://shop.example.com --coverage depth
 
 <span class="c"># focused, prompt-driven, runs and bundles an evidence ZIP</span>
-reviewqa prompt "verify the checkout flow" \
+quail prompt "verify the checkout flow" \
   --url https://shop.example.com --evidence</pre>
     </div>
   </section>
@@ -412,15 +412,15 @@ reviewqa prompt "verify the checkout flow" \
           <h2>One step. Pure Go. No CGO.</h2>
           <p>Bring any OpenAI‑compatible endpoint — ollama, vLLM, a DGX‑hosted model, or the public API. Leave the key empty and you still get deterministic scaffolds.</p>
         </div>
-<pre class="snippet" data-testid="snippet"><span class="c"># .github/workflows/reviewqa.yml</span>
-<span class="k">name:</span> <span class="v">reviewqa</span>
+<pre class="snippet" data-testid="snippet"><span class="c"># .github/workflows/quail.yml</span>
+<span class="k">name:</span> <span class="v">quail</span>
 <span class="k">on:</span> <span class="v">pull_request</span>
 <span class="k">jobs:</span>
-  <span class="k">reviewqa:</span>
+  <span class="k">quail:</span>
     <span class="k">runs-on:</span> <span class="v">ubuntu-latest</span>
     <span class="k">steps:</span>
       - <span class="k">uses:</span> <span class="v">actions/checkout@v4</span>
-      - <span class="k">uses:</span> <span class="v">spriteCloud/reviewqa@v1</span>
+      - <span class="k">uses:</span> <span class="v">spriteCloud/quail@v1</span>
         <span class="k">with:</span>
           <span class="k">openai-api-key:</span> <span class="v">${{ secrets.OPENAI_API_KEY }}</span>
           <span class="k">heal-mode:</span> <span class="v">on-failure</span>
@@ -437,16 +437,16 @@ reviewqa prompt "verify the checkout flow" \
       </div>
       <div class="faq-list" data-testid="faq-list">
         <details class="faq-item" data-testid="faq-item">
-          <summary>Does reviewqa send my source code to a third-party LLM?</summary>
-          <p>Only when you configure an inference endpoint and your `OPENAI_API_KEY` is set. Even then, the LLM is restricted to rewriting test titles and step comments inside a deterministic scaffold. The PR diff is never sent unless you explicitly opt in with `REVIEWQA_ALLOW_DIFF_TO_LLM=1`.</p>
+          <summary>Does quail send my source code to a third-party LLM?</summary>
+          <p>Only when you configure an inference endpoint and your `OPENAI_API_KEY` is set. Even then, the LLM is restricted to rewriting test titles and step comments inside a deterministic scaffold. The PR diff is never sent unless you explicitly opt in with `QUAIL_ALLOW_DIFF_TO_LLM=1`.</p>
         </details>
         <details class="faq-item" data-testid="faq-item">
           <summary>What happens when the LLM is unavailable or returns garbage?</summary>
-          <p>reviewqa keeps the deterministic scaffold. The LLM rewrite is checked against the original for structural equivalence — same imports, same number of test declarations — and any mismatch is silently discarded.</p>
+          <p>quail keeps the deterministic scaffold. The LLM rewrite is checked against the original for structural equivalence — same imports, same number of test declarations — and any mismatch is silently discarded.</p>
         </details>
         <details class="faq-item" data-testid="faq-item">
           <summary>Can I use my own model instead of OpenAI?</summary>
-          <p>Yes. Any OpenAI-compatible endpoint works — ollama, vLLM, a DGX-hosted model, or a private gateway. Point `OPENAI_BASE_URL` at it and set `REVIEWQA_MODEL` to the model name.</p>
+          <p>Yes. Any OpenAI-compatible endpoint works — ollama, vLLM, a DGX-hosted model, or a private gateway. Point `OPENAI_BASE_URL` at it and set `QUAIL_MODEL` to the model name.</p>
         </details>
       </div>
     </div>
@@ -456,10 +456,10 @@ reviewqa prompt "verify the checkout flow" \
     <div class="container foot-inner">
       <span class="wm"><span class="s">sprite</span><span class="c">Cloud</span></span>
       <div class="foot-links">
-        <a href="https://github.com/spriteCloud/reviewqa">Repo</a>
-        <a href="https://github.com/spriteCloud/reviewqa/issues">Issues</a>
-        <a href="https://github.com/spriteCloud/reviewqa/blob/main/LICENSE">AGPL‑3.0</a>
-        <a href="https://github.com/spriteCloud/reviewqa/blob/main/COMMERCIAL.md">Commercial</a>
+        <a href="https://github.com/spriteCloud/quail">Repo</a>
+        <a href="https://github.com/spriteCloud/quail/issues">Issues</a>
+        <a href="https://github.com/spriteCloud/quail/blob/main/LICENSE">AGPL‑3.0</a>
+        <a href="https://github.com/spriteCloud/quail/blob/main/COMMERCIAL.md">Commercial</a>
       </div>
     </div>
   </footer>

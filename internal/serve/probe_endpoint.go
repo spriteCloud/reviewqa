@@ -15,7 +15,7 @@ import (
 	"sync"
 	"time"
 
-	"github.com/reviewqa/reviewqa/internal/probe"
+	"github.com/spriteCloud/quail/internal/probe"
 )
 
 // capture holds the most recent stdout lines from the most recent
@@ -85,9 +85,15 @@ type ProbeRequest struct {
 	// MaxJourneys overrides the per-kind journey cap. v0.90: empty
 	// = use coverage default; "N" caps at N per kind.
 	MaxJourneys string `json:"maxJourneys,omitempty"`
+	// Name is the optional human-friendly project name. When set on a
+	// probe that creates a new sibling project, it drives both the new
+	// dir slug and the feature-label inside the emitted specs instead
+	// of the URL host. Ignored when the probe lands in-place inside an
+	// existing project (the project keeps its own name).
+	Name string `json:"name,omitempty"`
 }
 
-// ProbeStream invokes the reviewqa binary's `probe` subcommand and
+// ProbeStream invokes the quail binary's `probe` subcommand and
 // streams its stdout/stderr as Server-Sent Events to the response
 // writer. Returns the exit code so the handler can emit a final
 // "done" event with the verdict.
@@ -108,14 +114,15 @@ func ProbeStream(ctx context.Context, w http.ResponseWriter, workdir string, req
 
 	exe, err := os.Executable()
 	if err != nil {
-		if path, lerr := exec.LookPath("reviewqa"); lerr == nil {
+		if path, lerr := exec.LookPath("quail"); lerr == nil {
 			exe = path
 		} else {
-			return -1, fmt.Errorf("locate reviewqa binary: %w", err)
+			return -1, fmt.Errorf("locate quail binary: %w", err)
 		}
 	}
 
-	cwd := pickProbeDestination(workdir, u)
+	nameSlug := slugifyName(req.Name)
+	cwd := pickProbeDestination(workdir, u, nameSlug)
 
 	// --local: write rendered files into the workdir, do NOT try to
 	// open a GitHub PR. The serve UI is a local control room, not a
@@ -150,6 +157,9 @@ func ProbeStream(ctx context.Context, w http.ResponseWriter, workdir string, req
 	}
 	if req.MaxJourneys != "" {
 		args = append(args, "--max-journeys", req.MaxJourneys)
+	}
+	if nameSlug != "" {
+		args = append(args, "--name", req.Name)
 	}
 
 	flusher, ok := w.(http.Flusher)
@@ -264,14 +274,14 @@ func parseProbeOutcome(lines []string) (int, string) {
 
 // probeSubprocessEnv returns the env the probe subprocess should
 // inherit, with the user's saved LLM settings translated into the
-// env vars `cmd/reviewqa/main.go::newProbeCmd` expects:
+// env vars `cmd/quail/main.go::newProbeCmd` expects:
 //
-//   - LLM.Endpoint   → REVIEWQA_LLM (applyLLMOverride uses this)
-//   - LLM.Model      → REVIEWQA_MODEL
+//   - LLM.Endpoint   → QUAIL_LLM (applyLLMOverride uses this)
+//   - LLM.Model      → QUAIL_MODEL
 //   - LLM.APIKey     → OPENAI_API_KEY (or "ollama" sentinel when
 //                      the endpoint is set but the key is blank,
 //                      matching llmConfigFromEnv)
-//   - LLM.TimeoutSec → REVIEWQA_LLM_TIMEOUT (Go duration string)
+//   - LLM.TimeoutSec → QUAIL_LLM_TIMEOUT (Go duration string)
 //
 // LLM.Enabled=false zeroes OPENAI_API_KEY so the subprocess sees
 // the LLM as disabled regardless of the host env. v0.77's
@@ -297,10 +307,10 @@ func probeSubprocessEnv() []string {
 	}
 	if s.LLM.Enabled {
 		if s.LLM.Endpoint != "" {
-			apply("REVIEWQA_LLM", s.LLM.Endpoint)
+			apply("QUAIL_LLM", s.LLM.Endpoint)
 		}
 		if s.LLM.Model != "" {
-			apply("REVIEWQA_MODEL", s.LLM.Model)
+			apply("QUAIL_MODEL", s.LLM.Model)
 		}
 		switch {
 		case s.LLM.APIKey != "":
@@ -311,7 +321,7 @@ func probeSubprocessEnv() []string {
 			apply("OPENAI_API_KEY", "ollama")
 		}
 		if s.LLM.TimeoutSec > 0 {
-			apply("REVIEWQA_LLM_TIMEOUT", fmt.Sprintf("%ds", s.LLM.TimeoutSec))
+			apply("QUAIL_LLM_TIMEOUT", fmt.Sprintf("%ds", s.LLM.TimeoutSec))
 		}
 	} else if s.LLM.Endpoint != "" || s.LLM.APIKey != "" {
 		// User explicitly turned LLM OFF — strip the key.
@@ -338,25 +348,59 @@ func probeCwd(workdir string) string {
 // write. If the URL's brand matches the current workdir's name, we
 // re-probe in place (probeCwd). Otherwise we land in a new sibling
 // dir named after `BrandFromOrigin(url)`, suffixing `-1`, `-2`, etc.
-// if a non-reviewqa dir already squats the slot.
+// if a non-quail dir already squats the slot.
 //
 // Scratch mode (v0.85): when the current workdir is empty or
 // doesn't exist on disk, we have no parent dir to plant a sibling
 // in. Fall back to a per-user projects root at
-// `~/reviewqa-projects/<brand>/` — same XDG-ish location pattern
-// as the settings file at `~/.config/reviewqa/serve.json`. Falls
+// `~/quail-projects/<brand>/` — same XDG-ish location pattern
+// as the settings file at `~/.config/quail/serve.json`. Falls
 // back to cwd if the user's home dir can't be resolved.
 //
 // Created dirs are mkdir'd here so the probe subprocess has a cwd to
 // run in. The frontend reads the destination from the SSE `start`
 // event so it can /api/switch-project to the new dir on `done`.
-func pickProbeDestination(workdir string, u *url.URL) string {
+// slugifyName normalises a human-entered project name into a
+// filesystem-safe slug: lowercase, non-alnum → dash, collapse repeats,
+// trim. Empty input → "".
+func slugifyName(name string) string {
+	name = strings.TrimSpace(strings.ToLower(name))
+	if name == "" {
+		return ""
+	}
+	var b strings.Builder
+	b.Grow(len(name))
+	prevDash := false
+	for _, r := range name {
+		switch {
+		case r >= 'a' && r <= 'z', r >= '0' && r <= '9':
+			b.WriteRune(r)
+			prevDash = false
+		default:
+			if !prevDash && b.Len() > 0 {
+				b.WriteByte('-')
+				prevDash = true
+			}
+		}
+	}
+	out := strings.TrimRight(b.String(), "-")
+	return out
+}
+
+func pickProbeDestination(workdir string, u *url.URL, nameOverride string) string {
 	brand := probe.BrandFromHost(u.Host)
+	// A user-provided name only takes effect when we'd create a NEW
+	// sibling dir. In-place re-probes keep the existing project's
+	// identity — see the `current` branch below.
+	siblingBrand := brand
+	if nameOverride != "" {
+		siblingBrand = nameOverride
+	}
 	// Scratch mode: no current project; pick the user-level root.
 	if workdir == "" {
 		if home, err := os.UserHomeDir(); err == nil {
-			parent := filepath.Join(home, "reviewqa-projects")
-			return reserveSiblingDir(parent, brand, workdir)
+			parent := filepath.Join(home, "quail-projects")
+			return reserveSiblingDir(parent, siblingBrand, workdir)
 		}
 		// Last-resort fallback: cwd.
 		cwd, _ := os.Getwd()
@@ -364,8 +408,8 @@ func pickProbeDestination(workdir string, u *url.URL) string {
 	}
 	if info, err := os.Stat(workdir); err != nil || !info.IsDir() {
 		if home, err := os.UserHomeDir(); err == nil {
-			parent := filepath.Join(home, "reviewqa-projects")
-			return reserveSiblingDir(parent, brand, workdir)
+			parent := filepath.Join(home, "quail-projects")
+			return reserveSiblingDir(parent, siblingBrand, workdir)
 		}
 		cwd, _ := os.Getwd()
 		return reserveSiblingDir(cwd, brand, workdir)
@@ -384,8 +428,8 @@ func pickProbeDestination(workdir string, u *url.URL) string {
 
 // reserveSiblingDir picks a destination subdir of `parent` named
 // after `brand`. If `parent/brand` is free it's created and
-// returned. If a reviewqa-looking project already exists there we
-// re-probe in place. If a non-reviewqa dir (or non-dir file) is
+// returned. If a quail-looking project already exists there we
+// re-probe in place. If a non-quail dir (or non-dir file) is
 // squatting the slot, we suffix `-1`, `-2`, … until we find a free
 // or compatible slot. Returns `fallback` if anything fails (parent
 // can't be created, 100 collisions, etc).
@@ -410,11 +454,11 @@ func reserveSiblingDir(parent, brand, fallback string) string {
 			candidate = filepath.Join(parent, brand+"-"+strconv.Itoa(i))
 			continue
 		}
-		// Exists as a dir. Reuse if it's a reviewqa project (re-
+		// Exists as a dir. Reuse if it's a quail project (re-
 		// probe in place) OR if it's empty (likely a residue from
 		// a prior aborted probe or scratch-mode warmup — safe to
 		// land into). Otherwise suffix.
-		if looksLikeReviewqaProject(candidate) {
+		if looksLikeQuailProject(candidate) {
 			return candidate
 		}
 		if entries, derr := os.ReadDir(candidate); derr == nil && len(entries) == 0 {

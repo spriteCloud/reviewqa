@@ -27,7 +27,7 @@ type StepResult struct {
 }
 
 // LastRunRecord is the on-disk record per Scenario name. Persisted
-// into tests/e2e/.reviewqa-runs/last-run.json so the UI can render
+// into tests/e2e/.quail-runs/last-run.json so the UI can render
 // "last passed Xm ago" pills across reloads.
 type LastRunRecord struct {
 	Status     string       `json:"status"`     // passed | failed | skipped | mixed
@@ -41,7 +41,7 @@ type LastRunRecord struct {
 type LastRunIndex map[string]LastRunRecord
 
 func runsDir(workdir string) string {
-	return filepath.Join(workdir, "tests", "e2e", ".reviewqa-runs")
+	return filepath.Join(workdir, "tests", "e2e", ".quail-runs")
 }
 
 func lastRunPath(workdir string) string {
@@ -71,11 +71,11 @@ type ScenarioRun struct {
 }
 
 // LoadScenarioTimeline walks the per-run JSON reports in
-// tests/e2e/.reviewqa-runs/ (written one per Run by the JSON
+// tests/e2e/.quail-runs/ (written one per Run by the JSON
 // reporter) and returns this scenario's runs sorted oldest→newest.
 // Capped at the last 20 entries so the popover stays compact.
 //
-// The .reviewqa-runs/ dir already exists from v0.75 — the JSON
+// The .quail-runs/ dir already exists from v0.75 — the JSON
 // reports were retained but never aggregated. This reader closes
 // that loop.
 func LoadScenarioTimeline(workdir, scenarioName string) []ScenarioRun {
@@ -409,7 +409,7 @@ func RunScenarioStream(ctx context.Context, w http.ResponseWriter, workdir, feat
 		}
 	}
 
-	// Write the JSON report into the per-workdir .reviewqa-runs/
+	// Write the JSON report into the per-workdir .quail-runs/
 	// directory so we can parse per-step verdicts after the run.
 	//
 	// Playwright 1.61's CLI does NOT accept `--reporter=name:path`

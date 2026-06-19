@@ -8,7 +8,7 @@ import (
 
 	"golang.org/x/net/html"
 
-	"github.com/reviewqa/reviewqa/internal/probe"
+	"github.com/spriteCloud/quail/internal/probe"
 )
 
 // DOMLandmarks is the JSON-friendly shape returned by /api/probe-dom.

@@ -1,4 +1,4 @@
-// reviewqa serve — Phase B frontend (read + Scenario CRUD).
+// quail serve — Phase B frontend (read + Scenario CRUD).
 // Plain vanilla JS so the project keeps its no-build posture.
 
 const $featureList = document.querySelector('[data-feature-list]')
@@ -568,7 +568,7 @@ function openRunDrawer (feature, scenario) {
 }
 
 function chatStorageKey (featurePath, scenarioName) {
-  return `reviewqa-chat::${featurePath}::${scenarioName}`
+  return `quail-chat::${featurePath}::${scenarioName}`
 }
 
 function loadChatHistory (featurePath, scenarioName) {
@@ -723,7 +723,7 @@ function openChat (feature, scenario, currentBlock) {
 }
 
 async function deleteScenario (featurePath, name) {
-  if (!confirm(`Delete scenario "${name}"?\n\nA backup is saved under tests/e2e/.reviewqa-history/ for recovery.`)) return
+  if (!confirm(`Delete scenario "${name}"?\n\nA backup is saved under tests/e2e/.quail-history/ for recovery.`)) return
   try {
     const res = await fetch('/api/scenario?feature=' + encodeURIComponent(featurePath) + '&name=' + encodeURIComponent(name), { method: 'DELETE' })
     if (!res.ok) {
@@ -843,7 +843,7 @@ async function init () {
     const project = await fetchJSON('/api/project')
     window.__project = project
     $projectName.textContent = project.scratch ? 'no project' : project.name
-    document.title = `reviewqa · ${project.name}`
+    document.title = `quail · ${project.name}`
     const $badge = document.querySelector('[data-brand-badge]')
     if ($badge && project.version) $badge.textContent = `v${project.version} · local`
 
@@ -912,6 +912,13 @@ async function renderHome () {
   // sidebar; LLM/runtime status surface from Settings + run-preflight.)
 
   const $urlInput = el('input', { type: 'url', class: 'home-probe-input', placeholder: 'https://example.com', autocomplete: 'off' })
+  const $nameInput = el('input', {
+    type: 'text',
+    class: 'home-probe-name',
+    placeholder: 'name (optional)',
+    autocomplete: 'off',
+    title: 'Optional project name. If set, the new sibling dir + feature labels use this instead of the URL host. Ignored when probing in-place inside an existing project.',
+  })
   const $coverage = el('select', { class: 'home-probe-coverage' },
     el('option', { value: '' }, 'coverage: default'),
     el('option', { value: 'breadth' }, 'breadth'),
@@ -944,10 +951,38 @@ async function renderHome () {
   })
   const $btn = el('button', { class: 'btn-primary home-probe-btn', onclick: () => startProbe() }, '▶ Probe')
   const $terminal = el('pre', { class: 'run-terminal home-probe-terminal' }, '$ awaiting probe…')
+  const $logBox = el('details', { class: 'home-probe-log' },
+    el('summary', {}, 'Log'),
+    $terminal,
+  )
+  const $progress = el('progress', { class: 'home-probe-progress', max: '100', value: '0', style: 'display:none' })
+  const $stage = el('span', { class: 'home-probe-stage' }, '')
   const $verdict = el('div', { class: 'home-probe-verdict' })
 
   let activeStream = null
   let probeDestWorkdir = ''
+  let progressPct = 0
+
+  // Forward-only stage detector. Probe stdout markers → {percent, label}.
+  // First match wins; subsequent lines can only bump percent up.
+  const STAGES = [
+    { match: /humaniz/i,                  percent: 90, label: 'Humanizing' },
+    { match: /composer:/i,                percent: 75, label: 'Composing scenarios' },
+    { match: /identif(ied|y).*journey/i,  percent: 55, label: 'Journeys identified' },
+    { match: /browser probe.*launch/i,    percent: 35, label: 'Browser probe launching' },
+    { match: /probe.*crawl/i,             percent: 15, label: 'Crawling' },
+  ]
+  function stageFromLine (text) {
+    for (const s of STAGES) if (s.match.test(text)) return s
+    return null
+  }
+  function bumpProgress (next) {
+    if (!next) return
+    if (next.percent <= progressPct) return
+    progressPct = next.percent
+    $progress.value = String(progressPct)
+    $stage.textContent = next.label
+  }
 
   async function startProbe () {
     const url = ($urlInput.value || '').trim()
@@ -961,6 +996,11 @@ async function renderHome () {
     $verdict.textContent = ''
     $verdict.className = 'home-probe-verdict'
     $terminal.textContent = ''
+    progressPct = 0
+    $progress.value = '0'
+    $progress.style.display = ''
+    $stage.textContent = 'Starting…'
+    $logBox.open = false
 
     if (activeStream) try { activeStream.close() } catch (_) {}
 
@@ -969,7 +1009,7 @@ async function renderHome () {
       const res = await fetch('/api/probe', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ url, coverage: $coverage.value, browser: $browser.value, engine: $engine.value, stealth: $stealth.value, maxJourneys: ($maxJourneys.value || '').trim() }),
+        body: JSON.stringify({ url, name: ($nameInput.value || '').trim(), coverage: $coverage.value, browser: $browser.value, engine: $engine.value, stealth: $stealth.value, maxJourneys: ($maxJourneys.value || '').trim() }),
         signal: ctrl.signal,
       })
       if (!res.ok || !res.body) {
@@ -1007,6 +1047,8 @@ async function renderHome () {
           } else if (evt === 'line') {
             $terminal.textContent += payload.text + '\n'
             $terminal.scrollTop = $terminal.scrollHeight
+            if (!$logBox.open) $logBox.open = true
+            bumpProgress(stageFromLine(payload.text || ''))
           } else if (evt === 'done') {
             const ok = !!payload.passed
             const items = (typeof payload.itemCount === 'number') ? payload.itemCount : -1
@@ -1024,6 +1066,11 @@ async function renderHome () {
             }
             $verdict.textContent = msg
             $verdict.className = 'home-probe-verdict ' + (ok ? 'pass' : 'fail')
+            progressPct = 100
+            $progress.value = '100'
+            $progress.style.display = 'none'
+            $stage.textContent = ''
+            $logBox.open = !ok
             toast(ok ? 'Done' : 'Probe failed', ok ? 'ok' : 'fail')
             if (ok) {
               const currentWorkdir = (window.__project && window.__project.workdir) || ''
@@ -1094,8 +1141,13 @@ async function renderHome () {
     el('section', { class: 'home-card home-probe-card' },
       el('h2', { class: 'home-card-title' }, 'Probe a URL'),
       el('p', { class: 'home-card-sub' }, 'Tests appear in the sidebar when done.'),
-      el('div', { class: 'home-probe-row' }, $urlInput, $coverage, $browser, $engine, $stealth, $maxJourneys, $btn),
-      $terminal,
+      el('div', { class: 'home-probe-row' }, $urlInput, $nameInput, $btn),
+      el('details', { class: 'home-probe-advanced' },
+        el('summary', {}, 'Advanced'),
+        el('div', { class: 'home-probe-row home-probe-row-advanced' }, $coverage, $browser, $engine, $stealth, $maxJourneys),
+      ),
+      el('div', { class: 'home-probe-progress-row' }, $progress, $stage),
+      $logBox,
       $verdict,
     ),
     el('section', { class: 'home-card' },

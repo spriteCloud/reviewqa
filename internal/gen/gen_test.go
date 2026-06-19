@@ -4,8 +4,8 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/reviewqa/reviewqa/internal/ast"
-	"github.com/reviewqa/reviewqa/internal/plan"
+	"github.com/spriteCloud/quail/internal/ast"
+	"github.com/spriteCloud/quail/internal/plan"
 )
 
 func TestRenderJestUnit(t *testing.T) {
@@ -454,7 +454,7 @@ func TestRender_QualityReport_AndPerLineNotes(t *testing.T) {
 	}
 	body := string(out[0].Content)
 	for _, want := range []string{
-		"reviewqa quality report",
+		"quail quality report",
 		"note: using <name>",
 		"Weak / missing locators",
 	} {

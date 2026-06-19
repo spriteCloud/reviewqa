@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>reviewqa stakeholder summary — https://gohugo.io</title>
+<title>quail stakeholder summary — https://gohugo.io</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Sora:wght@400;500;600;700;800&family=Inter:wght@400;500;600;900&family=Fira+Code:wght@400;500;600&display=swap" rel="stylesheet">
@@ -66,12 +66,60 @@
   .cover h1 {
     font-family: 'Sora', sans-serif;
     font-weight: 800;
-    font-size: clamp(36px, 4.6vw, 52px);
-    line-height: 1.04;
-    letter-spacing: -0.035em;
+    font-size: clamp(26px, 2.8vw, 36px);
+    line-height: 1.1;
+    letter-spacing: -0.025em;
     color: var(--white);
-    margin: 12px 0 18px;
-    word-break: break-word;
+    margin: 10px 0 14px;
+    overflow-wrap: anywhere;
+  }
+  .cover .origin {
+    font-family: 'Fira Code', monospace;
+    font-size: 12px;
+    color: var(--copper);
+    word-break: break-all;
+    margin-bottom: 10px;
+    display: block;
+  }
+  /* Risk strip — three KPI tiles right under the cover band. */
+  .risk-strip {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 0;
+    background: var(--charcoal);
+    color: var(--white);
+    padding: 0;
+  }
+  .risk-tile {
+    padding: 18px 24px;
+    border-right: 1px solid rgba(255,255,255,0.08);
+  }
+  .risk-tile:last-child { border-right: 0; }
+  .risk-tile .num {
+    font-family: 'Sora', sans-serif;
+    font-weight: 800;
+    font-size: 32px;
+    letter-spacing: -0.02em;
+    line-height: 1;
+  }
+  .risk-tile .label {
+    font-family: 'Fira Code', monospace;
+    font-size: 10px;
+    letter-spacing: 0.16em;
+    text-transform: uppercase;
+    color: var(--copper);
+    display: block;
+    margin-bottom: 8px;
+  }
+  .risk-tile .sub {
+    font-size: 11px;
+    color: var(--mist);
+    margin-top: 4px;
+  }
+  @media (max-width: 720px) {
+    .risk-strip { grid-template-columns: 1fr; }
+    .risk-tile { border-right: 0; border-bottom: 1px solid rgba(255,255,255,0.08); }
+    .risk-tile:last-child { border-bottom: 0; }
   }
   .cover-meta {
     display: flex;
@@ -301,18 +349,35 @@
 
   <header class="cover">
     <div class="cover-head">
-      <span class="label">reviewqa · stakeholder summary</span>
+      <span class="label">quail · stakeholder summary</span>
       <span class="wm"><span class="s">sprite</span><span class="c">Cloud</span></span>
     </div>
-    <h1>https://gohugo.io</h1>
+    <h1>Coverage map for gohugo.</h1>
+    <span class="origin">https://gohugo.io</span>
     <div class="cover-meta">
       <span>Generated </span>
       <span class="dot">·</span>
       <span class="pill">standard coverage</span>
-      <span class="dot">·</span>
-      <span>30 pages · 3 journeys · 5 fuzz specs</span>
     </div>
   </header>
+
+  <section class="risk-strip" aria-label="Risk snapshot">
+    <div class="risk-tile">
+      <span class="label">Gated on release</span>
+      <div class="num">0</div>
+      <div class="sub">critical journeys the suite blocks shipping on</div>
+    </div>
+    <div class="risk-tile">
+      <span class="label">Standard regression</span>
+      <div class="num">6</div>
+      <div class="sub">standard journeys monitored every nightly</div>
+    </div>
+    <div class="risk-tile">
+      <span class="label">Awaiting wireup</span>
+      <div class="num">1</div>
+      <div class="sub">Integration layer is scaffold-only until `quail.yml` wires the backing resource</div>
+    </div>
+  </section>
 
   <div class="pixel-rail" aria-hidden="true">
     <div class="pixel-rail-inner">
@@ -328,19 +393,23 @@
     <section class="section">
       <div class="section-head">
         <span class="label">At a glance</span>
-        <h2>What reviewqa did on this site.</h2>
+        <h2>What's green-lit, what's gated, what's unverified.</h2>
       </div>
       <div class="glance">
         <p>
-          reviewqa crawled <span class="num">30</span> pages on <strong>https://gohugo.io</strong>
-          and identified <span class="num">3</span> user journeys, classified by business priority. <span class="num">3</span> are <strong>nice-to-have</strong> &mdash; longer-tail flows worth keeping warm.
+          quail observed <span class="num">30</span> pages
+          on this surface and translated them into <span class="num">9</span> user
+          journeys. <strong>6</strong> run on nightly regression &mdash; the early-warning net. <strong>3</strong> are kept warm but won't block a ship.
         </p>
         <p>
-          The emitted suite spans <strong>standard</strong> coverage:
-          a Playwright + Gherkin journey suite (one .feature file per journey),
-          an accessibility trio on every crawled page (5 axe-core gates, 5 landmark checks, 5 keyboard gestures),
-          responsive / performance / security / health / observability quality specs,
-          a 4-device × 2-orientation mobile matrix, and <span class="num">5</span> adversarial fuzz specs per form.
+          Beyond the journey suite, every crawled page is checked for accessibility
+          (5 axe-core gates, 5 landmark, 5 keyboard), mobile rendering on 4 devices ×
+          2 orientations, network resilience, security headers, and performance budgets. <span class="num">5</span> adversarial fuzz specs hammer the discovered forms with 9 negative payloads each.
+        </p>
+        <p>
+          <strong>Unverified surface:</strong> the Integration layer (DB / cache / auth /
+          observability) ships as scaffolds that skip until <code>quail.yml</code> binds them
+          to the backing resources. Until then, the suite cannot prove cross-system contracts.
         </p>
       </div>
     </section>
@@ -378,7 +447,7 @@
             <h3>Integration</h3>
             <span class="pill-state state-stub">scaffold only</span>
           </div>
-          <div class="layer-desc">5 scaffolds (api / db / cache / observability / auth) × 3 wireable blocks each. Tests skip until <code>reviewqa.yml</code> wires the backing resource.</div>
+          <div class="layer-desc">5 scaffolds (api / db / cache / observability / auth) × 3 wireable blocks each. Tests skip until <code>quail.yml</code> wires the backing resource.</div>
         </div>
         <div class="layer-card">
           <div class="layer-head">
@@ -400,16 +469,16 @@
     <section class="section">
       <div class="section-head">
         <span class="label">Priority mix</span>
-        <h2>How the work splits across 3 journeys.</h2>
+        <h2>How the work splits across 9 journeys.</h2>
       </div>
       <div class="pri-bar" aria-label="Priority distribution bar">
         <span style="width: 0%; background: var(--bad-fg)"></span>
-        <span style="width: 0%; background: var(--deep-water)"></span>
-        <span style="width: 100%; background: var(--mist)"></span>
+        <span style="width: 66%; background: var(--deep-water)"></span>
+        <span style="width: 33%; background: var(--mist)"></span>
       </div>
       <div class="pri-legend">
         <span><i style="background: var(--bad-fg)"></i>critical (0)</span>
-        <span><i style="background: var(--deep-water)"></i>standard (0)</span>
+        <span><i style="background: var(--deep-water)"></i>standard (6)</span>
         <span><i style="background: var(--mist)"></i>nice-to-have (3)</span>
       </div>
     </section>
@@ -421,11 +490,56 @@
       </div>
       <div class="journey-list">
         <div class="journey-card">
-          <span class="pri pri-nice-to-have">nice-to-have</span>
+          <span class="pri pri-standard">standard</span>
           <div class="journey-body">
-            <div class="journey-kind">read</div>
-            <div class="journey-blurb">users consume long-form content.</div>
-            <div class="journey-meta">→ <code>tests/e2e/features/gohugo-io-read-templates-new-templatesystem-overview.feature</code></div>
+            <div class="journey-kind">exercise</div>
+            <div class="journey-blurb">users complete an interactive task.</div>
+            <div class="journey-meta">→ <code>tests/e2e/features/exercise.feature</code></div>
+          </div>
+          <div class="journey-steps">1<small>steps</small></div>
+        </div>
+        <div class="journey-card">
+          <span class="pri pri-standard">standard</span>
+          <div class="journey-body">
+            <div class="journey-kind">exercise</div>
+            <div class="journey-blurb">users complete an interactive task.</div>
+            <div class="journey-meta">→ <code>tests/e2e/features/exercise-news.feature</code></div>
+          </div>
+          <div class="journey-steps">1<small>steps</small></div>
+        </div>
+        <div class="journey-card">
+          <span class="pri pri-standard">standard</span>
+          <div class="journey-body">
+            <div class="journey-kind">exercise</div>
+            <div class="journey-blurb">users complete an interactive task.</div>
+            <div class="journey-meta">→ <code>tests/e2e/features/exercise-documentation.feature</code></div>
+          </div>
+          <div class="journey-steps">1<small>steps</small></div>
+        </div>
+        <div class="journey-card">
+          <span class="pri pri-standard">standard</span>
+          <div class="journey-body">
+            <div class="journey-kind">browse</div>
+            <div class="journey-blurb">users navigate marketing content.</div>
+            <div class="journey-meta">→ <code>tests/e2e/features/browse-getting-started.feature</code></div>
+          </div>
+          <div class="journey-steps">2<small>steps</small></div>
+        </div>
+        <div class="journey-card">
+          <span class="pri pri-standard">standard</span>
+          <div class="journey-body">
+            <div class="journey-kind">browse</div>
+            <div class="journey-blurb">users navigate marketing content.</div>
+            <div class="journey-meta">→ <code>tests/e2e/features/browse-about.feature</code></div>
+          </div>
+          <div class="journey-steps">2<small>steps</small></div>
+        </div>
+        <div class="journey-card">
+          <span class="pri pri-standard">standard</span>
+          <div class="journey-body">
+            <div class="journey-kind">browse</div>
+            <div class="journey-blurb">users navigate marketing content.</div>
+            <div class="journey-meta">→ <code>tests/e2e/features/browse-commands.feature</code></div>
           </div>
           <div class="journey-steps">2<small>steps</small></div>
         </div>
@@ -434,7 +548,7 @@
           <div class="journey-body">
             <div class="journey-kind">read</div>
             <div class="journey-blurb">users consume long-form content.</div>
-            <div class="journey-meta">→ <code>tests/e2e/features/gohugo-io-read-about.feature</code></div>
+            <div class="journey-meta">→ <code>tests/e2e/features/read-news.feature</code></div>
           </div>
           <div class="journey-steps">2<small>steps</small></div>
         </div>
@@ -443,7 +557,16 @@
           <div class="journey-body">
             <div class="journey-kind">read</div>
             <div class="journey-blurb">users consume long-form content.</div>
-            <div class="journey-meta">→ <code>tests/e2e/features/gohugo-io-read-commands.feature</code></div>
+            <div class="journey-meta">→ <code>tests/e2e/features/read-documentation.feature</code></div>
+          </div>
+          <div class="journey-steps">2<small>steps</small></div>
+        </div>
+        <div class="journey-card">
+          <span class="pri pri-nice-to-have">nice-to-have</span>
+          <div class="journey-body">
+            <div class="journey-kind">read</div>
+            <div class="journey-blurb">users consume long-form content.</div>
+            <div class="journey-meta">→ <code>tests/e2e/features/read-contribute.feature</code></div>
           </div>
           <div class="journey-steps">2<small>steps</small></div>
         </div>
@@ -452,41 +575,41 @@
     <section class="section">
       <div class="section-head">
         <span class="label">Pages crawled</span>
-        <h2>30 pages reviewqa observed on this site.</h2>
+        <h2>30 pages quail observed on this site.</h2>
       </div>
       <table>
         <thead><tr><th>URL</th><th>Title</th></tr></thead>
         <tbody>
-          <tr><td><code>https://gohugo.io</code></td><td>The world's fastest framework for building websites</td></tr>
-          <tr><td><code>https://gohugo.io/templates/new-templatesystem-overview</code></td><td>New template system in Hugo v0.146.0</td></tr>
-          <tr><td><code>https://gohugo.io/about</code></td><td>About Hugo</td></tr>
-          <tr><td><code>https://gohugo.io/commands</code></td><td>Command line interface</td></tr>
-          <tr><td><code>https://gohugo.io/configuration</code></td><td>Configuration</td></tr>
-          <tr><td><code>https://gohugo.io/content-management</code></td><td>Content management</td></tr>
-          <tr><td><code>https://gohugo.io/contribute</code></td><td>Contribute to the Hugo project</td></tr>
-          <tr><td><code>https://gohugo.io/tools</code></td><td>Developer tools</td></tr>
-          <tr><td><code>https://gohugo.io/tools/editors</code></td><td>Editor plugins</td></tr>
-          <tr><td><code>https://gohugo.io/functions</code></td><td>Functions</td></tr>
-          <tr><td><code>https://gohugo.io/getting-started</code></td><td>Getting started</td></tr>
-          <tr><td><code>https://gohugo.io/host-and-deploy</code></td><td>Host and deploy</td></tr>
-          <tr><td><code>https://gohugo.io/hugo-modules</code></td><td>Hugo modules</td></tr>
-          <tr><td><code>https://gohugo.io/hugo-pipes</code></td><td>Hugo Pipes</td></tr>
-          <tr><td><code>https://gohugo.io/installation</code></td><td>Installation</td></tr>
-          <tr><td><code>https://gohugo.io/about/introduction</code></td><td>Introduction</td></tr>
-          <tr><td><code>https://gohugo.io/configuration/introduction</code></td><td>Introduction</td></tr>
-          <tr><td><code>https://gohugo.io/hugo-modules/introduction</code></td><td>Introduction</td></tr>
-          <tr><td><code>https://gohugo.io/hugo-pipes/introduction</code></td><td>Hugo Pipes</td></tr>
-          <tr><td><code>https://gohugo.io/render-hooks/introduction</code></td><td>Introduction</td></tr>
-          <tr><td><code>https://gohugo.io/templates/introduction</code></td><td>Introduction to templating</td></tr>
-          <tr><td><code>https://gohugo.io/installation/macos</code></td><td>macOS</td></tr>
-          <tr><td><code>https://gohugo.io/methods</code></td><td>Methods</td></tr>
-          <tr><td><code>https://gohugo.io/news</code></td><td>News</td></tr>
-          <tr><td><code>https://gohugo.io/quick-reference</code></td><td>Quick reference guides</td></tr>
-          <tr><td><code>https://gohugo.io/getting-started/quick-start</code></td><td>Quick start</td></tr>
-          <tr><td><code>https://gohugo.io/render-hooks</code></td><td>Render hooks</td></tr>
-          <tr><td><code>https://gohugo.io/shortcodes</code></td><td>Shortcodes</td></tr>
-          <tr><td><code>https://gohugo.io/templates</code></td><td>Templates</td></tr>
-          <tr><td><code>https://gohugo.io/troubleshooting</code></td><td>Troubleshooting</td></tr>
+          <tr><td><code>https://gohugo.io/</code></td><td>The world's fastest framework for building websites</td></tr>
+          <tr><td><code>https://gohugo.io/news/</code></td><td>News</td></tr>
+          <tr><td><code>https://gohugo.io/documentation/</code></td><td>Hugo Documentation</td></tr>
+          <tr><td><code>https://gohugo.io/getting-started/</code></td><td>Getting started</td></tr>
+          <tr><td><code>https://gohugo.io/about/</code></td><td>About Hugo</td></tr>
+          <tr><td><code>https://gohugo.io/commands/</code></td><td>Command line interface</td></tr>
+          <tr><td><code>https://gohugo.io/configuration/</code></td><td>Configuration</td></tr>
+          <tr><td><code>https://gohugo.io/content-management/</code></td><td>Content management</td></tr>
+          <tr><td><code>https://gohugo.io/contribute/</code></td><td>Contribute to the Hugo project</td></tr>
+          <tr><td><code>https://gohugo.io/tools/</code></td><td>Developer tools</td></tr>
+          <tr><td><code>https://gohugo.io/functions/</code></td><td>Functions</td></tr>
+          <tr><td><code>https://gohugo.io/host-and-deploy/</code></td><td>Host and deploy</td></tr>
+          <tr><td><code>https://gohugo.io/hugo-modules/</code></td><td>Hugo modules</td></tr>
+          <tr><td><code>https://gohugo.io/hugo-pipes/</code></td><td>Hugo Pipes</td></tr>
+          <tr><td><code>https://gohugo.io/installation/</code></td><td>Installation</td></tr>
+          <tr><td><code>https://gohugo.io/methods/</code></td><td>Methods</td></tr>
+          <tr><td><code>https://gohugo.io/quick-reference/</code></td><td>Quick reference guides</td></tr>
+          <tr><td><code>https://gohugo.io/render-hooks/</code></td><td>Render hooks</td></tr>
+          <tr><td><code>https://gohugo.io/shortcodes/</code></td><td>Shortcodes</td></tr>
+          <tr><td><code>https://gohugo.io/templates/</code></td><td>Templates</td></tr>
+          <tr><td><code>https://gohugo.io/troubleshooting/</code></td><td>Troubleshooting</td></tr>
+          <tr><td><code>https://gohugo.io/getting-started/quick-start/</code></td><td>Quick start</td></tr>
+          <tr><td><code>https://gohugo.io/getting-started/usage/</code></td><td>Basic usage</td></tr>
+          <tr><td><code>https://gohugo.io/getting-started/directory-structure/</code></td><td>Directory structure</td></tr>
+          <tr><td><code>https://gohugo.io/getting-started/external-learning-resources/</code></td><td>External learning resources</td></tr>
+          <tr><td><code>https://gohugo.io/about/introduction/</code></td><td>Introduction</td></tr>
+          <tr><td><code>https://gohugo.io/about/features/</code></td><td>Features</td></tr>
+          <tr><td><code>https://gohugo.io/about/security/</code></td><td>Security model</td></tr>
+          <tr><td><code>https://gohugo.io/about/license/</code></td><td>License</td></tr>
+          <tr><td><code>https://gohugo.io/commands/hugo/</code></td><td>hugo</td></tr>
         </tbody>
       </table>
     </section>
@@ -515,21 +638,21 @@
           <span class="n">3</span>
           <div>
             <h4>Triage failures</h4>
-            <p>Open <code>tests/e2e/docs/findings.md</code> after each run. <code>reviewqa ledger update --report playwright-report.json</code> deduplicates failures by (spec, test) and surfaces them risk-weighted by priority — survives across runs.</p>
+            <p>Open <code>tests/e2e/docs/findings.md</code> after each run. <code>quail ledger update --report playwright-report.json</code> deduplicates failures by (spec, test) and surfaces them risk-weighted by priority — survives across runs.</p>
           </div>
         </div>
         <div class="next-step">
           <span class="n">4</span>
           <div>
             <h4>Re-probe on change</h4>
-            <p>Re-run <code>reviewqa probe</code> after feature merges to track coverage drift — new pages and new forms get picked up automatically; removed surfaces drop out.</p>
+            <p>Re-run <code>quail probe</code> after feature merges to track coverage drift — new pages and new forms get picked up automatically; removed surfaces drop out.</p>
           </div>
         </div>
         <div class="next-step">
           <span class="n">5</span>
           <div>
             <h4>Tailor in the browser</h4>
-            <p><code>reviewqa serve --workdir .</code> opens a local UI where stakeholders can delete journeys, refine Scenarios via chat, suggest locators from the live DOM, and run individual Scenarios — no IDE required.</p>
+            <p><code>quail serve --workdir .</code> opens a local UI where stakeholders can delete journeys, refine Scenarios via chat, suggest locators from the live DOM, and run individual Scenarios — no IDE required.</p>
           </div>
         </div>
       </div>
@@ -537,8 +660,8 @@
   </main>
 
   <footer>
-    <span>Re-generate with <code>reviewqa probe</code> · published by reviewqa &mdash; by spriteCloud.</span>
-    <a href="https://github.com/spriteCloud/reviewqa">github.com/spriteCloud/reviewqa</a>
+    <span>Re-generate with <code>quail probe</code> · published by quail &mdash; by spriteCloud.</span>
+    <a href="https://github.com/spriteCloud/quail">github.com/spriteCloud/quail</a>
   </footer>
 </body>
 </html>

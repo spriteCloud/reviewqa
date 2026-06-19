@@ -4,8 +4,8 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/reviewqa/reviewqa/internal/ast"
-	"github.com/reviewqa/reviewqa/internal/plan"
+	"github.com/spriteCloud/quail/internal/ast"
+	"github.com/spriteCloud/quail/internal/plan"
 )
 
 func TestStepsAPITemplate_EmitsHelperVerbs(t *testing.T) {
@@ -39,7 +39,7 @@ func TestStepsAPITemplate_EmitsHelperVerbs(t *testing.T) {
 		}
 	}
 	// Quality report block is for specs, not stakeholder helpers.
-	if strings.HasPrefix(body, "/* reviewqa quality report") {
+	if strings.HasPrefix(body, "/* quail quality report") {
 		t.Errorf("steps.ts must not carry a quality-report header")
 	}
 }
@@ -155,7 +155,7 @@ func TestSummaryTemplate_RendersPriorityMix(t *testing.T) {
 	}
 	body := string(out[0].Content)
 	mustContain(t, body, "<!doctype html>")
-	mustContain(t, body, "reviewqa · stakeholder summary")
+	mustContain(t, body, "quail · stakeholder summary")
 	mustContain(t, body, "https://x.test")
 	mustContain(t, body, "spriteCloud")              // wordmark
 	mustContain(t, body, "pixel-rail")               // brand motif

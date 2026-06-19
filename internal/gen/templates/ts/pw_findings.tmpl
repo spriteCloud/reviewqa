@@ -4,7 +4,7 @@ Persists fuzz/negative/journey failures across runs. Each row is one
 finding, deduped by (spec, test). Update with:
 
 ```bash
-reviewqa ledger update --report playwright-report.json
+quail ledger update --report playwright-report.json
 ```
 
 Severity follows the @priority mapping: critical journeys → high,

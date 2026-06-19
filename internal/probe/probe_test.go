@@ -7,11 +7,11 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/reviewqa/reviewqa/internal/mindmap"
+	"github.com/spriteCloud/quail/internal/mindmap"
 )
 
 func TestFetch_HappyPath(t *testing.T) {
-	t.Setenv("REVIEWQA_PROBE_ALLOW_LOOPBACK", "1")
+	t.Setenv("QUAIL_PROBE_ALLOW_LOOPBACK", "1")
 	body := `<!doctype html><html><body>
 <form data-testid="signup">
   <input type="email" name="email" required />
@@ -48,7 +48,7 @@ func TestFetch_RejectsNonHTTPScheme(t *testing.T) {
 
 func TestFetch_RejectsLoopback(t *testing.T) {
 	// Without the escape hatch, loopback must be blocked.
-	t.Setenv("REVIEWQA_PROBE_ALLOW_LOOPBACK", "")
+	t.Setenv("QUAIL_PROBE_ALLOW_LOOPBACK", "")
 	if _, err := Fetch(context.Background(), "http://127.0.0.1:9/"); err == nil {
 		t.Error("expected error for loopback address")
 	}
@@ -70,7 +70,7 @@ func TestBuildItem(t *testing.T) {
 	if item.PageURL != "https://www.spritecloud.com/" {
 		t.Errorf("PageURL = %q, want absolute URL", item.PageURL)
 	}
-	if item.OutPath != "tests/e2e/spritecloud-com.spec.ts" {
+	if item.OutPath != "tests/e2e/landing.spec.ts" {
 		t.Errorf("OutPath = %q", item.OutPath)
 	}
 	if len(item.Symbol.Inputs) != 1 {
@@ -158,7 +158,7 @@ func TestBuildItem_SpritecloudShape_FormIntent(t *testing.T) {
 }
 
 func TestRunAll_EmitsMultipleJourneys(t *testing.T) {
-	t.Setenv("REVIEWQA_PROBE_ALLOW_LOOPBACK", "1")
+	t.Setenv("QUAIL_PROBE_ALLOW_LOOPBACK", "1")
 	// Two-page site shaped like a marketing brochure:
 	//   /         — landing with an h1 + nav links
 	//   /contact  — detail page (h1 + few links)
@@ -209,25 +209,23 @@ func TestOutPathStemForJourney_ExerciseGetsSlugSuffix(t *testing.T) {
 	about := &mindmap.Page{URL: "https://x.test/about"}
 	stemLanding := outPathStemForJourney(
 		mindmap.Journey{Kind: mindmap.JourneyExercise, Steps: []mindmap.Step{{Page: landing}}},
-		landing,
 	)
 	stemAbout := outPathStemForJourney(
 		mindmap.Journey{Kind: mindmap.JourneyExercise, Steps: []mindmap.Step{{Page: about}}},
-		about,
 	)
 	if stemLanding == stemAbout {
 		t.Errorf("expected different stems for landing vs /about exercise; got both = %q", stemLanding)
 	}
-	if stemLanding != "x-test-exercise" {
-		t.Errorf("landing exercise stem = %q; want x-test-exercise", stemLanding)
+	if stemLanding != "exercise" {
+		t.Errorf("landing exercise stem = %q; want exercise", stemLanding)
 	}
-	if stemAbout != "x-test-exercise-about" {
-		t.Errorf("about exercise stem = %q; want x-test-exercise-about", stemAbout)
+	if stemAbout != "exercise-about" {
+		t.Errorf("about exercise stem = %q; want exercise-about", stemAbout)
 	}
 }
 
 func TestRunAll_AggregatesErrors(t *testing.T) {
-	t.Setenv("REVIEWQA_PROBE_ALLOW_LOOPBACK", "1")
+	t.Setenv("QUAIL_PROBE_ALLOW_LOOPBACK", "1")
 	srv := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		_, _ = w.Write([]byte(`<html><body><h1>Home</h1><a href="/about">About</a></body></html>`))
 	}))

@@ -12,10 +12,10 @@ import (
 	"sort"
 	"strings"
 
-	"github.com/reviewqa/reviewqa/internal/ast"
-	"github.com/reviewqa/reviewqa/internal/diff"
-	"github.com/reviewqa/reviewqa/internal/plan/patterns"
-	"github.com/reviewqa/reviewqa/internal/log"
+	"github.com/spriteCloud/quail/internal/ast"
+	"github.com/spriteCloud/quail/internal/diff"
+	"github.com/spriteCloud/quail/internal/plan/patterns"
+	"github.com/spriteCloud/quail/internal/log"
 )
 
 // pageRoot is a candidate page file: either a static HTML page or a TSX/JSX
@@ -640,7 +640,7 @@ func resolveLinkHref(baseURL, href string) string {
 // are mounted on the same page root, and emits a happy-flow item for each
 // static HTML page touched by the diff.
 func groupByPage(items []Item, files []diff.File, layout Layout) []Item {
-	style := os.Getenv("REVIEWQA_E2E_STYLE")
+	style := os.Getenv("QUAIL_E2E_STYLE")
 	roots := applyPageURLOverrides(findPageRoots(layout.WorkDir))
 	if len(roots) == 0 && style != "page-flow" {
 		return items
@@ -838,17 +838,17 @@ func isSameOriginRelative(href string) bool {
 	return strings.HasPrefix(href, "/") && !strings.HasPrefix(href, "//")
 }
 
-// applyPageURLOverrides parses REVIEWQA_PAGE_URLS (JSON map of source path →
+// applyPageURLOverrides parses QUAIL_PAGE_URLS (JSON map of source path →
 // URL) and updates matching roots' URL fields. Invalid JSON is logged and
 // otherwise ignored.
 func applyPageURLOverrides(roots []pageRoot) []pageRoot {
-	raw := os.Getenv("REVIEWQA_PAGE_URLS")
+	raw := os.Getenv("QUAIL_PAGE_URLS")
 	if raw == "" {
 		return roots
 	}
 	var overrides map[string]string
 	if err := json.Unmarshal([]byte(raw), &overrides); err != nil {
-		log.Warn("REVIEWQA_PAGE_URLS: invalid JSON; ignoring", "err", err)
+		log.Warn("QUAIL_PAGE_URLS: invalid JSON; ignoring", "err", err)
 		return roots
 	}
 	for i := range roots {

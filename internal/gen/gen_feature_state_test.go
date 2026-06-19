@@ -4,8 +4,8 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/reviewqa/reviewqa/internal/ast"
-	"github.com/reviewqa/reviewqa/internal/plan"
+	"github.com/spriteCloud/quail/internal/ast"
+	"github.com/spriteCloud/quail/internal/plan"
 )
 
 func TestFeatureTemplate_StateVariantsWhenAuthJourneyInSuite(t *testing.T) {
@@ -31,7 +31,7 @@ func TestFeatureTemplate_StateVariantsWhenAuthJourneyInSuite(t *testing.T) {
 	}
 	body := string(out[0].Content)
 	mustContain(t, body, "@state:logged-in @kind:state")
-	mustContain(t, body, `I am signed in as "reviewqa-test-user"`)
+	mustContain(t, body, `I am signed in as "quail-test-user"`)
 	mustContain(t, body, "@state:anonymous @kind:state")
 	mustContain(t, body, "I am not signed in")
 }

@@ -11,11 +11,11 @@ import (
 	"path/filepath"
 	"strings"
 
-	"github.com/reviewqa/reviewqa/internal/ast"
-	"github.com/reviewqa/reviewqa/internal/log"
-	"github.com/reviewqa/reviewqa/internal/mindmap"
-	"github.com/reviewqa/reviewqa/internal/plan"
-	"github.com/reviewqa/reviewqa/internal/probe/browser"
+	"github.com/spriteCloud/quail/internal/ast"
+	"github.com/spriteCloud/quail/internal/log"
+	"github.com/spriteCloud/quail/internal/mindmap"
+	"github.com/spriteCloud/quail/internal/plan"
+	"github.com/spriteCloud/quail/internal/probe/browser"
 )
 
 // browserPage is the on-the-wire shape emitted by the sidecar Playwright
@@ -147,16 +147,16 @@ func runBrowserCrawl(ctx context.Context, origin string, engine EngineMode, stea
 
 	cmd := exec.CommandContext(ctx, "node", scriptPath, origin)
 	// Run from the shared runner so node's ESM resolver walks
-	// <runner>/.reviewqa-browser-probe-XXX → <runner> →
+	// <runner>/.quail-browser-probe-XXX → <runner> →
 	// <runner>/node_modules — which EnsureRunner just populated.
 	// Independent of where the probed project lives on disk.
 	cmd.Dir = runnerDir
 	cmd.Env = append(os.Environ(),
 		"NODE_PATH="+filepath.Join(runnerDir, "node_modules"),
-		"REVIEWQA_ENGINE="+string(engine),
-		"REVIEWQA_STEALTH="+stealthVal,
-		fmt.Sprintf("REVIEWQA_MAX_PAGES=%d", maxPages),
-		fmt.Sprintf("REVIEWQA_MAX_DEPTH=%d", maxDepth),
+		"QUAIL_ENGINE="+string(engine),
+		"QUAIL_STEALTH="+stealthVal,
+		fmt.Sprintf("QUAIL_MAX_PAGES=%d", maxPages),
+		fmt.Sprintf("QUAIL_MAX_DEPTH=%d", maxDepth),
 	)
 	out, err := cmd.Output()
 	if err != nil {

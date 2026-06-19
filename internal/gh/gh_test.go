@@ -12,7 +12,7 @@ import (
 	"testing"
 
 	"github.com/google/go-github/v66/github"
-	"github.com/reviewqa/reviewqa/internal/config"
+	"github.com/spriteCloud/quail/internal/config"
 )
 
 func TestIsAlreadyExists(t *testing.T) {

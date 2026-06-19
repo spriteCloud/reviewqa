@@ -3,7 +3,7 @@ package gen
 import (
 	"testing"
 
-	"github.com/reviewqa/reviewqa/internal/ast"
+	"github.com/spriteCloud/quail/internal/ast"
 )
 
 // v0.92: name-hint dictionary fills calculator-shape fields with

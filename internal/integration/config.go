@@ -1,4 +1,4 @@
-// Package integration loads reviewqa.yml — the optional consumer-side
+// Package integration loads quail.yml — the optional consumer-side
 // config that declares external systems (DBs / brokers / caches /
 // storage / search / auth) the integration-test generator should emit
 // Testcontainers + round-trip tests for.
@@ -16,7 +16,7 @@ import (
 	"gopkg.in/yaml.v3"
 )
 
-// Config is the schema of reviewqa.yml.
+// Config is the schema of quail.yml.
 type Config struct {
 	Databases []Database `yaml:"databases"`
 	Brokers   []Broker   `yaml:"brokers"`
@@ -58,10 +58,10 @@ type Auth struct {
 	Issuer   string `yaml:"issuer"`
 }
 
-// Load reads reviewqa.yml from the given directory. Returns
+// Load reads quail.yml from the given directory. Returns
 // (nil, nil) when the file is absent; (nil, err) on parse errors.
 func Load(workDir string) (*Config, error) {
-	for _, name := range []string{"reviewqa.yml", "reviewqa.yaml"} {
+	for _, name := range []string{"quail.yml", "quail.yaml"} {
 		path := filepath.Join(workDir, name)
 		body, err := os.ReadFile(path)
 		if err != nil {

@@ -1,14 +1,14 @@
 # Commercial licensing
 
-reviewqa is offered under a **dual license**:
+quail is offered under a **dual license**:
 
 1. **AGPL-3.0** for the community edition. Free to use, modify, and run — as
    long as the resulting work (including any network-accessible service) is
    itself released under the AGPL.
 2. **Commercial license** from spriteCloud for organisations that cannot or
    prefer not to comply with the AGPL — typically because they:
-   - want to embed reviewqa into a proprietary product or pipeline,
-   - operate a network service derived from reviewqa without publishing the
+   - want to embed quail into a proprietary product or pipeline,
+   - operate a network service derived from quail without publishing the
      source of their modifications,
    - need contractual indemnification, an SLA, or named support.
 

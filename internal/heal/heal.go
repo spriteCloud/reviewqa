@@ -9,11 +9,11 @@ import (
 	"sort"
 	"strings"
 
-	"github.com/reviewqa/reviewqa/internal/ast"
-	"github.com/reviewqa/reviewqa/internal/config"
-	"github.com/reviewqa/reviewqa/internal/diff"
-	"github.com/reviewqa/reviewqa/internal/llm"
-	"github.com/reviewqa/reviewqa/internal/log"
+	"github.com/spriteCloud/quail/internal/ast"
+	"github.com/spriteCloud/quail/internal/config"
+	"github.com/spriteCloud/quail/internal/diff"
+	"github.com/spriteCloud/quail/internal/llm"
+	"github.com/spriteCloud/quail/internal/log"
 )
 
 // Candidate is a possible replacement for a broken locator.

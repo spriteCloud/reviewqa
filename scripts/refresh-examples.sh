@@ -7,22 +7,22 @@
 #   playwright-dev, gohugo-io, books-toscrape-com, es-wikipedia-org-madrid
 #
 # The 2 AI-on examples (spritecloud-com-dgx, petstore-swagger-io-dgx)
-# require REVIEWQA_LLM pointed at an OpenAI-compatible endpoint. The
+# require QUAIL_LLM pointed at an OpenAI-compatible endpoint. The
 # spriteCloud DGX (http://100.82.34.115:11434) is reachable only via
-# Netbird, so these two are skipped automatically when REVIEWQA_LLM is
+# Netbird, so these two are skipped automatically when QUAIL_LLM is
 # unset.
 #
 # Usage:
 #   ./scripts/refresh-examples.sh                      # 4 deterministic only
-#   REVIEWQA_LLM=http://… ./scripts/refresh-examples.sh  # all 6
+#   QUAIL_LLM=http://… ./scripts/refresh-examples.sh  # all 6
 set -euo pipefail
 
-BIN=${BIN:-/tmp/reviewqa}
+BIN=${BIN:-/tmp/quail}
 ROOT=$(git rev-parse --show-toplevel)
 cd "$ROOT"
 
 echo "==> Building binary"
-go build -o "$BIN" ./cmd/reviewqa
+go build -o "$BIN" ./cmd/quail
 "$BIN" --version || true
 
 split_and_write() {
@@ -48,7 +48,7 @@ split_and_write() {
 
 run_probe() {
   local site_dir=$1 url=$2; shift 2
-  local out=/tmp/reviewqa-refresh-$site_dir.out
+  local out=/tmp/quail-refresh-$site_dir.out
   echo "==> Probing $url -> examples/$site_dir/"
   env "$@" "$BIN" probe --url "$url" --dry-run > "$out"
   split_and_write "$site_dir" "$out"
@@ -56,19 +56,19 @@ run_probe() {
 
 # The 4 deterministic probes always run with LLM scrubbed from the env
 # regardless of what the caller exported, so humanization doesn't fire.
-run_probe playwright-dev          https://playwright.dev               -u REVIEWQA_LLM
-run_probe gohugo-io               https://gohugo.io                    -u REVIEWQA_LLM
-run_probe books-toscrape-com      https://books.toscrape.com           -u REVIEWQA_LLM
-run_probe es-wikipedia-org-madrid https://es.wikipedia.org/wiki/Madrid -u REVIEWQA_LLM
+run_probe playwright-dev          https://playwright.dev               -u QUAIL_LLM
+run_probe gohugo-io               https://gohugo.io                    -u QUAIL_LLM
+run_probe books-toscrape-com      https://books.toscrape.com           -u QUAIL_LLM
+run_probe es-wikipedia-org-madrid https://es.wikipedia.org/wiki/Madrid -u QUAIL_LLM
 
 # AI probes require an OpenAI-compatible endpoint reachable from this
 # machine (spriteCloud's DGX is on Netbird; any local Ollama / vLLM
 # works too). Skip cleanly when none is configured.
-if [[ -n "${REVIEWQA_LLM:-}" ]]; then
-  run_probe spritecloud-com-dgx     https://www.spritecloud.com    REVIEWQA_LLM="$REVIEWQA_LLM" REVIEWQA_HUMANIZE=0
-  run_probe petstore-swagger-io-dgx https://petstore3.swagger.io   REVIEWQA_LLM="$REVIEWQA_LLM" REVIEWQA_HUMANIZE=0
+if [[ -n "${QUAIL_LLM:-}" ]]; then
+  run_probe spritecloud-com-dgx     https://www.spritecloud.com    QUAIL_LLM="$QUAIL_LLM" QUAIL_HUMANIZE=0
+  run_probe petstore-swagger-io-dgx https://petstore3.swagger.io   QUAIL_LLM="$QUAIL_LLM" QUAIL_HUMANIZE=0
 else
-  echo "==> REVIEWQA_LLM unset — skipping AI-on examples (spritecloud-com-dgx, petstore-swagger-io-dgx)."
+  echo "==> QUAIL_LLM unset — skipping AI-on examples (spritecloud-com-dgx, petstore-swagger-io-dgx)."
 fi
 
 echo "==> Done. Review with: git status examples/"

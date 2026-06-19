@@ -11,13 +11,13 @@ import (
 	"strings"
 	"testing"
 
-	_ "github.com/reviewqa/reviewqa/internal/ast/golang"
-	_ "github.com/reviewqa/reviewqa/internal/ast/java"
-	_ "github.com/reviewqa/reviewqa/internal/ast/python"
-	_ "github.com/reviewqa/reviewqa/internal/ast/ts"
-	"github.com/reviewqa/reviewqa/internal/diff"
-	"github.com/reviewqa/reviewqa/internal/gen"
-	"github.com/reviewqa/reviewqa/internal/plan"
+	_ "github.com/spriteCloud/quail/internal/ast/golang"
+	_ "github.com/spriteCloud/quail/internal/ast/java"
+	_ "github.com/spriteCloud/quail/internal/ast/python"
+	_ "github.com/spriteCloud/quail/internal/ast/ts"
+	"github.com/spriteCloud/quail/internal/diff"
+	"github.com/spriteCloud/quail/internal/gen"
+	"github.com/spriteCloud/quail/internal/plan"
 )
 
 func TestEndToEnd_LoginFlow(t *testing.T) {

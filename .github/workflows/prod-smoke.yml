@@ -33,7 +33,7 @@ jobs:
 
       - name: Playwright (production)
         env:
-          PROD_URL: https://spritecloud.github.io/reviewqa/
+          PROD_URL: https://spritecloud.github.io/quail/
           CI: 'true'
         run: npx playwright test
 

@@ -3,8 +3,8 @@ package ledger
 import (
 	"strings"
 
-	"github.com/reviewqa/reviewqa/internal/ast"
-	"github.com/reviewqa/reviewqa/internal/plan"
+	"github.com/spriteCloud/quail/internal/ast"
+	"github.com/spriteCloud/quail/internal/plan"
 )
 
 // EmitSentinels converts the "open" rows of a ledger into one

@@ -4,8 +4,8 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/reviewqa/reviewqa/internal/ast"
-	"github.com/reviewqa/reviewqa/internal/plan"
+	"github.com/spriteCloud/quail/internal/ast"
+	"github.com/spriteCloud/quail/internal/plan"
 )
 
 func renderQuality(t *testing.T, tmpl plan.Template, sym ast.Symbol, pageURL string) string {
@@ -148,7 +148,7 @@ func TestConfigTemplate_CrossBrowserProjects(t *testing.T) {
 		t.Fatal(err)
 	}
 	body := string(out[0].Content)
-	mustContain(t, body, "REVIEWQA_BROWSERS")
+	mustContain(t, body, "QUAIL_BROWSERS")
 	mustContain(t, body, "Desktop Firefox")
 	mustContain(t, body, "Desktop Safari")
 	mustContain(t, body, "Desktop Chrome")

@@ -11,7 +11,7 @@ import (
 
 // mdEngine is configured once and reused. GFM enables tables,
 // strikethrough, autolinks, and task lists — everything the
-// reviewqa-emitted stakeholder docs (catalogue, findings) need.
+// quail-emitted stakeholder docs (catalogue, findings) need.
 var mdEngine = goldmark.New(
 	goldmark.WithExtensions(extension.GFM),
 	goldmark.WithParserOptions(parser.WithAutoHeadingID()),
@@ -20,7 +20,7 @@ var mdEngine = goldmark.New(
 
 // renderMarkdown turns a markdown document into rendered HTML.
 // WithUnsafe is enabled because the docs we render are produced by
-// reviewqa itself in the local workdir — the user owns the input and
+// quail itself in the local workdir — the user owns the input and
 // HTML escaping would mangle the existing inline-HTML our templates
 // occasionally emit (e.g. <details> blocks in findings.md).
 func renderMarkdown(src []byte) string {

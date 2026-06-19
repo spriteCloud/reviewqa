@@ -1,4 +1,4 @@
-/* reviewqa serve — local viewer styling.
+/* quail serve — local viewer styling.
  *
  * This file mirrors the public site (web/index.html) design system —
  * wordmark, pixel-bar motif, Sora display hierarchy, copper labels,
@@ -1200,7 +1200,81 @@ code, pre { font-family: 'Fira Code', ui-monospace, monospace; }
   background: var(--warm-white);
   color: var(--deep-water);
 }
+.home-probe-name {
+  flex: 0 1 200px;
+  min-width: 0;
+  padding: 10px 14px;
+  font-family: 'Fira Code', monospace;
+  font-size: 13px;
+  border: 1px solid var(--border-warm);
+  border-radius: 8px;
+  background: var(--warm-white);
+  color: var(--deep-water);
+}
+.home-probe-name:focus {
+  outline: 2px solid var(--copper);
+  outline-offset: -1px;
+  background: var(--white);
+}
 .home-probe-btn { flex-shrink: 0; }
+.home-probe-advanced {
+  margin: -4px 0 12px;
+  font-family: 'Fira Code', monospace;
+  font-size: 12px;
+  color: var(--mist);
+}
+.home-probe-advanced > summary {
+  cursor: pointer;
+  user-select: none;
+  padding: 4px 0;
+  letter-spacing: 0.04em;
+}
+.home-probe-advanced > summary:hover { color: var(--deep-water); }
+.home-probe-row-advanced { margin-top: 8px; margin-bottom: 0; }
+.home-probe-progress-row {
+  display: flex;
+  gap: 10px;
+  align-items: center;
+  margin-bottom: 8px;
+  min-height: 18px;
+}
+.home-probe-progress {
+  flex: 1 1 auto;
+  height: 8px;
+  appearance: none;
+  -webkit-appearance: none;
+  border: 1px solid var(--border-warm);
+  border-radius: 999px;
+  background: var(--warm-white);
+  overflow: hidden;
+}
+.home-probe-progress::-webkit-progress-bar { background: var(--warm-white); }
+.home-probe-progress::-webkit-progress-value {
+  background: var(--copper);
+  transition: width 0.3s ease;
+}
+.home-probe-progress::-moz-progress-bar { background: var(--copper); }
+.home-probe-stage {
+  flex: 0 0 auto;
+  font-family: 'Fira Code', monospace;
+  font-size: 11px;
+  letter-spacing: 0.04em;
+  color: var(--mist);
+}
+.home-probe-log {
+  margin-bottom: 8px;
+  font-family: 'Fira Code', monospace;
+  font-size: 12px;
+  color: var(--mist);
+}
+.home-probe-log > summary {
+  cursor: pointer;
+  user-select: none;
+  padding: 4px 0;
+  letter-spacing: 0.04em;
+}
+.home-probe-log > summary:hover { color: var(--deep-water); }
+.home-probe-log[open] > summary { margin-bottom: 4px; }
 .home-probe-terminal {
   min-height: 80px;
   max-height: 320px;

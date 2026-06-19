@@ -1,11 +1,26 @@
 # Changelog
 
-reviewqa's release-by-release history. v0.19 → v0.30 was the
+quail's release-by-release history. v0.19 → v0.30 was the
 taxonomy-closure arc that took the framework from a single-Playwright
 happy-flow generator to a 10-layer deterministic test author. v0.55+
 shipped the depth-parity arc (Contract, Integration, Mobile, A11y trio).
 v0.61–v0.62 are the live-execution + composer-validation arc — first
 real-site run + composer destination-DOM enforcement.
+
+## v0.93.0 — Renamed to Quail
+
+The product is now **Quail**. Hard cut, no back-compat:
+
+- **Binaries:** `reviewqa` → `quail`, `reviewqa-quality-check` → `quail-quality-check`.
+- **Module path:** `github.com/reviewqa/reviewqa` → `github.com/spriteCloud/quail`. Downstream Go consumers must flip imports.
+- **Env vars:** every `REVIEWQA_*` → `QUAIL_*`. Old names are no longer read.
+- **Settings:** `~/.config/reviewqa/serve.json` → `~/.config/quail/serve.json`. Old file is ignored; re-enter settings.
+- **Scratch projects:** `~/reviewqa-projects/` → `~/quail-projects/`.
+- **Per-project run history dir:** `.reviewqa-runs/` → `.quail-runs/`.
+- **Integration config:** `reviewqa.yml` → `quail.yml`.
+- **GitHub repo:** `spriteCloud/reviewqa` → `spriteCloud/quail` (old URL still redirects).
+
+CI / shell rc files setting any `REVIEWQA_*` env var will silently no-op — update before upgrading.
 
 ## v0.92.0 — Runnable scenarios + calculator-shape forms + Exercise capture
 
@@ -164,13 +179,13 @@ surfaced:
    Fix: explicit case returning 12 (and FuzzCap bumped to 15).
 
 3. **Browser sidecar didn't see coverage mode.** `probe.mjs`
-   read `REVIEWQA_MAX_PAGES` / `REVIEWQA_MAX_DEPTH` but the Go
+   read `QUAIL_MAX_PAGES` / `QUAIL_MAX_DEPTH` but the Go
    side never set them, so the sidecar hard-capped at 20 pages
    / depth 3 regardless of `--coverage max`'s 120/5 promise.
    Fix: thread `mindmap.Options` into `runBrowserCrawl` and
    pass the values via env.
 
-New knob: `--max-journeys N` (env `REVIEWQA_MAX_JOURNEYS`) overrides
+New knob: `--max-journeys N` (env `QUAIL_MAX_JOURNEYS`) overrides
 the per-kind cap from coverage mode. Empty = use coverage default;
 positive integer = force that cap. UI HOME card surfaces the
 input next to the engine / stealth selectors.
@@ -201,7 +216,7 @@ v0.89 adds two new probe flags:
 Install strategy is lazy per-engine. The shared runner deps
 (@playwright/test + playwright-extra + the stealth plugin)
 install once; each engine binary is fetched on first use and
-recorded by a `.reviewqa-engine-<name>-ready` sentinel. Users
+recorded by a `.quail-engine-<name>-ready` sentinel. Users
 who never trip the cascade past Chromium save ~300MB.
 
 UI: HOME card adds engine and stealth selectors next to the
@@ -218,23 +233,23 @@ environment signal stays separate.
 
 ## v0.88.0 — Shared Playwright runner cache for browser probe
 
-`reviewqa probe --browser always` against any URL from a fresh
-destination (scratch-mode probes into `~/reviewqa-projects/<brand>/`,
+`quail probe --browser always` against any URL from a fresh
+destination (scratch-mode probes into `~/quail-projects/<brand>/`,
 or any project that hasn't run `npm i -D @playwright/test`) used
 to fail Node ESM resolution:
 
 ```
 Error [ERR_MODULE_NOT_FOUND]: Cannot find package '@playwright/test'
-imported from /home/oa/reviewqa-projects/ing/.reviewqa-browser-probe-XXX/probe.mjs
+imported from /home/oa/quail-projects/ing/.quail-browser-probe-XXX/probe.mjs
 ```
 
 The probe then silently fell back to static — which for SPA-heavy
 sites yields one discover-fallback Feature, masking the failure.
 
 v0.88 introduces a shared runner cache at
-`$XDG_CACHE_HOME/reviewqa/playwright-runner/` (default
-`~/.cache/reviewqa/playwright-runner/`). On first browser probe,
-`reviewqa` runs `npm install @playwright/test` + `npx playwright
+`$XDG_CACHE_HOME/quail/playwright-runner/` (default
+`~/.cache/quail/playwright-runner/`). On first browser probe,
+`quail` runs `npm install @playwright/test` + `npx playwright
 install chromium` inside the cache (one-time, ~30s, output
 streamed through the SSE viewer so the user sees progress).
 Every subsequent probe runs from the cache — independent of the
@@ -252,7 +267,7 @@ signal, not an environment one.
 ## v0.87.2 — Probe subprocess outlives SSE client disconnect
 
 The v0.87.1 UI probe of ing.nl wrote all 167 static specs to
-`~/reviewqa-projects/ing/tests/e2e/…` but never produced a
+`~/quail-projects/ing/tests/e2e/…` but never produced a
 `.feature`. Root cause: `ProbeStream` built the subprocess with
 `exec.CommandContext(ctx, …)`, binding it to the HTTP request
 context. When curl `--max-time` fired (or the user closed the
@@ -287,8 +302,8 @@ artifacts, the wall clock spirals — the per-call timeout is
   exhausted, remaining files keep their deterministic content
   and a warning logs the count skipped + the env knob to
   extend.
-- `REVIEWQA_HUMANIZE_BUDGET=10m` (or any Go duration) overrides
-  the default. Set the legacy `REVIEWQA_HUMANIZE=0` to skip the
+- `QUAIL_HUMANIZE_BUDGET=10m` (or any Go duration) overrides
+  the default. Set the legacy `QUAIL_HUMANIZE=0` to skip the
   pass entirely.
 
 ### Discover-fallback uses crawl order
@@ -320,18 +335,18 @@ OPENAI_API_KEY)".
 
 - New `probeSubprocessEnv()` translates Settings.LLM into the env
   vars the probe CLI expects:
-  - `LLM.Endpoint` → `REVIEWQA_LLM`
-  - `LLM.Model` → `REVIEWQA_MODEL`
+  - `LLM.Endpoint` → `QUAIL_LLM`
+  - `LLM.Model` → `QUAIL_MODEL`
   - `LLM.APIKey` → `OPENAI_API_KEY` (or `ollama` for keyless
     local endpoints)
-  - `LLM.TimeoutSec` → `REVIEWQA_LLM_TIMEOUT`
+  - `LLM.TimeoutSec` → `QUAIL_LLM_TIMEOUT`
 - `LLM.Enabled=false` explicitly zeroes `OPENAI_API_KEY`.
 - Settings appended AFTER `os.Environ()` so user-saved wins.
 
 ### Empty-dir reuse
-v0.85 verification left an empty `~/reviewqa-projects/<brand>/`
+v0.85 verification left an empty `~/quail-projects/<brand>/`
 behind. v0.86's `reserveSiblingDir` refused to land in it (looked
-like a non-reviewqa squatter) and bumped to `<brand>-1/`. v0.87
+like a non-quail squatter) and bumped to `<brand>-1/`. v0.87
 reuses empty candidate dirs — same shape as never-existed.
 
 ### Discover-fallback journey
@@ -360,11 +375,11 @@ log line `"probe: no items produced"`, and the UI showed a green
   modern browser sends on a top-level navigation. Defeats
   header-shape fingerprinting (the easy 80% of bot detection).
 - The real probe identity moves to a custom
-  `X-Reviewqa-Probe: reviewqa-probe/1 (+...)` header so honest
+  `X-Quail-Probe: quail-probe/1 (+...)` header so honest
   origins can still tell who we are.
 
 ### `--browser` flag with auto-fallback
-- New flag on `reviewqa probe`: `--browser auto|always|never`.
+- New flag on `quail probe`: `--browser auto|always|never`.
   Default `auto`.
 - `auto` tries the static fetch first; if pages came back, done.
   If the static crawl returned zero pages AND any error matches
@@ -376,7 +391,7 @@ log line `"probe: no items produced"`, and the UI showed a green
   static client can't.
 - `always` skips the static attempt; `never` keeps the legacy
   static-only path (for CI hosts without Node/Chromium).
-- `REVIEWQA_BROWSER_PROBE=1` legacy env still works — maps to
+- `QUAIL_BROWSER_PROBE=1` legacy env still works — maps to
   `--browser=always`.
 
 ### Zero-items now surface as failure
@@ -407,7 +422,7 @@ ParseBrowserMode + legacy env override). 590 → 594 passing.
 User: *"What if I want to start from scratch without any project
 loaded, probe and then automatically load the probed site?"*
 
-`reviewqa serve` used to hard-fail when the workdir didn't exist.
+`quail serve` used to hard-fail when the workdir didn't exist.
 Now it tolerates a missing path and opens the UI in scratch mode.
 
 - `Run()` no longer errors on a non-existent workdir. It logs
@@ -415,7 +430,7 @@ Now it tolerates a missing path and opens the UI in scratch mode.
 - `loadProject` marks the response with `scratch: true` when the
   workdir is empty or doesn't exist on disk.
 - `pickProbeDestination` falls back to
-  `~/reviewqa-projects/<brand>/` in scratch mode. New
+  `~/quail-projects/<brand>/` in scratch mode. New
   `reserveSiblingDir` helper factors the collision-safe branch
   out from the v0.81 in-place path.
 - Frontend:
@@ -433,25 +448,25 @@ Auto-switch after probe was already wired by v0.81's SSE
 
 ```bash
 mkdir /tmp/fresh && cd /tmp/fresh
-/tmp/reviewqa serve --no-browser
+/tmp/quail serve --no-browser
 # Server boots; UI opens on HOME with Probe + Import.
-# Probe ing.nl → lands in ~/reviewqa-projects/ing/, UI switches in.
+# Probe ing.nl → lands in ~/quail-projects/ing/, UI switches in.
 ```
 
 5 new tests; 585 → 590 passing.
 
-## v0.84 — Hide Tests for reviewqa projects + HOME Import card + spec rendering parity
+## v0.84 — Hide Tests for quail projects + HOME Import card + spec rendering parity
 
 Three fixes after looking at `examples/spritecloud-com-dgx`:
 
-### 1. Tests section suppressed for reviewqa projects
+### 1. Tests section suppressed for quail projects
 v0.80's `loadSpecs` walked `tests/e2e/` recursively and surfaced
-all 222 reviewqa-emitted `*.spec.ts` layer artifacts (a11y,
+all 222 quail-emitted `*.spec.ts` layer artifacts (a11y,
 mobile, contract, security, network, perf, visual, …) as
 "Tests" — visually overwhelming AND incorrect (they're already
 covered by Run from the Gherkin Scenario view).
-- New `isReviewqaProject(workdir)` checks for any `.feature`
-  file or `tests/e2e/steps/reviewqa.steps.ts`. When either
+- New `isQuailProject(workdir)` checks for any `.feature`
+  file or `tests/e2e/steps/quail.steps.ts`. When either
   exists, `loadSpecs` returns `nil`. The Tests sidebar
   disappears.
 - Vanilla Playwright projects keep the Tests section.
@@ -510,7 +525,7 @@ history / polish thread.
 
 ## v0.82 — Multi-run history + pass-rate sparkline
 
-The per-run JSON reports written under `tests/e2e/.reviewqa-runs/`
+The per-run JSON reports written under `tests/e2e/.quail-runs/`
 have been on disk since v0.75 but only the most-recent one fed
 the last-run pill; previous runs were inert. v0.82 reads them.
 
@@ -544,9 +559,9 @@ saw the contamination in this session). v0.81 fixes that.
   - Otherwise create a sibling dir named after the brand
     (`petstore3.swagger`, `playwright`, …) under the current
     workdir's parent.
-  - Collision-safe: if the slot is squatted by a non-reviewqa
+  - Collision-safe: if the slot is squatted by a non-quail
     dir, suffix `-1`, `-2`, … until we find an empty slot or an
-    existing reviewqa project for the same brand (in which case
+    existing quail project for the same brand (in which case
     we re-probe it in place).
 - Frontend: SSE `start` event reports the destination workdir;
   on `done` with `passed: true` the UI auto-POSTs
@@ -556,19 +571,19 @@ saw the contamination in this session). v0.81 fixes that.
 4 new tests cover re-probe-in-place, fresh-brand, squatter
 collision, and existing-sibling re-probe. 578 → 582 passing.
 
-## v0.80 — Onboard non-reviewqa projects + vanilla Playwright
+## v0.80 — Onboard non-quail projects + vanilla Playwright
 
 ### Onboard any Playwright project
-`looksLikeReviewqaProject` (used by the switcher + sibling
+`looksLikeQuailProject` (used by the switcher + sibling
 discovery) now accepts:
-- the original reviewqa layout (`tests/e2e/features/`,
-  `reviewqa.steps.ts`, stakeholder docs)
+- the original quail layout (`tests/e2e/features/`,
+  `quail.steps.ts`, stakeholder docs)
 - `playwright.config.{ts,js,mjs,cjs}` at the project root
 - `tests/`, `e2e/`, `playwright/`, `spec/`, `__tests__/` with any
   `*.spec.{ts,js,mts,mjs}` or `*.test.{ts,js}` inside.
 
 The project switcher dropdown surfaces vanilla Playwright sibling
-projects alongside reviewqa-native ones.
+projects alongside quail-native ones.
 
 ### Consume vanilla `*.spec.ts` in the UI
 - New `internal/serve/spec_parse.go` regex parser extracts
@@ -603,8 +618,8 @@ projects alongside reviewqa-native ones.
 Spec parser handles all three quote styles + 6 test modifier
 variants. New `TestParseSpecFile_ExtractsTitles`,
 `TestLoadSpecs_FindsFiles`,
-`TestLooksLikeReviewqaProject_VanillaPlaywright`,
-`TestLooksLikeReviewqaProject_SpecRootOnly`. 574 → 578 passing.
+`TestLooksLikeQuailProject_VanillaPlaywright`,
+`TestLooksLikeQuailProject_SpecRootOnly`. 574 → 578 passing.
 
 ## v0.79.1 — Drop PRETTY/RAW toggle + UI copy trim
 
@@ -674,7 +689,7 @@ content. Action row sits a clean 12 px under the pill now.
 
 ### Repo housekeeping (scripts/cleanup-branches.sh)
 - New committed script. After merge, deletes all merged remote
-  branches (26 `reviewqa/tests-pr-*` CI-generated leftovers),
+  branches (26 `quail/tests-pr-*` CI-generated leftovers),
   cleans up local merged branches, and closes any open PRs >30 d
   / issues >60 d (today both empty).
 
@@ -725,7 +740,7 @@ Five UX threads from one v0.77 screenshot tour.
 ### Project switcher
 - The header pill (`spritecloud-com-dgx`) is now a clickable
   dropdown trigger. Click → menu listing Current, Siblings
-  (auto-discovered reviewqa projects in the parent dir), Recents
+  (auto-discovered quail projects in the parent dir), Recents
   (from settings), plus an "Open path" input for free-form
   workdirs.
 - Backend: `workdir` promoted to a mutex-protected `workdirState`
@@ -735,7 +750,7 @@ Five UX threads from one v0.77 screenshot tour.
 - New endpoints:
   - `GET /api/projects` → `{current, siblings, recents}`
   - `POST /api/switch-project` → validate, set state, push to
-    recents (capped at 8, dedup) in `~/.config/reviewqa/serve.json`.
+    recents (capped at 8, dedup) in `~/.config/quail/serve.json`.
 - Frontend swaps the project state on switch, re-fetches
   `/api/project`, and toasts the new path.
 
@@ -749,10 +764,10 @@ Two threads from the same v0.76 HOME session:
 
 ### Probe from HOME no longer needs `GITHUB_TOKEN`
 
-The v0.76 HOME probe form shelled out to `reviewqa probe --url <X>`,
+The v0.76 HOME probe form shelled out to `quail probe --url <X>`,
 which defaults to "render → open PR via gh". Without a GitHub
 token the CLI errored with `gh: missing GITHUB_TOKEN /
-REVIEWQA_GITHUB_TOKEN` after the probe finished — so the UI
+QUAIL_GITHUB_TOKEN` after the probe finished — so the UI
 appeared to "fail" even though the deterministic generation was
 fine.
 
@@ -768,7 +783,7 @@ fine.
 ### Settings page
 
 The serve UI now has a `SETTINGS` row in the sidebar (below
-HOME). Edits persist to `~/.config/reviewqa/serve.json` with mode
+HOME). Edits persist to `~/.config/quail/serve.json` with mode
 `0600` and take effect on the next API call — no restart needed.
 
 Sections:
@@ -782,7 +797,7 @@ Sections:
 - **Run defaults** — soft timeout cap, keep-playwright-report
   toggle.
 
-The LLM settings overlay the existing `REVIEWQA_LLM` /
+The LLM settings overlay the existing `QUAIL_LLM` /
 `OPENAI_API_KEY` env-var pipeline: anything set in the file wins;
 unset fields fall back to the env defaults. An explicit OFF
 zeroes the API key so downstream sees the LLM as disabled
@@ -798,7 +813,7 @@ overrides env).
 Every edit you make in the UI is already persistent — chat-edited
 scenarios, Edit/Delete on a scenario, HOME probe runs, run
 verdicts. All write to disk (`.feature` files, project tree,
-`tests/e2e/.reviewqa-runs/last-run.json`). Restarting `reviewqa
+`tests/e2e/.quail-runs/last-run.json`). Restarting `quail
 serve` doesn't lose any of it. v0.77 just makes the LLM
 configuration persistent too.
 
@@ -809,7 +824,7 @@ Two threads from one screenshot — same release.
 ### HOME view
 
 The sidebar now opens with a `HOME` row above `FEATURES`. The
-home panel is the first thing you see when you launch `reviewqa
+home panel is the first thing you see when you launch `quail
 serve`:
 
 - **Project summary** — workdir, binary version, # features,
@@ -818,7 +833,7 @@ serve`:
   `/api/run-preflight` endpoints.
 - **Probe a URL** — a single input + coverage select + Probe
   button. Hits a new `POST /api/probe` SSE endpoint, which
-  shells out to the reviewqa binary's own `probe` subcommand
+  shells out to the quail binary's own `probe` subcommand
   (via `os.Executable()`) in the project's root directory and
   streams stdout line-by-line into a terminal-style panel. On
   success the sidebar refreshes so the new / updated features
@@ -896,8 +911,8 @@ Three asks from the user after the v0.74 Run fix worked:
 ### Last-execution pill per Scenario
 
 - Every Run writes
-  `tests/e2e/.reviewqa-runs/last-run.json` — a flat map keyed by
-  Scenario name. `.reviewqa-runs/` is already gitignored from
+  `tests/e2e/.quail-runs/last-run.json` — a flat map keyed by
+  Scenario name. `.quail-runs/` is already gitignored from
   v0.74.
 - `/api/feature` joins this on every request: `Scenario.LastRun
   *LastRunRecord` is populated when an entry exists.
@@ -914,13 +929,13 @@ first — restructured the template (`pw_work_summary.tmpl`) around
 their questions:
 
 - **At a glance** — narrative card. Two paragraphs translating the
-  counts into prose ("reviewqa crawled N pages and identified M
+  counts into prose ("quail crawled N pages and identified M
   journeys; K are critical — gated on every release; …"). Drops
   the 4 KPI big-number boxes that v0.73 had.
 - **Coverage map** — a 2×3 grid of layer cards. Each layer (UI /
   API / Contract / Integration / Mobile / Non-functional) gets a
   status pill (`exercised` green, `scaffold only` copper, `no
-  surface` mist) and a one-line description of what reviewqa
+  surface` mist) and a one-line description of what quail
   generated for it.
 - **Priority mix** — kept; same visual.
 - **Journey cards** (NEW) — replaces the journey table. Each card
@@ -1089,7 +1104,7 @@ Usage:
 cd ./my-generated-suite
 npm install && npx playwright install
 
-# Back in reviewqa serve, hit ▶ Run on any Scenario.
+# Back in quail serve, hit ▶ Run on any Scenario.
 ```
 
 ## v0.71 — chat-flow hardening + always-on suggest + step validity
@@ -1170,7 +1185,7 @@ Backend
 
 Frontend
 - 💬 Chat button on every Scenario card. Disabled with tooltip when
-  REVIEWQA_LLM is unset.
+  QUAIL_LLM is unset.
 - Right-side drawer (440px) instead of a modal so the Scenario card
   remains visible while chatting. Slide-in animation.
 - Bubble UI: copper user bubbles right, white assistant bubbles left.
@@ -1186,16 +1201,16 @@ Tests: 5 new in `internal/serve/chat_test.go` (response-only,
 proposed-block extraction, backtick-fence stripping, empty-input
 rejection, history inclusion). Suite 544 / 544 green.
 
-Live-verified against the spritecloud-com-dgx example with REVIEWQA_LLM
+Live-verified against the spritecloud-com-dgx example with QUAIL_LLM
 pointed at the DGX (`qwen3-coder-next:latest`): asking "add a step to
 assert the page title also contains Contact" round-trips a valid
 updated Scenario in 8-12s.
 
-## v0.69 — reviewqa serve UI branding parity
+## v0.69 — quail serve UI branding parity
 
 User feedback after the v0.65–v0.68 serve arc: the local UI shipped
 with the brand CSS *variables* but not the full design *system* of
-the public site (https://spritecloud.github.io/reviewqa/). The GH
+the public site (https://spritecloud.github.io/quail/). The GH
 Pages site is meaningfully more polished — wordmark, pixel-bar motif,
 Sora display hierarchy, copper Fira Code labels, card-and-hover rhythm.
 
@@ -1225,15 +1240,15 @@ features — pure polish:
   copper-soft background.
 - **Brand badge** in the topbar now shows the live binary version,
   sourced from a new `Version` field on `GET /api/project` and a
-  `serve.BinaryVersion` package variable set from `cmd/reviewqa/`
+  `serve.BinaryVersion` package variable set from `cmd/quail/`
   at process startup.
 
 Bumped main.go version 0.68 → 0.69. Suite 539/539 green (no API
 changes; pure visual).
 
-## v0.68 — reviewqa serve Phase D: AI compose step bindings
+## v0.68 — quail serve Phase D: AI compose step bindings
 
-Closes out the `reviewqa serve` arc. The Scenario editor gains an "AI
+Closes out the `quail serve` arc. The Scenario editor gains an "AI
 compose" row — type a free-form description of the Scenario you want
 (natural language) and a destination URL, click Compose, and the
 binary probes the page's DOM and asks the LLM to produce a valid
@@ -1250,15 +1265,15 @@ Backend:
 - `extractScenarioBlock` strips any preamble or trailing chatter the
   model adds despite the strict prompt; the result is then validated
   through the existing `validateScenarioBlock`.
-- Deterministic fallback when REVIEWQA_LLM is unset: emits a minimal
+- Deterministic fallback when QUAIL_LLM is unset: emits a minimal
   Scenario that opens the landing page, navigates to the destination
   path, and asserts on the page's h1. Always parses cleanly.
 - New endpoint `POST /api/compose-steps` with a 90s context timeout
   (LLM calls against local Ollama-shaped endpoints often need 20-30s).
 
-The endpoint respects the same REVIEWQA_LLM convention as
-`reviewqa probe`: `REVIEWQA_LLM=http://your-endpoint:11434` opts in;
-REVIEWQA_MODEL overrides the model; unset → deterministic mode.
+The endpoint respects the same QUAIL_LLM convention as
+`quail probe`: `QUAIL_LLM=http://your-endpoint:11434` opts in;
+QUAIL_MODEL overrides the model; unset → deterministic mode.
 
 Frontend:
 - The Scenario editor modal now has a copper-tinted "🤖 AI compose"
@@ -1274,7 +1289,7 @@ rejection). Full suite 539 / 539 green.
 This closes the four-phase v0.65–v0.68 serve roadmap. Future work
 (v0.69+) is iteration on UX from real usage, not new endpoints.
 
-## v0.67 — reviewqa serve Phase C: locator suggestion from DOM
+## v0.67 — quail serve Phase C: locator suggestion from DOM
 
 Per-step locator suggestion. The UI surfaces a 🔍 button next to each
 step that contains a placeholder or quoted argument — clicking it
@@ -1319,11 +1334,11 @@ Tests: 10 new in `internal/serve/dom_test.go` (parsing title /
 headings / forms-with-inputs / links / buttons; ranking for each
 kind; relative-URL resolution). Full suite 534 / 534 green.
 
-## v0.66 — reviewqa serve Phase B: Scenario CRUD
+## v0.66 — quail serve Phase B: Scenario CRUD
 
 Mutation endpoints on top of v0.65's read-only viewer. Users can now
 delete, edit, and append Scenarios from the browser UI. Each write is
-preceded by a backup into `tests/e2e/.reviewqa-history/<ts>/` so an
+preceded by a backup into `tests/e2e/.quail-history/<ts>/` so an
 accidental delete is recoverable.
 
 - `DELETE /api/scenario?feature=<rel>&name=<scenario-name>` — splice
@@ -1340,7 +1355,7 @@ accidental delete is recoverable.
   "error":"..."}`. UI uses this for the modal's Validate button.
 
 File I/O via atomic tmpfile + rename in the same directory. Pre-edit
-backups land at `tests/e2e/.reviewqa-history/<UTC timestamp>/` so the
+backups land at `tests/e2e/.quail-history/<UTC timestamp>/` so the
 user can `cp` files back if the new Scenario was wrong.
 
 Frontend additions to `internal/serve/web/`:
@@ -1355,10 +1370,10 @@ Tests: 10 new in `internal/serve/edit_test.go` (range finding,
 delete, replace, append, invalid-block rejection, multi-scenario
 rejection, plus HTTP-handler coverage for each verb). 524 / 524 green.
 
-## v0.65 — reviewqa serve (Phase A: read-only project viewer)
+## v0.65 — quail serve (Phase A: read-only project viewer)
 
-New `reviewqa serve` subcommand. Opens a localhost HTTP server (default
-`127.0.0.1:8765`) that loads an existing reviewqa-generated project and
+New `quail serve` subcommand. Opens a localhost HTTP server (default
+`127.0.0.1:8765`) that loads an existing quail-generated project and
 renders a read-only browser UI for its Features, Scenarios, and
 stakeholder docs. Auto-opens the user's default browser (skip with
 `--no-browser`).
@@ -1373,7 +1388,7 @@ as follow-up PRs.
   HTTP handler exposing `GET /api/project`, `GET /api/feature`,
   `GET /api/steps`, `GET /api/doc`. Localhost-only by request-origin
   enforcement; `--addr` overridable but the default is loopback.
-- New `cmd/reviewqa/serve.go` wires the subcommand with `--workdir`,
+- New `cmd/quail/serve.go` wires the subcommand with `--workdir`,
   `--addr`, `--no-browser` flags.
 - Frontend lives under `internal/serve/web/` and is embedded via
   `//go:embed`. Plain HTML + CSS + JS — no build step. CSS variables
@@ -1383,11 +1398,11 @@ as follow-up PRs.
   (rooted at workdir, `../` escape rejected with 400).
 - 14 new tests in `internal/serve/` (Gherkin parser × 5, step-defs
   parser × 2, HTTP handler × 5, including path-traversal rejection).
-- `cmd/reviewqa/main.go` version constant bumped 0.64 → 0.65.
+- `cmd/quail/main.go` version constant bumped 0.64 → 0.65.
 
 Usage:
 ```bash
-reviewqa serve --workdir ./examples/playwright-dev
+quail serve --workdir ./examples/playwright-dev
 ```
 
 ## v0.64 — re-emit examples + drop version-caveat prose + AI badge
@@ -1395,7 +1410,7 @@ reviewqa serve --workdir ./examples/playwright-dev
 User feedback after v0.63: the "Output from the v0.59 binary — templates
 remain current through v0.62" gymnastics was the wrong convention. The
 website must show CURRENT output, not a multi-release explanation. The
-"DGX" badge is vendor-specific; users may point `REVIEWQA_LLM` at any
+"DGX" badge is vendor-specific; users may point `QUAIL_LLM` at any
 OpenAI-compatible endpoint. And the depth-parity / live-execution /
 composer-DOM narration in docs.html belongs in this changelog, not in
 the docs page.
@@ -1407,7 +1422,7 @@ the docs page.
 - New `scripts/refresh-examples.sh` codifies the build + probe + split
   flow with the awk split-pattern baked in. Run before tagging every
   release. CI-safe for the 4 deterministic examples; the 2 AI-on ones
-  need a local `REVIEWQA_LLM` endpoint.
+  need a local `QUAIL_LLM` endpoint.
 - web/index.html + web/docs.html + README.md + examples/README.md
   prose simplified everywhere to "v0.64 binary" — no more multi-release
   caveats, no more "introduced in vX.Y, current in vZ.W" labels.
@@ -1418,11 +1433,11 @@ the docs page.
 - Three feature callouts removed from web/docs.html: "Depth parity
   (v0.55–v0.57)", "Live execution validated (v0.61)", "Composer
   destination-DOM validation (v0.62)". Their content lives here.
-- `cmd/reviewqa/main.go` version constant bumped 0.63 → 0.64.
+- `cmd/quail/main.go` version constant bumped 0.63 → 0.64.
 
 ## v0.63 — repo-wide consistency sweep + force gh-pages redeploy
 
-Live https://spritecloud.github.io/reviewqa/ was showing **v0.23-era**
+Live https://spritecloud.github.io/quail/ was showing **v0.23-era**
 content because the pages.yml workflow did not fire for the v0.60 merge
 (missed-push window during the v0.60/v0.61/v0.62 cluster on 2026-06-17)
 and v0.61/v0.62 did not touch web/. Net effect: the live site was two
@@ -1440,7 +1455,7 @@ This release does not change any code. It:
   templates beneath the examples ARE current through v0.62.
 - Backfills CHANGELOG.md with the v0.61 and v0.62 entries that were
   shipped without changelog notes.
-- Bumps cmd/reviewqa/main.go's source-default version constant from
+- Bumps cmd/quail/main.go's source-default version constant from
   "0.1.0" to "0.62" so a locally-built binary's --version output
   matches the release line (release.yml still ldflags-overrides this).
 - Triggers pages.yml via `gh workflow run pages.yml` so the live
@@ -1473,7 +1488,7 @@ Full suite 502/502 green.
 ## v0.61 — execute spritecloud-com-dgx locally + 4 template fixes
 
 First time the generated suite was actually executed against a real
-production site (https://www.spritecloud.com). Until v0.61 reviewqa
+production site (https://www.spritecloud.com). Until v0.61 quail
 had been validated only at the **emission layer** — Go tests asserted
 templates rendered correctly, file counts were right, Scenarios
 contained the expected blocks. The execution surfaced four template
@@ -1515,7 +1530,7 @@ Run report: `examples/spritecloud-com-dgx/_run/v0.61-run-report.md`.
 
 User audit: "the project sustain certain consistency. README, GitHub
 Pages, Docs and all are updated? They have any cognitive dissonance?
-Have we run the full reviewqa locally using the DGX for all the
+Have we run the full quail locally using the DGX for all the
 examples?"
 
 Two Explore agents confirmed the dissonance. README claimed v0.23,
@@ -1637,7 +1652,7 @@ shipped 1–2 tests per emission while API/UI/Non-functional shipped
   while the bug is unfixed; flips to "unexpected pass" the moment the
   fix lands.
 - `internal/ledger/sentinels.go::EmitSentinels` drives the emission;
-  `parseLedger` re-parses the markdown table in cmd/reviewqa so the
+  `parseLedger` re-parses the markdown table in cmd/quail so the
   generate path picks them up alongside compat tests + integration
   items.
 - CHANGELOG.md consolidated v0.31 → v0.40 history.
@@ -1683,13 +1698,13 @@ average density doubled (2.1 → 5.7).
 - `internal/composer/cache.go` file-backed memo keyed by `(model, URL,
   kind, title, h1, links, pages)`
 - Re-runs against the same site return cached scenarios in 0s
-- Strictly opt-in via `REVIEWQA_LLM_CACHE=auto` or explicit path
+- Strictly opt-in via `QUAIL_LLM_CACHE=auto` or explicit path
 
 ## v0.34 — multi-model ladder
 
 - `composer.Ladder` walks rungs in order; first to parse cleanly wins
 - `@model:<id>` tag on every emitted scenario
-- `REVIEWQA_LLM_LADDER=<m1>,<m2>,...` env opts in
+- `QUAIL_LLM_LADDER=<m1>,<m2>,...` env opts in
 
 ## v0.33 — composer feedback loop
 
@@ -1717,7 +1732,7 @@ into view.
 - Cyclomatic complexity refactor: `gen.templateLocation` switch
   (cyclo 75) → O(1) registry map (cyclo 2). Out of the top-5
   hotspot list.
-- Stale-PR sweep: closed every remaining `reviewqa: tests for PR #N`
+- Stale-PR sweep: closed every remaining `quail: tests for PR #N`
   dogfood follow-up.
 - CHANGELOG.md (this file) consolidates the v0.19 → v0.30 history.
 
@@ -1737,7 +1752,7 @@ into view.
 
 ## v0.27 — Layer 5 integration tests
 
-- `reviewqa.yml` config file at repo root
+- `quail.yml` config file at repo root
 - `internal/integration` package: `Load` + `EmitItems`
 - Templates for DB / broker / cache / storage / search / auth +
   shared `_containers.ts` and `docker-compose.test.yml`
@@ -1787,7 +1802,7 @@ into view.
 
 - `.feature` files become executable contracts via playwright-bdd
 - `.spec.ts` happy-flow emission dropped; step defs in
-  `tests/e2e/steps/reviewqa.steps.ts`
+  `tests/e2e/steps/quail.steps.ts`
 
 ## v0.20 — Achilles Tier 2
 

@@ -4,7 +4,7 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/reviewqa/reviewqa/internal/plan"
+	"github.com/spriteCloud/quail/internal/plan"
 )
 
 func TestEmitSentinels_OneItemPerOpenFinding(t *testing.T) {

@@ -4,8 +4,8 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/reviewqa/reviewqa/internal/ast"
-	"github.com/reviewqa/reviewqa/internal/plan"
+	"github.com/spriteCloud/quail/internal/ast"
+	"github.com/spriteCloud/quail/internal/plan"
 )
 
 func TestGraphQLStubTemplate(t *testing.T) {
@@ -13,7 +13,7 @@ func TestGraphQLStubTemplate(t *testing.T) {
 	body := renderQuality(t, plan.TmplPlaywrightGraphQLStub, sym, "https://x.test/")
 	mustContain(t, body, "@kind:graphql-stub")
 	mustContain(t, body, "__schema")
-	mustContain(t, body, "REVIEWQA_GRAPHQL_ENDPOINT")
+	mustContain(t, body, "QUAIL_GRAPHQL_ENDPOINT")
 	mustContain(t, body, "test.skip(true")
 }
 
@@ -47,7 +47,7 @@ func TestWebhookStubTemplate(t *testing.T) {
 	mustContain(t, body, "X-Hub-Signature-256")
 	mustContain(t, body, "Stripe-Signature")
 	mustContain(t, body, "createHmac")
-	mustContain(t, body, "REVIEWQA_WEBHOOK_SECRET")
+	mustContain(t, body, "QUAIL_WEBHOOK_SECRET")
 }
 
 // v0.55 — five new adversarial blocks plus the original signed/unsigned

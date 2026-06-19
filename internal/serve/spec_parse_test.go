@@ -60,11 +60,11 @@ func TestParseSpecFile_ExtractsTitles(t *testing.T) {
 	}
 }
 
-// loadSpecs returns nil for reviewqa-generated workdirs so the
+// loadSpecs returns nil for quail-generated workdirs so the
 // Tests sidebar section disappears for those projects.
-func TestLoadSpecs_SuppressedForReviewqaProject(t *testing.T) {
+func TestLoadSpecs_SuppressedForQuailProject(t *testing.T) {
 	root := t.TempDir()
-	// reviewqa signature: a .feature file under tests/e2e/features.
+	// quail signature: a .feature file under tests/e2e/features.
 	featDir := filepath.Join(root, "tests", "e2e", "features")
 	if err := os.MkdirAll(featDir, 0o755); err != nil {
 		t.Fatal(err)
@@ -82,7 +82,7 @@ func TestLoadSpecs_SuppressedForReviewqaProject(t *testing.T) {
 	}
 	got := loadSpecs(root)
 	if got != nil {
-		t.Errorf("expected nil for reviewqa project; got %+v", got)
+		t.Errorf("expected nil for quail project; got %+v", got)
 	}
 }
 
@@ -107,18 +107,18 @@ func TestLoadSpecs_FindsFiles(t *testing.T) {
 	}
 }
 
-func TestLooksLikeReviewqaProject_VanillaPlaywright(t *testing.T) {
+func TestLooksLikeQuailProject_VanillaPlaywright(t *testing.T) {
 	dir := t.TempDir()
 	// Just a playwright.config.ts is enough.
 	if err := os.WriteFile(filepath.Join(dir, "playwright.config.ts"), []byte("export default { testDir: './tests' }"), 0o644); err != nil {
 		t.Fatal(err)
 	}
-	if !looksLikeReviewqaProject(dir) {
+	if !looksLikeQuailProject(dir) {
 		t.Errorf("vanilla playwright project should be accepted")
 	}
 }
 
-func TestLooksLikeReviewqaProject_SpecRootOnly(t *testing.T) {
+func TestLooksLikeQuailProject_SpecRootOnly(t *testing.T) {
 	dir := t.TempDir()
 	specDir := filepath.Join(dir, "e2e")
 	if err := os.MkdirAll(specDir, 0o755); err != nil {
@@ -127,7 +127,7 @@ func TestLooksLikeReviewqaProject_SpecRootOnly(t *testing.T) {
 	if err := os.WriteFile(filepath.Join(specDir, "a.spec.ts"), []byte(`test('x', () => {})`), 0o644); err != nil {
 		t.Fatal(err)
 	}
-	if !looksLikeReviewqaProject(dir) {
+	if !looksLikeQuailProject(dir) {
 		t.Errorf("dir with e2e/*.spec.ts should be accepted")
 	}
 }

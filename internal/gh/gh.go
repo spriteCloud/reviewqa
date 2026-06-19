@@ -12,8 +12,8 @@ import (
 	"strings"
 
 	"github.com/google/go-github/v66/github"
-	"github.com/reviewqa/reviewqa/internal/config"
-	"github.com/reviewqa/reviewqa/internal/log"
+	"github.com/spriteCloud/quail/internal/config"
+	"github.com/spriteCloud/quail/internal/log"
 	"golang.org/x/oauth2"
 )
 
@@ -24,7 +24,7 @@ type Client struct {
 
 func New(ctx context.Context, cfg config.Config) (*Client, error) {
 	if cfg.GitHubToken == "" {
-		return nil, errors.New("gh: missing GITHUB_TOKEN / REVIEWQA_GITHUB_TOKEN")
+		return nil, errors.New("gh: missing GITHUB_TOKEN / QUAIL_GITHUB_TOKEN")
 	}
 	ts := oauth2.StaticTokenSource(&oauth2.Token{AccessToken: cfg.GitHubToken})
 	tc := oauth2.NewClient(ctx, ts)

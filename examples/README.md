@@ -119,7 +119,7 @@ release with the one-shot script:
 
 # All 6 examples (requires an OpenAI-compatible endpoint for the 2 AI-on
 # ones — Ollama, vLLM, OpenAI, spriteCloud's DGX, anything):
-REVIEWQA_LLM=http://your-endpoint:11434 ./scripts/refresh-examples.sh
+QUAIL_LLM=http://your-endpoint:11434 ./scripts/refresh-examples.sh
 ```
 
 The script builds the binary, runs `reviewqa probe --dry-run` against each

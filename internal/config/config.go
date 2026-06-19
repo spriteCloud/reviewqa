@@ -35,26 +35,26 @@ type Config struct {
 
 func FromEnv() Config {
 	c := Config{
-		GitHubToken:      first(os.Getenv("REVIEWQA_GITHUB_TOKEN"), os.Getenv("GITHUB_TOKEN")),
+		GitHubToken:      first(os.Getenv("QUAIL_GITHUB_TOKEN"), os.Getenv("GITHUB_TOKEN")),
 		Repo:             os.Getenv("GITHUB_REPOSITORY"),
 		OpenAIBaseURL:    firstNonEmpty(os.Getenv("OPENAI_BASE_URL"), "https://api.openai.com/v1"),
 		OpenAIAPIKey:     os.Getenv("OPENAI_API_KEY"),
-		Model:            firstNonEmpty(os.Getenv("REVIEWQA_MODEL"), "gpt-4o-mini"),
+		Model:            firstNonEmpty(os.Getenv("QUAIL_MODEL"), "gpt-4o-mini"),
 		// v0.48 — 20s was tight against a local-Ollama-on-DGX setup
 		// where responses arrived in 20-25s; we'd amputate ~50% of
 		// real-world calls. 60s gives slower hardware breathing room
 		// without unduly extending fast-LLM runs (those return well
 		// inside it anyway). Operators can still override via the
 		// env var.
-		LLMTimeout:       envDuration("REVIEWQA_LLM_TIMEOUT", 60*time.Second),
-		LLMTokenCap:      envInt("REVIEWQA_LLM_TOKEN_CAP", 600),
-		HealMode:         HealMode(firstNonEmpty(os.Getenv("REVIEWQA_HEAL_MODE"), string(HealOnFailure))),
-		AllowDiffToLLM:   os.Getenv("REVIEWQA_ALLOW_DIFF_TO_LLM") == "1",
-		BranchPrefix:     firstNonEmpty(os.Getenv("REVIEWQA_BRANCH_PREFIX"), "reviewqa"),
-		PlaywrightReport: os.Getenv("REVIEWQA_PLAYWRIGHT_REPORT"),
-		WorkDir:          firstNonEmpty(os.Getenv("REVIEWQA_WORKDIR"), "."),
+		LLMTimeout:       envDuration("QUAIL_LLM_TIMEOUT", 60*time.Second),
+		LLMTokenCap:      envInt("QUAIL_LLM_TOKEN_CAP", 600),
+		HealMode:         HealMode(firstNonEmpty(os.Getenv("QUAIL_HEAL_MODE"), string(HealOnFailure))),
+		AllowDiffToLLM:   os.Getenv("QUAIL_ALLOW_DIFF_TO_LLM") == "1",
+		BranchPrefix:     firstNonEmpty(os.Getenv("QUAIL_BRANCH_PREFIX"), "quail"),
+		PlaywrightReport: os.Getenv("QUAIL_PLAYWRIGHT_REPORT"),
+		WorkDir:          firstNonEmpty(os.Getenv("QUAIL_WORKDIR"), "."),
 	}
-	if n := os.Getenv("REVIEWQA_PR"); n != "" {
+	if n := os.Getenv("QUAIL_PR"); n != "" {
 		if v, err := strconv.Atoi(n); err == nil {
 			c.PRNumber = v
 		}
@@ -66,7 +66,7 @@ func (c Config) Validate() error {
 	switch c.HealMode {
 	case HealOnFailure, HealProactive, HealOff:
 	default:
-		return fmt.Errorf("invalid REVIEWQA_HEAL_MODE %q; want on-failure|proactive|off", c.HealMode)
+		return fmt.Errorf("invalid QUAIL_HEAL_MODE %q; want on-failure|proactive|off", c.HealMode)
 	}
 	return nil
 }

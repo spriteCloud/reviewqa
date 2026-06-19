@@ -1,4 +1,4 @@
-name: reviewqa
+name: quail
 description: Generate tests for a PR and heal Playwright locators on failure.
 author: spriteCloud
 branding:
@@ -33,16 +33,16 @@ inputs:
     required: false
     default: playwright-report.json
   run-generate:
-    description: Whether to run `reviewqa generate`. Set to "false" to only heal.
+    description: Whether to run `quail generate`. Set to "false" to only heal.
     required: false
     default: "true"
   run-heal:
-    description: Whether to run `reviewqa heal`. Set to "false" to only generate.
+    description: Whether to run `quail heal`. Set to "false" to only generate.
     required: false
     default: "true"
   target-urls:
     description: |
-      Comma-separated list of live URLs reviewqa should probe and generate a
+      Comma-separated list of live URLs quail should probe and generate a
       Playwright happy-flow against. Useful for projects with little or no
       source in the PR diff (the URL is the source of truth instead).
       Pages are fetched over plain HTTP(S) — JavaScript-rendered SPAs that
@@ -54,13 +54,13 @@ inputs:
     required: false
     default: info
   version:
-    description: reviewqa release tag to install. Defaults to "latest".
+    description: quail release tag to install. Defaults to "latest".
     required: false
     default: latest
 runs:
   using: composite
   steps:
-    - name: Install reviewqa
+    - name: Install quail
       shell: bash
       run: |
         set -euo pipefail
@@ -72,24 +72,24 @@ runs:
           aarch64|arm64) arch=arm64 ;;
         esac
         if [ "$ver" = "latest" ]; then
-          ver=$(curl -fsSL https://api.github.com/repos/spriteCloud/reviewqa/releases/latest | grep tag_name | cut -d'"' -f4)
+          ver=$(curl -fsSL https://api.github.com/repos/spriteCloud/quail/releases/latest | grep tag_name | cut -d'"' -f4)
         fi
-        base="https://github.com/spriteCloud/reviewqa/releases/download/${ver}"
-        archive="reviewqa_${os}_${arch}.tar.gz"
+        base="https://github.com/spriteCloud/quail/releases/download/${ver}"
+        archive="quail_${os}_${arch}.tar.gz"
         tmp=$(mktemp -d)
         curl -fsSL "$base/$archive" -o "$tmp/$archive"
         if curl -fsSL "$base/checksums.txt" -o "$tmp/checksums.txt"; then
           (cd "$tmp" && sha256sum -c --ignore-missing checksums.txt) || {
-            echo "reviewqa: checksum verification failed" >&2
+            echo "quail: checksum verification failed" >&2
             exit 1
           }
         else
-          echo "reviewqa: checksums.txt unavailable; proceeding without verification" >&2
+          echo "quail: checksums.txt unavailable; proceeding without verification" >&2
         fi
         tar -xzf "$tmp/$archive" -C "$tmp"
-        sudo install -m 0755 "$tmp/reviewqa" /usr/local/bin/reviewqa
-        reviewqa --version
-    - name: reviewqa generate
+        sudo install -m 0755 "$tmp/quail" /usr/local/bin/quail
+        quail --version
+    - name: quail generate
       # Diff-driven generation needs a PR. Skip when there's none but a probe
       # target is set — the standalone probe step below covers that case.
       if: inputs.run-generate == 'true' && inputs.pr != ''
@@ -98,12 +98,12 @@ runs:
         GITHUB_TOKEN: ${{ inputs.github-token != '' && inputs.github-token || github.token }}
         OPENAI_BASE_URL: ${{ inputs.openai-base-url }}
         OPENAI_API_KEY: ${{ inputs.openai-api-key }}
-        REVIEWQA_MODEL: ${{ inputs.model }}
-        REVIEWQA_PR: ${{ inputs.pr }}
-        REVIEWQA_LOG_LEVEL: ${{ inputs.log-level }}
-        REVIEWQA_TARGET_URLS: ${{ inputs.target-urls }}
-      run: reviewqa generate
-    - name: reviewqa probe (standalone, no PR)
+        QUAIL_MODEL: ${{ inputs.model }}
+        QUAIL_PR: ${{ inputs.pr }}
+        QUAIL_LOG_LEVEL: ${{ inputs.log-level }}
+        QUAIL_TARGET_URLS: ${{ inputs.target-urls }}
+      run: quail generate
+    - name: quail probe (standalone, no PR)
       # Fires when target-urls is set AND no PR is available (workflow_dispatch
       # or push runs). The PR-attached probe path already runs inside `generate`.
       if: inputs.target-urls != '' && inputs.pr == ''
@@ -112,25 +112,25 @@ runs:
         GITHUB_TOKEN: ${{ inputs.github-token != '' && inputs.github-token || github.token }}
         OPENAI_BASE_URL: ${{ inputs.openai-base-url }}
         OPENAI_API_KEY: ${{ inputs.openai-api-key }}
-        REVIEWQA_MODEL: ${{ inputs.model }}
-        REVIEWQA_LOG_LEVEL: ${{ inputs.log-level }}
-        REVIEWQA_TARGET_URLS: ${{ inputs.target-urls }}
-      run: reviewqa probe
-    - name: reviewqa heal
+        QUAIL_MODEL: ${{ inputs.model }}
+        QUAIL_LOG_LEVEL: ${{ inputs.log-level }}
+        QUAIL_TARGET_URLS: ${{ inputs.target-urls }}
+      run: quail probe
+    - name: quail heal
       if: inputs.run-heal == 'true' && inputs.heal-mode != 'off'
       shell: bash
       env:
         GITHUB_TOKEN: ${{ inputs.github-token != '' && inputs.github-token || github.token }}
         OPENAI_BASE_URL: ${{ inputs.openai-base-url }}
         OPENAI_API_KEY: ${{ inputs.openai-api-key }}
-        REVIEWQA_MODEL: ${{ inputs.model }}
-        REVIEWQA_HEAL_MODE: ${{ inputs.heal-mode }}
-        REVIEWQA_PR: ${{ inputs.pr }}
-        REVIEWQA_PLAYWRIGHT_REPORT: ${{ inputs.playwright-report }}
-        REVIEWQA_LOG_LEVEL: ${{ inputs.log-level }}
+        QUAIL_MODEL: ${{ inputs.model }}
+        QUAIL_HEAL_MODE: ${{ inputs.heal-mode }}
+        QUAIL_PR: ${{ inputs.pr }}
+        QUAIL_PLAYWRIGHT_REPORT: ${{ inputs.playwright-report }}
+        QUAIL_LOG_LEVEL: ${{ inputs.log-level }}
       run: |
         if [ "${{ inputs.heal-mode }}" = "on-failure" ] && [ ! -f "${{ inputs.playwright-report }}" ]; then
-          echo "reviewqa: no Playwright report at ${{ inputs.playwright-report }}; nothing to heal."
+          echo "quail: no Playwright report at ${{ inputs.playwright-report }}; nothing to heal."
           exit 0
         fi
-        reviewqa heal
+        quail heal

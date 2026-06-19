@@ -10,34 +10,34 @@ import (
 	"testing"
 )
 
-// fixtureProjectAt writes a minimal reviewqa-shaped tree under `root`
+// fixtureProjectAt writes a minimal quail-shaped tree under `root`
 // and returns root. Used by switcher / sibling-discovery tests.
 func fixtureProjectAt(t *testing.T, root string) string {
 	t.Helper()
 	mustWrite(t, filepath.Join(root, "tests", "e2e", "features", "demo.feature"), sampleFeature)
-	mustWrite(t, filepath.Join(root, "tests", "e2e", "steps", "reviewqa.steps.ts"), sampleSteps)
+	mustWrite(t, filepath.Join(root, "tests", "e2e", "steps", "quail.steps.ts"), sampleSteps)
 	return root
 }
 
-func TestLooksLikeReviewqaProject(t *testing.T) {
+func TestLooksLikeQuailProject(t *testing.T) {
 	// A tmp dir with the features dir → yes.
 	yes := t.TempDir()
 	fixtureProjectAt(t, yes)
-	if !looksLikeReviewqaProject(yes) {
-		t.Errorf("fixture project should look like reviewqa")
+	if !looksLikeQuailProject(yes) {
+		t.Errorf("fixture project should look like quail")
 	}
 	// An empty dir → no.
 	no := t.TempDir()
-	if looksLikeReviewqaProject(no) {
-		t.Errorf("empty dir should NOT look like reviewqa")
+	if looksLikeQuailProject(no) {
+		t.Errorf("empty dir should NOT look like quail")
 	}
 }
 
-func TestSiblingProjects_DiscoversReviewqaPeers(t *testing.T) {
+func TestSiblingProjects_DiscoversQuailPeers(t *testing.T) {
 	parent := t.TempDir()
 	a := filepath.Join(parent, "project-a")
 	b := filepath.Join(parent, "project-b")
-	c := filepath.Join(parent, "project-c") // not a reviewqa project
+	c := filepath.Join(parent, "project-c") // not a quail project
 	for _, p := range []string{a, b, c} {
 		if err := os.MkdirAll(p, 0o755); err != nil {
 			t.Fatal(err)

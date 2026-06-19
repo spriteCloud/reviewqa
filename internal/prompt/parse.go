@@ -7,10 +7,10 @@ package prompt
 import (
 	"strings"
 
-	"github.com/reviewqa/reviewqa/internal/mindmap"
+	"github.com/spriteCloud/quail/internal/mindmap"
 )
 
-// Filter is what `reviewqa prompt` produces: a set of journey kinds and
+// Filter is what `quail prompt` produces: a set of journey kinds and
 // page-keyword hints to narrow the generation pipeline to what the user
 // asked about. Empty filters degrade to "include everything" so passing
 // the zero value matches all journeys.

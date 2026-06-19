@@ -25,8 +25,8 @@ func TestWriteScript_RoundTrip(t *testing.T) {
 		"@playwright/test",
 		"engine.launch",
 		"process.stdout.write",
-		"REVIEWQA_ENGINE",
-		"REVIEWQA_STEALTH",
+		"QUAIL_ENGINE",
+		"QUAIL_STEALTH",
 		"playwright-extra",
 	} {
 		if !strings.Contains(string(body), want) {

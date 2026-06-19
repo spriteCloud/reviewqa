@@ -6,7 +6,7 @@ import (
 	"strings"
 )
 
-// StepPattern is one entry from the generated reviewqa.steps.ts file —
+// StepPattern is one entry from the generated quail.steps.ts file —
 // the bound Gherkin pattern + its keyword family. The UI surfaces this
 // list so users editing a Scenario can pick from the registered
 // vocabulary instead of guessing.

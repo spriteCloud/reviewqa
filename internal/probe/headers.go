@@ -7,17 +7,17 @@ import (
 
 // Chrome-shaped UA. WAFs (Akamai, Cloudflare Bot Manager, etc.)
 // reject obvious-bot UAs by default. v0.86 swaps the long-lived
-// `reviewqa-probe/1` UA for a recent Chrome-on-Linux string — same
+// `quail-probe/1` UA for a recent Chrome-on-Linux string — same
 // shape every modern browser sends. We still send the real UA via
-// the `X-Reviewqa-Probe` header so origins that *want* to identify
+// the `X-Quail-Probe` header so origins that *want* to identify
 // us can.
 const chromeUserAgent = "Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/130.0.0.0 Safari/537.36"
 
-// reviewqaIdentHeader lets honest sites identify the probe without
+// quailIdentHeader lets honest sites identify the probe without
 // us giving the game away to bot managers. Servers can choose to
 // allow us based on this header; the UA stays browser-like.
-const reviewqaIdentHeader = "X-Reviewqa-Probe"
-const reviewqaIdentValue = "reviewqa-probe/1 (+https://github.com/spriteCloud/reviewqa)"
+const quailIdentHeader = "X-Quail-Probe"
+const quailIdentValue = "quail-probe/1 (+https://github.com/spriteCloud/quail)"
 
 // applyDefaultHeaders sets the full set of headers a modern Chrome
 // sends on a top-level navigation. Used by Fetch + the contract /
@@ -38,7 +38,7 @@ func applyDefaultHeaders(req *http.Request) {
 	req.Header.Set("Sec-Fetch-Site", "none")
 	req.Header.Set("Sec-Fetch-User", "?1")
 	req.Header.Set("Upgrade-Insecure-Requests", "1")
-	req.Header.Set(reviewqaIdentHeader, reviewqaIdentValue)
+	req.Header.Set(quailIdentHeader, quailIdentValue)
 }
 
 // looksLikeWAFRejection reports whether an error from the static

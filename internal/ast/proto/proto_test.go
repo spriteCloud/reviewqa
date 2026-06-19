@@ -3,7 +3,7 @@ package proto
 import (
 	"testing"
 
-	"github.com/reviewqa/reviewqa/internal/ast"
+	"github.com/spriteCloud/quail/internal/ast"
 )
 
 func TestExtract_RoutesByStreamingShape(t *testing.T) {

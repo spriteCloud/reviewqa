@@ -7,9 +7,9 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/reviewqa/reviewqa/internal/ast"
-	"github.com/reviewqa/reviewqa/internal/mindmap"
-	"github.com/reviewqa/reviewqa/internal/plan"
+	"github.com/spriteCloud/quail/internal/ast"
+	"github.com/spriteCloud/quail/internal/mindmap"
+	"github.com/spriteCloud/quail/internal/plan"
 )
 
 func TestApiSpecItems_EmitsOnePerFormSameOrigin(t *testing.T) {
@@ -40,7 +40,7 @@ func TestApiSpecItems_EmitsOnePerFormSameOrigin(t *testing.T) {
 			},
 		},
 	}
-	items := apiSpecItems("https://x.test", m)
+	items := apiSpecItems("https://x.test", m, "")
 	if len(items) != 1 {
 		t.Fatalf("expected 1 same-origin API spec; got %d (%+v)", len(items), items)
 	}
@@ -78,7 +78,7 @@ func TestResolveFormAction_HandlesEmptyAndAbsolute(t *testing.T) {
 }
 
 func TestRunAll_EmitsApiSpecForForm(t *testing.T) {
-	t.Setenv("REVIEWQA_PROBE_ALLOW_LOOPBACK", "1")
+	t.Setenv("QUAIL_PROBE_ALLOW_LOOPBACK", "1")
 	mux := http.NewServeMux()
 	mux.HandleFunc("/", func(w http.ResponseWriter, r *http.Request) {
 		if r.URL.Path != "/" {

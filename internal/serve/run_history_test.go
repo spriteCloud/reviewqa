@@ -48,7 +48,7 @@ func writeMinimalReport(t *testing.T, dir, scenario, status, at string, duration
 
 func TestLoadScenarioTimeline_ReadsRunFiles(t *testing.T) {
 	root := t.TempDir()
-	runsRoot := filepath.Join(root, "tests", "e2e", ".reviewqa-runs")
+	runsRoot := filepath.Join(root, "tests", "e2e", ".quail-runs")
 	writeMinimalReport(t, runsRoot, "demo scenario", "passed", "20260618-100000", 1234)
 	writeMinimalReport(t, runsRoot, "demo scenario", "failed", "20260618-110000", 2345)
 	writeMinimalReport(t, runsRoot, "other", "passed", "20260618-120000", 999)

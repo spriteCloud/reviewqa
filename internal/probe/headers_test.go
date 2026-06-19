@@ -16,7 +16,7 @@ func TestApplyDefaultHeaders_SendsBrowserShape(t *testing.T) {
 	if ua == "" || ua[:5] != "Mozil" {
 		t.Errorf("User-Agent should be browser-shaped; got %q", ua)
 	}
-	for _, h := range []string{"Accept-Language", "Sec-Fetch-Dest", "Sec-Fetch-Mode", "X-Reviewqa-Probe", "Sec-Ch-Ua", "Upgrade-Insecure-Requests"} {
+	for _, h := range []string{"Accept-Language", "Sec-Fetch-Dest", "Sec-Fetch-Mode", "X-Quail-Probe", "Sec-Ch-Ua", "Upgrade-Insecure-Requests"} {
 		if req.Header.Get(h) == "" {
 			t.Errorf("missing header %s", h)
 		}
@@ -62,7 +62,7 @@ func TestParseBrowserMode(t *testing.T) {
 }
 
 func TestParseBrowserMode_LegacyEnvOverride(t *testing.T) {
-	t.Setenv("REVIEWQA_BROWSER_PROBE", "1")
+	t.Setenv("QUAIL_BROWSER_PROBE", "1")
 	if got := ParseBrowserMode(""); got != BrowserAlways {
 		t.Errorf("legacy env should force BrowserAlways; got %v", got)
 	}

@@ -67,15 +67,15 @@ func TestCacheKey_DiffersAcrossModels(t *testing.T) {
 }
 
 func TestResolveCacheDir_Precedence(t *testing.T) {
-	t.Setenv("REVIEWQA_LLM_CACHE", "")
+	t.Setenv("QUAIL_LLM_CACHE", "")
 	if got := ResolveCacheDir("", "/work"); got != "" {
 		t.Errorf("no opt-in signal → empty; got %q", got)
 	}
-	t.Setenv("REVIEWQA_LLM_CACHE", "auto")
-	if got := ResolveCacheDir("", "/work"); got != "/work/.reviewqa-cache" {
-		t.Errorf(`"auto" + workdir → /work/.reviewqa-cache; got %q`, got)
+	t.Setenv("QUAIL_LLM_CACHE", "auto")
+	if got := ResolveCacheDir("", "/work"); got != "/work/.quail-cache" {
+		t.Errorf(`"auto" + workdir → /work/.quail-cache; got %q`, got)
 	}
-	t.Setenv("REVIEWQA_LLM_CACHE", "/explicit/path")
+	t.Setenv("QUAIL_LLM_CACHE", "/explicit/path")
 	if got := ResolveCacheDir("", "/work"); got != "/explicit/path" {
 		t.Errorf("env path wins; got %q", got)
 	}

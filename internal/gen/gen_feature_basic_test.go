@@ -4,8 +4,8 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/reviewqa/reviewqa/internal/ast"
-	"github.com/reviewqa/reviewqa/internal/plan"
+	"github.com/spriteCloud/quail/internal/ast"
+	"github.com/spriteCloud/quail/internal/plan"
 )
 
 func TestFeatureTemplate_EmitsTaggedScenario(t *testing.T) {
@@ -75,7 +75,7 @@ func TestStepDefsBDDTemplate_BindsToStepsAPI(t *testing.T) {
 		Symbols:  []ast.Symbol{sym},
 		PageURL:  "https://x.test",
 		Template: plan.TmplPlaywrightStepsBDD,
-		OutPath:  "tests/e2e/steps/reviewqa.steps.ts",
+		OutPath:  "tests/e2e/steps/quail.steps.ts",
 	}
 	out, err := Render([]plan.Item{it}, t.TempDir())
 	if err != nil {

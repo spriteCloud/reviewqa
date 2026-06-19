@@ -3,8 +3,8 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>reviewqa — reference docs · by spriteCloud</title>
-  <meta name="description" content="Dense reference docs for reviewqa: subcommands, environment variables, the 10-layer test taxonomy, coverage modes, workflow recipes, and FAQ.">
+  <title>quail — reference docs · by spriteCloud</title>
+  <meta name="description" content="Dense reference docs for quail: subcommands, environment variables, the 10-layer test taxonomy, coverage modes, workflow recipes, and FAQ.">
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Sora:wght@400;500;600;700;800&family=Inter:wght@400;500;600;900&family=Fira+Code:wght@400;500;600&display=swap" rel="stylesheet">
@@ -293,16 +293,16 @@
         <a href="index.html#examples">Examples</a>
         <a href="docs.html" class="active">Docs</a>
         <a href="index.html#faq">FAQ</a>
-        <a href="https://github.com/spriteCloud/reviewqa">GitHub</a>
-        <a class="nav-cta" href="https://github.com/marketplace/actions/reviewqa" data-testid="nav-cta">Install action</a>
+        <a href="https://github.com/spriteCloud/quail">GitHub</a>
+        <a class="nav-cta" href="https://github.com/marketplace/actions/quail" data-testid="nav-cta">Install action</a>
       </div>
     </div>
   </nav>
 
   <header class="hero">
     <div class="container">
-      <span class="label">reviewqa · reference</span>
-      <h1>The complete <em>reviewqa</em> reference.</h1>
+      <span class="label">quail · reference</span>
+      <h1>The complete <em>quail</em> reference.</h1>
       <p class="lead">
         Every subcommand, every environment variable, every taxonomy layer.
         Dense and direct — bookmark a heading and link back when you need to.
@@ -391,7 +391,7 @@
     <div class="container">
       <h2><span class="num">02</span>The 10-layer taxonomy</h2>
       <p class="lede">
-        Every test reviewqa emits maps to one of ten layers, modeled after
+        Every test quail emits maps to one of ten layers, modeled after
         the standard test pyramid expanded for modern web/API surfaces.
         Layers 1, 2, 6, 9 trigger on PR-diff source code; the other six
         emit on any live-URL probe.
@@ -403,7 +403,7 @@
           <tr><td>2</td><td>Component</td><td>PR diff touches a Kind=Component symbol</td><td>3–5 per component</td><td><code>pw_e2e</code></td><td><code>generate</code> against a UI PR</td></tr>
           <tr><td>3</td><td>API</td><td>HTML form OR OpenAPI endpoint discovered</td><td><strong>10 per form</strong> (1 happy + 9 negatives)</td><td><code>pw_api</code> · <code>jest_api</code> · <code>pytest_api</code> · <code>gotest_httptest</code></td><td>both example projects</td></tr>
           <tr><td>4</td><td>Contract</td><td>OpenAPI / GraphQL / Webhook discovered, OR always-attempt stubs</td><td><strong>9 per endpoint</strong> (contract) · <strong>6 per origin</strong> (gql/webhook stub)</td><td><code>pw_contract</code> · <code>openapi_compat</code> · <code>pw_graphql_stub</code> · <code>pw_webhook_stub</code></td><td><strong>petstore: 12 contract specs × 9 tests = 108</strong></td></tr>
-          <tr><td>5</td><td>Integration</td><td>Always-on scaffold; real Testcontainers specs when <code>reviewqa.yml</code> declares resources</td><td><strong>15 per origin</strong> (5 stubs × 3 blocks)</td><td><code>pw_integration_api_stub</code> · <code>db_stub</code> · <code>cache_stub</code> · <code>obs_stub</code> · <code>auth_stub</code> · real <code>integration_*</code> via yml</td><td>both example projects</td></tr>
+          <tr><td>5</td><td>Integration</td><td>Always-on scaffold; real Testcontainers specs when <code>quail.yml</code> declares resources</td><td><strong>15 per origin</strong> (5 stubs × 3 blocks)</td><td><code>pw_integration_api_stub</code> · <code>db_stub</code> · <code>cache_stub</code> · <code>obs_stub</code> · <code>auth_stub</code> · real <code>integration_*</code> via yml</td><td>both example projects</td></tr>
           <tr><td>6</td><td>Backend</td><td>PR diff touches gRPC source</td><td>1+ per method</td><td><code>grpc_unary</code> · <code>grpc_server_stream</code> · <code>grpc_client_stream</code> · <code>grpc_bidi</code></td><td><code>generate</code> against a gRPC PR</td></tr>
           <tr><td>7</td><td>UI</td><td>Every probed page</td><td><strong>a11y trio: 5+5+5 tests on EVERY crawled page</strong> (uncapped); responsive / perf / visual / etc. capped at <code>coverage.FuzzCap()</code></td><td>a11y (5 axe gates) · landmarks (5 structural) · keyboard (5 gestures) · responsive · perf · visual · visual-states · security · health · observability · i18n</td><td>both example projects</td></tr>
           <tr><td>8</td><td>Mobile</td><td>Every probed page</td><td><strong>8 per page</strong> (4 devices × 2 scenarios)</td><td><code>pw_mobile</code> (iPhone 13 · Pixel 5 · iPad Pro 11 · Galaxy S9+) · <code>pw_touch</code> (5 gestures) · <code>pw_deeplink</code></td><td>both example projects</td></tr>
@@ -420,29 +420,29 @@
       <p class="lede">
         Every behavior change can be made via an environment variable or
         a CLI flag — flags win when both are set. Defaults are tuned for
-        the public-cloud LLM case; local-LLM operators bump <code>REVIEWQA_LLM_TIMEOUT</code>
-        and set <code>REVIEWQA_HUMANIZE=0</code> for tight wall-clock budgets.
+        the public-cloud LLM case; local-LLM operators bump <code>QUAIL_LLM_TIMEOUT</code>
+        and set <code>QUAIL_HUMANIZE=0</code> for tight wall-clock budgets.
       </p>
       <table class="dense">
         <thead><tr><th>Variable</th><th>Default</th><th>Effect</th></tr></thead>
         <tbody>
-          <tr><td><code>REVIEWQA_LLM</code></td><td>(empty)</td><td>OpenAI-compatible endpoint. When set, the composer adds up to 5 <code>@llm-composed</code> Scenarios per journey. Use a local or private endpoint — the diff is sent in clear.</td></tr>
-          <tr><td><code>REVIEWQA_MODEL</code></td><td><code>gpt-4o-mini</code></td><td>Model id used by the composer. Auto-set to <code>qwen3-coder-next:latest</code> when <code>--llm</code> points at an Ollama-shaped endpoint.</td></tr>
-          <tr><td><code>REVIEWQA_LLM_LADDER</code></td><td>(empty)</td><td>Comma-separated model fallbacks. First to return parseable JSON wins; the chosen model is embedded as <code>@model:&lt;id&gt;</code> on each emitted Scenario.</td></tr>
-          <tr><td><code>REVIEWQA_LLM_TIMEOUT</code></td><td><code>60s</code></td><td>Per-call timeout. Local CPU-only endpoints often need <code>120s</code>+; OpenAI-hosted endpoints are happy with 20–30s.</td></tr>
-          <tr><td><code>REVIEWQA_LLM_TOKEN_CAP</code></td><td><code>600</code></td><td>Max output tokens per LLM call.</td></tr>
-          <tr><td><code>REVIEWQA_HUMANIZE</code></td><td>(unset)</td><td>Set to <code>0</code> to skip the per-file humanization pass while keeping the composer active. Useful when generating hundreds of specs against a slow LLM.</td></tr>
-          <tr><td><code>REVIEWQA_ALLOW_DIFF_TO_LLM</code></td><td><code>0</code></td><td>Set to <code>1</code> to send the PR diff to the LLM for richer scaffold suggestions. Off by default — diff often contains secrets.</td></tr>
-          <tr><td><code>REVIEWQA_BROWSER_PROBE</code></td><td>(unset)</td><td>Set to <code>1</code> to drive Chromium (via Playwright) instead of the static HTML crawler. Required for SPA targets whose HTML is mostly JavaScript.</td></tr>
-          <tr><td><code>REVIEWQA_IGNORE_ROBOTS</code></td><td>(unset)</td><td>Set to <code>1</code> to crawl paths a <code>robots.txt</code> Disallow excludes. Default OFF — only enable for QA of sites you own.</td></tr>
-          <tr><td><code>REVIEWQA_COVERAGE</code></td><td><code>standard</code></td><td>Spider depth: <code>breadth</code> · <code>standard</code> · <code>depth</code> · <code>max</code>. See the next section.</td></tr>
-          <tr><td><code>REVIEWQA_TARGET_URLS</code></td><td>(empty)</td><td>Comma-separated URLs to probe — alternative to <code>--url</code>.</td></tr>
-          <tr><td><code>REVIEWQA_HEAL_MODE</code></td><td><code>on-failure</code></td><td><code>on-failure</code> · <code>proactive</code> · <code>off</code>. Controls when the locator-heal command runs.</td></tr>
-          <tr><td><code>REVIEWQA_GRAPHQL_ENDPOINT</code></td><td><code>/graphql</code></td><td>Override the GraphQL stub's introspection path.</td></tr>
-          <tr><td><code>REVIEWQA_WEBHOOK_ENDPOINT</code></td><td>(empty)</td><td>Set to the webhook receiver path to activate the signed-POST assertion in <code>pw_webhook_stub</code>.</td></tr>
-          <tr><td><code>REVIEWQA_WEBHOOK_SECRET</code></td><td>(empty)</td><td>HMAC signing secret used by <code>pw_webhook_stub</code>.</td></tr>
-          <tr><td><code>REVIEWQA_GITHUB_TOKEN</code></td><td>(empty)</td><td>GitHub token used to open the follow-up PR. Falls back to <code>GITHUB_TOKEN</code>.</td></tr>
-          <tr><td><code>REVIEWQA_BRANCH_PREFIX</code></td><td><code>reviewqa</code></td><td>Prefix for branches reviewqa pushes (e.g. <code>reviewqa/tests-pr-42-abc1234</code>).</td></tr>
+          <tr><td><code>QUAIL_LLM</code></td><td>(empty)</td><td>OpenAI-compatible endpoint. When set, the composer adds up to 5 <code>@llm-composed</code> Scenarios per journey. Use a local or private endpoint — the diff is sent in clear.</td></tr>
+          <tr><td><code>QUAIL_MODEL</code></td><td><code>gpt-4o-mini</code></td><td>Model id used by the composer. Auto-set to <code>qwen3-coder-next:latest</code> when <code>--llm</code> points at an Ollama-shaped endpoint.</td></tr>
+          <tr><td><code>QUAIL_LLM_LADDER</code></td><td>(empty)</td><td>Comma-separated model fallbacks. First to return parseable JSON wins; the chosen model is embedded as <code>@model:&lt;id&gt;</code> on each emitted Scenario.</td></tr>
+          <tr><td><code>QUAIL_LLM_TIMEOUT</code></td><td><code>60s</code></td><td>Per-call timeout. Local CPU-only endpoints often need <code>120s</code>+; OpenAI-hosted endpoints are happy with 20–30s.</td></tr>
+          <tr><td><code>QUAIL_LLM_TOKEN_CAP</code></td><td><code>600</code></td><td>Max output tokens per LLM call.</td></tr>
+          <tr><td><code>QUAIL_HUMANIZE</code></td><td>(unset)</td><td>Set to <code>0</code> to skip the per-file humanization pass while keeping the composer active. Useful when generating hundreds of specs against a slow LLM.</td></tr>
+          <tr><td><code>QUAIL_ALLOW_DIFF_TO_LLM</code></td><td><code>0</code></td><td>Set to <code>1</code> to send the PR diff to the LLM for richer scaffold suggestions. Off by default — diff often contains secrets.</td></tr>
+          <tr><td><code>QUAIL_BROWSER_PROBE</code></td><td>(unset)</td><td>Set to <code>1</code> to drive Chromium (via Playwright) instead of the static HTML crawler. Required for SPA targets whose HTML is mostly JavaScript.</td></tr>
+          <tr><td><code>QUAIL_IGNORE_ROBOTS</code></td><td>(unset)</td><td>Set to <code>1</code> to crawl paths a <code>robots.txt</code> Disallow excludes. Default OFF — only enable for QA of sites you own.</td></tr>
+          <tr><td><code>QUAIL_COVERAGE</code></td><td><code>standard</code></td><td>Spider depth: <code>breadth</code> · <code>standard</code> · <code>depth</code> · <code>max</code>. See the next section.</td></tr>
+          <tr><td><code>QUAIL_TARGET_URLS</code></td><td>(empty)</td><td>Comma-separated URLs to probe — alternative to <code>--url</code>.</td></tr>
+          <tr><td><code>QUAIL_HEAL_MODE</code></td><td><code>on-failure</code></td><td><code>on-failure</code> · <code>proactive</code> · <code>off</code>. Controls when the locator-heal command runs.</td></tr>
+          <tr><td><code>QUAIL_GRAPHQL_ENDPOINT</code></td><td><code>/graphql</code></td><td>Override the GraphQL stub's introspection path.</td></tr>
+          <tr><td><code>QUAIL_WEBHOOK_ENDPOINT</code></td><td>(empty)</td><td>Set to the webhook receiver path to activate the signed-POST assertion in <code>pw_webhook_stub</code>.</td></tr>
+          <tr><td><code>QUAIL_WEBHOOK_SECRET</code></td><td>(empty)</td><td>HMAC signing secret used by <code>pw_webhook_stub</code>.</td></tr>
+          <tr><td><code>QUAIL_GITHUB_TOKEN</code></td><td>(empty)</td><td>GitHub token used to open the follow-up PR. Falls back to <code>GITHUB_TOKEN</code>.</td></tr>
+          <tr><td><code>QUAIL_BRANCH_PREFIX</code></td><td><code>quail</code></td><td>Prefix for branches quail pushes (e.g. <code>quail/tests-pr-42-abc1234</code>).</td></tr>
         </tbody>
       </table>
     </div>
@@ -467,7 +467,7 @@
         </tbody>
       </table>
       <div class="callout">
-        <strong>Local-LLM tip.</strong> Higher coverage means more journeys, which means more LLM calls. Combine <code>--coverage=depth</code> with <code>REVIEWQA_HUMANIZE=0</code> so per-file humanization doesn't dominate your wall-clock.
+        <strong>Local-LLM tip.</strong> Higher coverage means more journeys, which means more LLM calls. Combine <code>--coverage=depth</code> with <code>QUAIL_HUMANIZE=0</code> so per-file humanization doesn't dominate your wall-clock.
       </div>
     </div>
   </section>
@@ -481,7 +481,7 @@
         the API service can't, and vice versa.
       </p>
       <table class="dense">
-        <thead><tr><th></th><th><a href="https://github.com/spriteCloud/reviewqa/tree/main/examples/spritecloud-com-dgx">spritecloud-com-dgx</a></th><th><a href="https://github.com/spriteCloud/reviewqa/tree/main/examples/petstore-swagger-io-dgx">petstore-swagger-io-dgx</a></th></tr></thead>
+        <thead><tr><th></th><th><a href="https://github.com/spriteCloud/quail/tree/main/examples/spritecloud-com-dgx">spritecloud-com-dgx</a></th><th><a href="https://github.com/spriteCloud/quail/tree/main/examples/petstore-swagger-io-dgx">petstore-swagger-io-dgx</a></th></tr></thead>
         <tbody>
           <tr><td>Target shape</td><td>Marketing + lead-gen forms</td><td>API service with OpenAPI 3</td></tr>
           <tr><td>Files emitted</td><td><strong>197</strong></td><td><strong>46</strong></td></tr>
@@ -504,43 +504,43 @@
 
       <h3>Probe a live URL with an LLM endpoint</h3>
 <pre class="snippet"><span class="c"># Any OpenAI-compatible endpoint works — Ollama, vLLM, OpenAI, spriteCloud's DGX.</span>
-<span class="k">REVIEWQA_LLM</span>=http://your-endpoint:11434 \
-  <span class="k">REVIEWQA_HUMANIZE</span>=0 \
-  reviewqa probe --url <span class="v">https://www.spritecloud.com</span> --coverage=standard</pre>
+<span class="k">QUAIL_LLM</span>=http://your-endpoint:11434 \
+  <span class="k">QUAIL_HUMANIZE</span>=0 \
+  quail probe --url <span class="v">https://www.spritecloud.com</span> --coverage=standard</pre>
 
       <h3>Tailor an existing generated suite (v0.65+)</h3>
 <pre class="snippet"><span class="c"># Opens http://127.0.0.1:8765 with a brand-styled viewer + editor:</span>
 <span class="c"># Features, Scenarios, registered step patterns, stakeholder docs.</span>
 <span class="c"># v0.66 — Edit / Delete / + New Scenario buttons; each edit backed up</span>
-<span class="c"># under tests/e2e/.reviewqa-history/ for undo.</span>
-reviewqa serve --workdir <span class="v">./my-generated-suite</span></pre>
+<span class="c"># under tests/e2e/.quail-history/ for undo.</span>
+quail serve --workdir <span class="v">./my-generated-suite</span></pre>
 
       <h3>Probe an API-only target (lights up the Contract layer)</h3>
-<pre class="snippet">reviewqa probe --url <span class="v">https://petstore3.swagger.io</span> --coverage=standard
+<pre class="snippet">quail probe --url <span class="v">https://petstore3.swagger.io</span> --coverage=standard
 <span class="c"># tests/e2e/contract/ → 12 OpenAPI-derived specs</span></pre>
 
       <h3>Generate from a PR diff</h3>
-<pre class="snippet">reviewqa generate --pr <span class="v">42</span>
+<pre class="snippet">quail generate --pr <span class="v">42</span>
 <span class="c"># Scans the diff, emits per-aspect test scaffolds, opens a follow-up PR.</span></pre>
 
       <h3>Bootstrap the sentinel layer</h3>
 <pre class="snippet"><span class="c"># 1) Probe + write the suite to disk</span>
-reviewqa probe --url <span class="v">https://example.com</span>
+quail probe --url <span class="v">https://example.com</span>
 
 <span class="c"># 2) Install + run it</span>
 cd e2e && npm i && npx playwright install
 
 <span class="c"># 3) Run once and record failures into findings.md</span>
-reviewqa run-once --record
+quail run-once --record
 
 <span class="c"># 4) Re-probe — each failure now emits a tests/e2e/sentinels/&lt;slug&gt;.sentinel.spec.ts</span>
-reviewqa probe --url <span class="v">https://example.com</span></pre>
+quail probe --url <span class="v">https://example.com</span></pre>
 
       <h3>Run against your own LLM endpoint</h3>
-<pre class="snippet"><span class="k">REVIEWQA_LLM</span>=https://your-ollama.local:11434 \
-  <span class="k">REVIEWQA_MODEL</span>=llama3.1:70b \
-  <span class="k">REVIEWQA_LLM_TIMEOUT</span>=120s \
-  reviewqa probe --url <span class="v">https://your-site.example.com</span></pre>
+<pre class="snippet"><span class="k">QUAIL_LLM</span>=https://your-ollama.local:11434 \
+  <span class="k">QUAIL_MODEL</span>=llama3.1:70b \
+  <span class="k">QUAIL_LLM_TIMEOUT</span>=120s \
+  quail probe --url <span class="v">https://your-site.example.com</span></pre>
     </div>
   </section>
 
@@ -550,27 +550,27 @@ reviewqa probe --url <span class="v">https://example.com</span></pre>
 
       <details class="faq-item">
         <summary>My composer keeps failing with <code>unexpected end of JSON input</code>.</summary>
-        <p>Two fixes, both operational: (1) bump <code>REVIEWQA_LLM_TIMEOUT</code> to 120s+ so the model has time to finish its response; (2) set <code>REVIEWQA_HUMANIZE=0</code> to free LLM budget from the per-file humanization pass. v0.46 also added partial-array recovery — truncated responses contribute whatever Scenarios completed before the cliff.</p>
+        <p>Two fixes, both operational: (1) bump <code>QUAIL_LLM_TIMEOUT</code> to 120s+ so the model has time to finish its response; (2) set <code>QUAIL_HUMANIZE=0</code> to free LLM budget from the per-file humanization pass. v0.46 also added partial-array recovery — truncated responses contribute whatever Scenarios completed before the cliff.</p>
       </details>
 
       <details class="faq-item">
         <summary>The probe says "no items produced" against my SPA.</summary>
-        <p>Static HTML crawl can't see JS-rendered content. Set <code>REVIEWQA_BROWSER_PROBE=1</code> to drive Chromium via Playwright — slower but sees the rendered DOM. Or, for API-only services, point the probe at the OpenAPI root: v0.52 fan-outs the contract + graphql + webhook layers even when no UI pages are discovered.</p>
+        <p>Static HTML crawl can't see JS-rendered content. Set <code>QUAIL_BROWSER_PROBE=1</code> to drive Chromium via Playwright — slower but sees the rendered DOM. Or, for API-only services, point the probe at the OpenAPI root: v0.52 fan-outs the contract + graphql + webhook layers even when no UI pages are discovered.</p>
       </details>
 
       <details class="faq-item">
         <summary>Where do sentinels come from?</summary>
-        <p>They're emitted from the on-disk ledger at <code>tests/e2e/docs/findings.md</code>. Run <code>reviewqa run-once --record</code> after the first probe to populate it from real test failures; the next <code>generate</code> emits one <code>*.sentinel.spec.ts</code> per finding.</p>
+        <p>They're emitted from the on-disk ledger at <code>tests/e2e/docs/findings.md</code>. Run <code>quail run-once --record</code> after the first probe to populate it from real test failures; the next <code>generate</code> emits one <code>*.sentinel.spec.ts</code> per finding.</p>
       </details>
 
       <details class="faq-item">
         <summary>Can I use this in public CI without exposing the LLM?</summary>
-        <p>Yes — never set <code>REVIEWQA_LLM</code> in your CI. The generated <code>.feature</code> and <code>.spec.ts</code> files run on plain Playwright with zero LLM dependency. The composer only runs at generation time, locally.</p>
+        <p>Yes — never set <code>QUAIL_LLM</code> in your CI. The generated <code>.feature</code> and <code>.spec.ts</code> files run on plain Playwright with zero LLM dependency. The composer only runs at generation time, locally.</p>
       </details>
 
       <details class="faq-item">
         <summary>How do I activate the GraphQL or Webhook stub?</summary>
-        <p>The stub itself always emits per origin. Activate the live assertion by setting <code>REVIEWQA_GRAPHQL_ENDPOINT</code> (default <code>/graphql</code>) or <code>REVIEWQA_WEBHOOK_ENDPOINT</code> + <code>REVIEWQA_WEBHOOK_SECRET</code>. When unset, the test skips with a hint about how to wire it.</p>
+        <p>The stub itself always emits per origin. Activate the live assertion by setting <code>QUAIL_GRAPHQL_ENDPOINT</code> (default <code>/graphql</code>) or <code>QUAIL_WEBHOOK_ENDPOINT</code> + <code>QUAIL_WEBHOOK_SECRET</code>. When unset, the test skips with a hint about how to wire it.</p>
       </details>
 
       <details class="faq-item">
@@ -585,7 +585,7 @@ reviewqa probe --url <span class="v">https://example.com</span></pre>
 
       <details class="faq-item">
         <summary>How deep is each layer? Are they consistent?</summary>
-        <p>See the <a href="#taxonomy">"tests per emit"</a> column above. v0.55–v0.57 brought the previously-shallow layers (Contract, Mobile, Integration) up to parity with the deep ones (API, UI, Non-functional). Contract: <strong>9 tests per endpoint</strong> including 8 adversarial blocks (sqli / xss / null-byte / oversize / wrong-method / unicode / invalid-json / rapid-burst). Mobile: <strong>8 tests per page</strong> across 4 devices × 2 orientations. Integration: <strong>15 tests per origin</strong> (5 scaffolds × 3 wireable blocks each, all <code>test.skip()</code> until <code>reviewqa.yml</code> wires the backing resource).</p>
+        <p>See the <a href="#taxonomy">"tests per emit"</a> column above. v0.55–v0.57 brought the previously-shallow layers (Contract, Mobile, Integration) up to parity with the deep ones (API, UI, Non-functional). Contract: <strong>9 tests per endpoint</strong> including 8 adversarial blocks (sqli / xss / null-byte / oversize / wrong-method / unicode / invalid-json / rapid-burst). Mobile: <strong>8 tests per page</strong> across 4 devices × 2 orientations. Integration: <strong>15 tests per origin</strong> (5 scaffolds × 3 wireable blocks each, all <code>test.skip()</code> until <code>quail.yml</code> wires the backing resource).</p>
       </details>
 
       <details class="faq-item">
@@ -595,7 +595,7 @@ reviewqa probe --url <span class="v">https://example.com</span></pre>
 
       <details class="faq-item">
         <summary>Are the integration stubs always skipped?</summary>
-        <p>Yes, until you wire them. Each per-kind stub (<code>db</code> / <code>cache</code> / <code>obs</code> / <code>auth</code>) ships as <code>test.skip(@wireable, ...)</code> with concrete TODOs in the body — the spec is documentation + catalogue presence. Declare the resource in <code>reviewqa.yml</code> and re-run <code>reviewqa generate</code> to swap the stub for a Testcontainers-backed real spec (<code>integration_db.tmpl</code>, etc.).</p>
+        <p>Yes, until you wire them. Each per-kind stub (<code>db</code> / <code>cache</code> / <code>obs</code> / <code>auth</code>) ships as <code>test.skip(@wireable, ...)</code> with concrete TODOs in the body — the spec is documentation + catalogue presence. Declare the resource in <code>quail.yml</code> and re-run <code>quail generate</code> to swap the stub for a Testcontainers-backed real spec (<code>integration_db.tmpl</code>, etc.).</p>
       </details>
     </div>
   </section>
@@ -604,9 +604,9 @@ reviewqa probe --url <span class="v">https://example.com</span></pre>
     <div class="container foot-inner">
       <span class="wm"><span class="s">sprite</span><span class="c">Cloud</span></span>
       <div class="foot-links">
-        <a href="https://github.com/spriteCloud/reviewqa">Repo</a>
-        <a href="https://github.com/spriteCloud/reviewqa/issues">Issues</a>
-        <a href="https://github.com/spriteCloud/reviewqa/blob/main/LICENSE.md">License</a>
+        <a href="https://github.com/spriteCloud/quail">Repo</a>
+        <a href="https://github.com/spriteCloud/quail/issues">Issues</a>
+        <a href="https://github.com/spriteCloud/quail/blob/main/LICENSE.md">License</a>
         <a href="https://spritecloud.com">Commercial</a>
       </div>
     </div>

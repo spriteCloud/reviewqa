@@ -1,6 +1,6 @@
-// reviewqa browser-driven probe.
+// quail browser-driven probe.
 //
-// Invoked by the Go binary when REVIEWQA_BROWSER_PROBE=1 (or --use-browser
+// Invoked by the Go binary when QUAIL_BROWSER_PROBE=1 (or --use-browser
 // is set). Takes a single URL on argv, performs a bounded BFS crawl using
 // Chromium, and writes a JSON document to stdout describing the rendered
 // state of each page.
@@ -14,8 +14,8 @@
 // Bounds (env-overridable): max 20 pages, max depth 3, single Chromium
 // instance, sequential page fetches (rate-friendly).
 
-// v0.89: engine selection via REVIEWQA_ENGINE (chromium|firefox|webkit,
-// default chromium) and stealth wrapping via REVIEWQA_STEALTH
+// v0.89: engine selection via QUAIL_ENGINE (chromium|firefox|webkit,
+// default chromium) and stealth wrapping via QUAIL_STEALTH
 // (on|off, default on). The Go side cascades chromium→firefox→webkit
 // in auto mode; per-engine binaries are lazy-installed by the Go
 // runner cache. playwright-extra + StealthPlugin patch JS-layer bot
@@ -28,20 +28,20 @@ import { addExtra } from 'playwright-extra'
 import StealthPlugin from 'puppeteer-extra-plugin-stealth'
 
 const ENGINES = { chromium: chrStock, firefox: ffStock, webkit: wkStock }
-const ENGINE_NAME = (process.env.REVIEWQA_ENGINE || 'chromium').toLowerCase()
+const ENGINE_NAME = (process.env.QUAIL_ENGINE || 'chromium').toLowerCase()
 const STOCK_ENGINE = ENGINES[ENGINE_NAME] || chrStock
-const STEALTH_ON = (process.env.REVIEWQA_STEALTH || 'on').toLowerCase() !== 'off'
+const STEALTH_ON = (process.env.QUAIL_STEALTH || 'on').toLowerCase() !== 'off'
 const engine = STEALTH_ON ? addExtra(STOCK_ENGINE).use(StealthPlugin()) : STOCK_ENGINE
 
 const TARGET = process.argv[2]
 if (!TARGET) {
-  console.error('reviewqa-browser-probe: usage: node probe.mjs <url>')
+  console.error('quail-browser-probe: usage: node probe.mjs <url>')
   process.exit(2)
 }
 
-const MAX_PAGES = Number(process.env.REVIEWQA_MAX_PAGES ?? 20)
-const MAX_DEPTH = Number(process.env.REVIEWQA_MAX_DEPTH ?? 3)
-const NAV_TIMEOUT_MS = Number(process.env.REVIEWQA_NAV_TIMEOUT ?? 15_000)
+const MAX_PAGES = Number(process.env.QUAIL_MAX_PAGES ?? 20)
+const MAX_DEPTH = Number(process.env.QUAIL_MAX_DEPTH ?? 3)
+const NAV_TIMEOUT_MS = Number(process.env.QUAIL_NAV_TIMEOUT ?? 15_000)
 const IDLE_MS = 800
 const ACCEPT_BUTTON_RE = /^(accept|agree|got it|continue|i understand|allow|ok|allow all|accept all)/i
 
@@ -302,7 +302,7 @@ async function main() {
   const queue = [{ url: canonical(TARGET), depth: 0 }]
   const browser = await engine.launch({ headless: true })
   const ctx = await browser.newContext({
-    userAgent: 'reviewqa-browser-probe/1 (+https://github.com/spriteCloud/reviewqa)',
+    userAgent: 'quail-browser-probe/1 (+https://github.com/spriteCloud/quail)',
   })
   const page = await ctx.newPage()
   page.on('pageerror', (e) => errors.push(`pageerror: ${e}`))
@@ -352,6 +352,6 @@ async function main() {
 }
 
 main().catch(e => {
-  console.error('reviewqa-browser-probe: fatal:', e)
+  console.error('quail-browser-probe: fatal:', e)
   process.exit(1)
 })

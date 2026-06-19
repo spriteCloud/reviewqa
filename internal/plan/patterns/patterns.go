@@ -1,4 +1,4 @@
-// Package patterns is reviewqa's structural-pattern registry. Each
+// Package patterns is quail's structural-pattern registry. Each
 // Pattern describes one known shape that should influence extraction —
 // "this element is hidden by design", "this is a tracker pixel", "this
 // is a cookie banner", etc — and what the extractor should do about it

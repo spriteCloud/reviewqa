@@ -25,7 +25,7 @@ func WriteScript(baseDir string) (path string, cleanup func(), err error) {
 	if baseDir == "" {
 		baseDir = "."
 	}
-	dir, err := os.MkdirTemp(baseDir, ".reviewqa-browser-probe-*")
+	dir, err := os.MkdirTemp(baseDir, ".quail-browser-probe-*")
 	if err != nil {
 		return "", func() {}, fmt.Errorf("browser: tempdir: %w", err)
 	}

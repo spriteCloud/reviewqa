@@ -1,6 +1,6 @@
 name: verify-references
 
-# Runs reviewqa probe against a fixed matrix of reference sites and emits a
+# Runs quail probe against a fixed matrix of reference sites and emits a
 # Markdown fitness report (spec count, journey-kind distribution, form-fill
 # leakage, h1 coverage, banner-only steps, empty steps). Diagnostic only —
 # not gating. See docs/reference-sites.md for the legal rationale behind
@@ -10,7 +10,7 @@ on:
   workflow_dispatch:
     inputs:
       ref:
-        description: Branch / tag to build reviewqa from
+        description: Branch / tag to build quail from
         required: false
         default: main
 
@@ -52,16 +52,16 @@ jobs:
             echo "robots.txt: not available at $host (treating as permissive)."
           fi
 
-      - name: Build reviewqa + quality-check
+      - name: Build quail + quality-check
         run: |
-          go build -o ./bin/reviewqa ./cmd/reviewqa
-          go build -o ./bin/reviewqa-quality-check ./cmd/reviewqa-quality-check
+          go build -o ./bin/quail ./cmd/quail
+          go build -o ./bin/quail-quality-check ./cmd/quail-quality-check
 
       - name: Probe (dry-run)
         id: probe
         run: |
           set +e
-          ./bin/reviewqa probe --url "${{ matrix.site.url }}" --dry-run > probe-output.log 2>&1
+          ./bin/quail probe --url "${{ matrix.site.url }}" --dry-run > probe-output.log 2>&1
           rc=$?
           echo "rc=$rc" >> "$GITHUB_OUTPUT"
           # Don't fail the job on probe error — we want the empty-input message
@@ -71,7 +71,7 @@ jobs:
 
       - name: Emit fitness report
         run: |
-          ./bin/reviewqa-quality-check --site="${{ matrix.site.name }}" probe-output.log >> "$GITHUB_STEP_SUMMARY"
+          ./bin/quail-quality-check --site="${{ matrix.site.name }}" probe-output.log >> "$GITHUB_STEP_SUMMARY"
 
       - name: Upload probe output
         if: always()

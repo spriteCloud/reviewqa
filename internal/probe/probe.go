@@ -1,5 +1,5 @@
 // Package probe fetches a live URL and synthesises a plan.Item carrying
-// the page's anchors/inputs/links — so reviewqa can generate a Playwright
+// the page's anchors/inputs/links — so quail can generate a Playwright
 // happy-flow against the URL without any source code in the diff.
 //
 // The fetcher is deliberately conservative: short timeout, restricted to
@@ -24,12 +24,12 @@ import (
 
 	"golang.org/x/net/publicsuffix"
 
-	"github.com/reviewqa/reviewqa/internal/ast"
-	"github.com/reviewqa/reviewqa/internal/log"
-	"github.com/reviewqa/reviewqa/internal/mindmap"
-	"github.com/reviewqa/reviewqa/internal/openapi"
-	"github.com/reviewqa/reviewqa/internal/plan"
-	"github.com/reviewqa/reviewqa/internal/probe/browser"
+	"github.com/spriteCloud/quail/internal/ast"
+	"github.com/spriteCloud/quail/internal/log"
+	"github.com/spriteCloud/quail/internal/mindmap"
+	"github.com/spriteCloud/quail/internal/openapi"
+	"github.com/spriteCloud/quail/internal/plan"
+	"github.com/spriteCloud/quail/internal/probe/browser"
 )
 
 // userAgent retained for back-compat with code outside this file
@@ -102,7 +102,7 @@ func guardHost(host string) error {
 	if host == "" {
 		return errors.New("empty host")
 	}
-	if os.Getenv("REVIEWQA_PROBE_ALLOW_LOOPBACK") == "1" {
+	if os.Getenv("QUAIL_PROBE_ALLOW_LOOPBACK") == "1" {
 		return nil // test / local-dev escape hatch
 	}
 	ips, err := net.LookupIP(host)
@@ -245,17 +245,40 @@ func hostToName(host string) string {
 	return b.String()
 }
 
-// outPathStem produces a slug for the output spec filename. Hostname plus
-// a normalised path. "https://www.spritecloud.com/services" → "spritecloud-com-services".
+// projectName returns the human-readable Symbol.Name. When a
+// projectLabel is set (via --name / WithProjectLabel), it wins;
+// otherwise we fall back to hostToName. Centralised so every emitter
+// shares the same precedence rule.
+func projectName(projectLabel, host string) string {
+	if s := strings.TrimSpace(projectLabel); s != "" {
+		return s
+	}
+	return hostToName(host)
+}
+
+// pageStem returns the host-less per-page filename stem. Root path
+// → "landing"; "https://x.test/wiki/Madrid" → "wiki-Madrid". Mirrors
+// outPathStem; used by per-page quality companions so their filename
+// stops baking in the host (the project dir carries that context).
+func pageStem(pageURL string) string {
+	slug := pathSlug(pageURL)
+	if slug == "" {
+		return "landing"
+	}
+	return slug
+}
+
+// outPathStem produces a slug for the output spec filename. The host
+// no longer prefixes the stem (the project dir name carries that
+// context). Root path → "landing"; sub-paths → "<path-segments>".
+// "https://www.spritecloud.com/services" → "services".
 func outPathStem(u *url.URL) string {
-	host := strings.ReplaceAll(u.Hostname(), ".", "-")
-	host = strings.TrimPrefix(host, "www-")
 	pathPart := strings.Trim(u.Path, "/")
 	pathPart = strings.ReplaceAll(pathPart, "/", "-")
 	if pathPart == "" {
-		return host
+		return "landing"
 	}
-	return host + "-" + pathPart
+	return pathPart
 }
 
 // RunAll crawls each source URL into a mindmap, then identifies multiple
@@ -391,7 +414,7 @@ const (
 )
 
 // ParseBrowserMode normalises a flag value, accepting empty
-// strings and the legacy REVIEWQA_BROWSER_PROBE=1 env override.
+// strings and the legacy QUAIL_BROWSER_PROBE=1 env override.
 func ParseBrowserMode(s string) BrowserMode {
 	switch strings.ToLower(strings.TrimSpace(s)) {
 	case "always":
@@ -400,7 +423,7 @@ func ParseBrowserMode(s string) BrowserMode {
 		return BrowserNever
 	default:
 		// Empty / "auto" / anything else.
-		if os.Getenv("REVIEWQA_BROWSER_PROBE") == "1" {
+		if os.Getenv("QUAIL_BROWSER_PROBE") == "1" {
 			return BrowserAlways
 		}
 		return BrowserAuto
@@ -447,11 +470,11 @@ var defaultCascade = []EngineMode{EngineChromium, EngineFirefox, EngineWebKit}
 
 // ParseEngineMode normalises a flag value into an EngineMode.
 // Empty / unknown defaults to EngineAuto (the cascade). Honours
-// REVIEWQA_ENGINE env override.
+// QUAIL_ENGINE env override.
 func ParseEngineMode(s string) EngineMode {
 	v := strings.ToLower(strings.TrimSpace(s))
 	if v == "" {
-		v = strings.ToLower(strings.TrimSpace(os.Getenv("REVIEWQA_ENGINE")))
+		v = strings.ToLower(strings.TrimSpace(os.Getenv("QUAIL_ENGINE")))
 	}
 	switch v {
 	case "chromium":
@@ -480,11 +503,11 @@ func engineModeFromCtx(ctx context.Context) EngineMode {
 
 // ParseStealth maps an `on|off|true|false|1|0` flag value into a
 // bool. Empty defaults to true (stealth-on) — opt-out semantics.
-// Honours REVIEWQA_STEALTH env override.
+// Honours QUAIL_STEALTH env override.
 func ParseStealth(s string) bool {
 	v := strings.ToLower(strings.TrimSpace(s))
 	if v == "" {
-		v = strings.ToLower(strings.TrimSpace(os.Getenv("REVIEWQA_STEALTH")))
+		v = strings.ToLower(strings.TrimSpace(os.Getenv("QUAIL_STEALTH")))
 	}
 	switch v {
 	case "off", "false", "0", "no":
@@ -507,6 +530,22 @@ func stealthFromCtx(ctx context.Context) bool {
 	return true
 }
 
+type projectLabelKey struct{}
+
+// WithProjectLabel attaches a human-friendly project name to ctx.
+// Probe emitters consult it via projectLabelFromCtx; when empty they
+// fall back to host-derived naming (BrandFromHost / hostToName).
+func WithProjectLabel(ctx context.Context, label string) context.Context {
+	return context.WithValue(ctx, projectLabelKey{}, strings.TrimSpace(label))
+}
+
+func projectLabelFromCtx(ctx context.Context) string {
+	if v, ok := ctx.Value(projectLabelKey{}).(string); ok {
+		return v
+	}
+	return ""
+}
+
 type maxJourneysKey struct{}
 
 // WithMaxJourneys overrides the per-kind journey cap from coverage
@@ -526,11 +565,11 @@ func maxJourneysFromCtx(ctx context.Context) int {
 
 // ParseMaxJourneys turns a flag value into a journey cap. Empty /
 // invalid / non-positive → 0, meaning "use the coverage default".
-// Honours REVIEWQA_MAX_JOURNEYS env override.
+// Honours QUAIL_MAX_JOURNEYS env override.
 func ParseMaxJourneys(s string) int {
 	v := strings.TrimSpace(s)
 	if v == "" {
-		v = strings.TrimSpace(os.Getenv("REVIEWQA_MAX_JOURNEYS"))
+		v = strings.TrimSpace(os.Getenv("QUAIL_MAX_JOURNEYS"))
 	}
 	if v == "" {
 		return 0
@@ -563,12 +602,13 @@ func runAllImpl(ctx context.Context, urls []string, filter JourneyFilter, covera
 // keep cyclomatic complexity in check. Orchestrates crawl → journey
 // identification → filter → fan-out across the spec families.
 func probeOneOrigin(ctx context.Context, u string, coverage CoverageMode, filter JourneyFilter, fetcher mindmap.Fetcher, mode BrowserMode) ([]plan.Item, []error) {
+	projectLabel := projectLabelFromCtx(ctx)
 	opts := coverage.crawlOpts()
-	// v0.41b — REVIEWQA_IGNORE_ROBOTS=1 lets the operator disable
+	// v0.41b — QUAIL_IGNORE_ROBOTS=1 lets the operator disable
 	// robots.txt Disallow honoring (eg. for an internal QA crawl of
 	// their own site whose /admin/ is excluded from public indexing
 	// but is in scope for test generation). Default is to honor.
-	if os.Getenv("REVIEWQA_IGNORE_ROBOTS") == "1" {
+	if os.Getenv("QUAIL_IGNORE_ROBOTS") == "1" {
 		opts.IgnoreRobots = true
 	}
 	m, crawlErrs := crawlOriginWithFallback(ctx, u, fetcher, opts, mode)
@@ -579,9 +619,9 @@ func probeOneOrigin(ctx context.Context, u string, coverage CoverageMode, filter
 		// testing. Probe those independently so an API-only target
 		// like petstore3.swagger.io produces a populated suite.
 		var items []plan.Item
-		items = append(items, openAPIContractItems(ctx, u)...)
-		items = append(items, graphQLContractItems(ctx, u)...)
-		items = append(items, webhookContractItems(ctx, u)...)
+		items = append(items, openAPIContractItems(ctx, u, projectLabel)...)
+		items = append(items, graphQLContractItems(ctx, u, projectLabel)...)
+		items = append(items, webhookContractItems(ctx, u, projectLabel)...)
 		return items, crawlErrs
 	}
 	journeys := identifyAndFilterJourneys(ctx, m, coverage, filter, u)
@@ -600,14 +640,14 @@ func probeOneOrigin(ctx context.Context, u string, coverage CoverageMode, filter
 		// mindmap so the taxonomy isn't empty.
 		log.Info("probe: no journeys identified; site is likely SPA-heavy or behind interactions", "url", u, "pages", len(m.Pages))
 		var items []plan.Item
-		items = append(items, qualityCompanions(u, m, coverage)...)
-		items = append(items, openAPIContractItems(ctx, u)...)
-		items = append(items, graphQLContractItems(ctx, u)...)
-		items = append(items, webhookContractItems(ctx, u)...)
+		items = append(items, qualityCompanions(u, m, coverage, projectLabel)...)
+		items = append(items, openAPIContractItems(ctx, u, projectLabel)...)
+		items = append(items, graphQLContractItems(ctx, u, projectLabel)...)
+		items = append(items, webhookContractItems(ctx, u, projectLabel)...)
 		return items, crawlErrs
 	}
-	journeyItems := promoteJourneysToFeatures(journeys, u)
-	fuzzItems := emitFuzzItems(m, u, coverage.FuzzCap())
+	journeyItems := promoteJourneysToFeatures(journeys, u, projectLabel)
+	fuzzItems := emitFuzzItems(m, u, coverage.FuzzCap(), projectLabel)
 	catalogue := buildCatalogue(u, m, journeyItems, fuzzItems)
 	catalogue.CoverageMode = string(coverage)
 	// v0.38: journey items reference the suite-level catalogue so the
@@ -618,15 +658,15 @@ func probeOneOrigin(ctx context.Context, u string, coverage CoverageMode, filter
 	}
 
 	var items []plan.Item
-	items = append(items, companionItems(u, m, catalogue)...)
+	items = append(items, companionItems(u, m, catalogue, projectLabel)...)
 	items = append(items, journeyItems...)
 	items = append(items, fuzzItems...)
-	items = append(items, apiSpecItems(u, m)...)
-	items = append(items, qualityCompanions(u, m, coverage)...)
-	items = append(items, openAPIContractItems(ctx, u)...)
-	items = append(items, graphQLContractItems(ctx, u)...)
-	items = append(items, webhookContractItems(ctx, u)...)
-	items = append(items, domSnapshotItems(u, m)...)
+	items = append(items, apiSpecItems(u, m, projectLabel)...)
+	items = append(items, qualityCompanions(u, m, coverage, projectLabel)...)
+	items = append(items, openAPIContractItems(ctx, u, projectLabel)...)
+	items = append(items, graphQLContractItems(ctx, u, projectLabel)...)
+	items = append(items, webhookContractItems(ctx, u, projectLabel)...)
+	items = append(items, domSnapshotItems(u, m, projectLabel)...)
 	return items, crawlErrs
 }
 
@@ -863,10 +903,10 @@ func identifyAndFilterJourneys(ctx context.Context, m *mindmap.Map, coverage Cov
 // promoteJourneysToFeatures wraps each mindmap.Journey in a plan.Item
 // whose Template is the .feature shape. v0.21 inversion: no .spec.ts
 // sibling — playwright-bdd compiles features into runnable specs.
-func promoteJourneysToFeatures(journeys []mindmap.Journey, u string) []plan.Item {
+func promoteJourneysToFeatures(journeys []mindmap.Journey, u string, projectLabel string) []plan.Item {
 	out := make([]plan.Item, 0, len(journeys))
 	for _, j := range journeys {
-		item := itemFromJourney(j, u)
+		item := itemFromJourney(j, u, projectLabel)
 		item.Template = plan.TmplPlaywrightFeature
 		item.OutPath = featurePathFor(item.OutPath)
 		out = append(out, item)
@@ -876,7 +916,7 @@ func promoteJourneysToFeatures(journeys []mindmap.Journey, u string) []plan.Item
 
 // emitFuzzItems emits up to cap fuzz spec items, one per page that
 // satisfies pageNeedsFuzz.
-func emitFuzzItems(m *mindmap.Map, u string, cap int) []plan.Item {
+func emitFuzzItems(m *mindmap.Map, u string, cap int, projectLabel string) []plan.Item {
 	out := make([]plan.Item, 0, cap)
 	for _, url := range m.Order {
 		if len(out) >= cap {
@@ -886,7 +926,7 @@ func emitFuzzItems(m *mindmap.Map, u string, cap int) []plan.Item {
 		if !pageNeedsFuzz(page) {
 			continue
 		}
-		out = append(out, fuzzItemForPage(page, u))
+		out = append(out, fuzzItemForPage(page, u, projectLabel))
 	}
 	return out
 }
@@ -897,7 +937,7 @@ func emitFuzzItems(m *mindmap.Map, u string, cap int) []plan.Item {
 // bounded at the same cap as fuzz; the per-origin ones (security,
 // health, observability) emit exactly one. i18n only emits when the
 // landing page exposes hreflang siblings.
-func qualityCompanions(sourceURL string, m *mindmap.Map, coverage CoverageMode) []plan.Item {
+func qualityCompanions(sourceURL string, m *mindmap.Map, coverage CoverageMode, projectLabel string) []plan.Item {
 	if m == nil || len(m.Pages) == 0 {
 		return nil
 	}
@@ -911,17 +951,13 @@ func qualityCompanions(sourceURL string, m *mindmap.Map, coverage CoverageMode) 
 		host = parsed.Hostname()
 	}
 	stub := ast.Symbol{
-		Name:     hostToName(host),
+		Name:     projectName(projectLabel, host),
 		Kind:     ast.KindComponent,
 		File:     origin,
 		Language: "ts",
 	}
 
 	var out []plan.Item
-	originSlug := strings.TrimPrefix(strings.ReplaceAll(host, ".", "-"), "www-")
-	if originSlug == "" {
-		originSlug = "origin"
-	}
 
 	// Per-origin: one of each. The page URL is the origin itself so the
 	// templates can hit "/" relative to baseURL.
@@ -938,7 +974,7 @@ func qualityCompanions(sourceURL string, m *mindmap.Map, coverage CoverageMode) 
 		{plan.TmplPlaywrightHTTPChains, "http-chains"},
 		// v0.43: integration scaffold — emits a skipped placeholder
 		// so the integration layer is represented in the catalogue
-		// even when the consumer has no reviewqa.yml.
+		// even when the consumer has no quail.yml.
 		{plan.TmplPlaywrightIntegrationStub, "integration"},
 		// v0.49: GraphQL + Webhook always-attempt stubs — drop the
 		// endpoint-discovery gate so the Contract / Non-functional
@@ -963,7 +999,7 @@ func qualityCompanions(sourceURL string, m *mindmap.Map, coverage CoverageMode) 
 			Symbols:  []ast.Symbol{stub},
 			PageURL:  origin,
 			Template: kind.tmpl,
-			OutPath:  "tests/e2e/" + kind.subdir + "/" + originSlug + "." + kind.subdir + ".spec.ts",
+			OutPath:  "tests/e2e/" + kind.subdir + "/" + kind.subdir + ".spec.ts",
 		})
 	}
 
@@ -988,9 +1024,9 @@ func qualityCompanions(sourceURL string, m *mindmap.Map, coverage CoverageMode) 
 		if page == nil {
 			continue
 		}
-		stem := domSnapshotStem(page.URL)
+		stem := pageStem(page.URL)
 		pageStub := ast.Symbol{
-			Name:     hostToName(parseHost(page.URL)),
+			Name:     projectName(projectLabel, parseHost(page.URL)),
 			Kind:     ast.KindComponent,
 			File:     page.URL,
 			Language: "ts",
@@ -1024,9 +1060,9 @@ func qualityCompanions(sourceURL string, m *mindmap.Map, coverage CoverageMode) 
 		if page == nil {
 			continue
 		}
-		stem := domSnapshotStem(page.URL) // re-uses the slug builder
+		stem := pageStem(page.URL)
 		pageStub := ast.Symbol{
-			Name:     hostToName(parseHost(page.URL)),
+			Name:     projectName(projectLabel, parseHost(page.URL)),
 			Kind:     ast.KindComponent,
 			File:     page.URL,
 			Language: "ts",
@@ -1181,7 +1217,7 @@ func qualityCompanions(sourceURL string, m *mindmap.Map, coverage CoverageMode) 
 	}
 	if i18nPage != nil {
 		i18nStub := ast.Symbol{
-			Name:     hostToName(parseHost(i18nPage.URL)),
+			Name:     projectName(projectLabel, parseHost(i18nPage.URL)),
 			Kind:     ast.KindComponent,
 			File:     i18nPage.URL,
 			Language: "ts",
@@ -1192,7 +1228,7 @@ func qualityCompanions(sourceURL string, m *mindmap.Map, coverage CoverageMode) 
 			Symbols:  []ast.Symbol{i18nStub},
 			PageURL:  i18nPage.URL,
 			Template: plan.TmplPlaywrightI18n,
-			OutPath:  "tests/e2e/i18n/" + originSlug + ".i18n.spec.ts",
+			OutPath:  "tests/e2e/i18n/i18n.spec.ts",
 		})
 		// v0.45 — when the origin actually exposes ≥2 hreflang
 		// siblings, emit the mid-session locale-switch spec alongside
@@ -1203,7 +1239,7 @@ func qualityCompanions(sourceURL string, m *mindmap.Map, coverage CoverageMode) 
 				Symbols:  []ast.Symbol{i18nStub},
 				PageURL:  i18nPage.URL,
 				Template: plan.TmplPlaywrightLocaleSwitch,
-				OutPath:  "tests/e2e/i18n/" + originSlug + ".locale-switch.spec.ts",
+				OutPath:  "tests/e2e/i18n/locale-switch.spec.ts",
 			})
 		}
 	}
@@ -1215,7 +1251,7 @@ func qualityCompanions(sourceURL string, m *mindmap.Map, coverage CoverageMode) 
 // /api-docs.json under the origin and, if found, emits one contract
 // spec per declared endpoint. Bounded at 12 endpoints to keep probes
 // from exploding on huge APIs.
-func openAPIContractItems(ctx context.Context, sourceURL string) []plan.Item {
+func openAPIContractItems(ctx context.Context, sourceURL string, projectLabel string) []plan.Item {
 	const cap = 12
 	parsed, err := url.Parse(sourceURL)
 	if err != nil || parsed == nil {
@@ -1260,7 +1296,6 @@ func openAPIContractItems(ctx context.Context, sourceURL string) []plan.Item {
 		endpoints = endpoints[:cap]
 	}
 	host := parsed.Hostname()
-	hostSlug := strings.TrimPrefix(strings.ReplaceAll(host, ".", "-"), "www-")
 	var out []plan.Item
 	for i, ep := range endpoints {
 		// Encode statuses + method as a synthetic FormSpec so the
@@ -1279,7 +1314,7 @@ func openAPIContractItems(ctx context.Context, sourceURL string) []plan.Item {
 		}
 		endpoint := origin + ep.Path
 		stub := ast.Symbol{
-			Name:     hostToName(host),
+			Name:     projectName(projectLabel, host),
 			Kind:     ast.KindComponent,
 			File:     endpoint,
 			Language: "ts",
@@ -1293,7 +1328,7 @@ func openAPIContractItems(ctx context.Context, sourceURL string) []plan.Item {
 			Symbols:  []ast.Symbol{stub},
 			PageURL:  endpoint,
 			Template: plan.TmplPlaywrightContract,
-			OutPath:  "tests/e2e/contract/" + hostSlug + "-" + ep.Method + "-" + slug + ".contract.spec.ts",
+			OutPath:  "tests/e2e/contract/" + ep.Method + "-" + slug + ".contract.spec.ts",
 			Form:     form,
 		})
 		// v0.24 fan-out: idempotency for write methods that should be
@@ -1306,7 +1341,7 @@ func openAPIContractItems(ctx context.Context, sourceURL string) []plan.Item {
 				Symbols:  []ast.Symbol{stub},
 				PageURL:  endpoint,
 				Template: plan.TmplPlaywrightIdempotency,
-				OutPath:  "tests/e2e/api/" + hostSlug + "-" + ep.Method + "-" + slug + ".idempotency.spec.ts",
+				OutPath:  "tests/e2e/api/" + ep.Method + "-" + slug + ".idempotency.spec.ts",
 				Form:     form,
 			})
 		}
@@ -1319,14 +1354,14 @@ func openAPIContractItems(ctx context.Context, sourceURL string) []plan.Item {
 				Symbols:  []ast.Symbol{stub},
 				PageURL:  endpoint,
 				Template: plan.TmplPlaywrightPagination,
-				OutPath:  "tests/e2e/api/" + hostSlug + "-" + ep.Method + "-" + slug + ".pagination.spec.ts",
+				OutPath:  "tests/e2e/api/" + ep.Method + "-" + slug + ".pagination.spec.ts",
 				Form:     form,
 			})
 		}
 	}
 	// API versioning: if we see endpoints under both /v1/ and /v2/,
 	// emit one versioning spec per pair (capped at 4).
-	versioningItems := pairVersionedPaths(endpoints, origin, hostSlug)
+	versioningItems := pairVersionedPaths(endpoints, origin, projectLabel)
 	const versCap = 4
 	if len(versioningItems) > versCap {
 		versioningItems = versioningItems[:versCap]
@@ -1354,7 +1389,7 @@ func looksLikeCollectionPath(p string) bool {
 
 // pairVersionedPaths detects (/v1/x, /v2/x) pairs and emits one
 // versioning spec per kept pair.
-func pairVersionedPaths(endpoints []openapi.Endpoint, origin, hostSlug string) []plan.Item {
+func pairVersionedPaths(endpoints []openapi.Endpoint, origin, projectLabel string) []plan.Item {
 	type key struct{ rest, method string }
 	seen := map[key]map[string]bool{}
 	for _, ep := range endpoints {
@@ -1380,7 +1415,7 @@ func pairVersionedPaths(endpoints []openapi.Endpoint, origin, hostSlug string) [
 		// PageURL points at v1; the template rewrites for v2.
 		endpoint := origin + "/v1" + k.rest
 		stub := ast.Symbol{
-			Name:     hostToName(parseHost(endpoint)),
+			Name:     projectName(projectLabel, parseHost(endpoint)),
 			Kind:     ast.KindComponent,
 			File:     endpoint,
 			Language: "ts",
@@ -1394,7 +1429,7 @@ func pairVersionedPaths(endpoints []openapi.Endpoint, origin, hostSlug string) [
 			Symbols:  []ast.Symbol{stub},
 			PageURL:  endpoint,
 			Template: plan.TmplPlaywrightVersioning,
-			OutPath:  "tests/e2e/api/" + hostSlug + "-" + k.method + "-" + slug + ".versioning.spec.ts",
+			OutPath:  "tests/e2e/api/" + k.method + "-" + slug + ".versioning.spec.ts",
 			Form:     &ast.FormSpec{Method: k.method},
 		})
 	}
@@ -1411,7 +1446,7 @@ func min(a, b int) int {
 // apiSpecItems synthesises one plan.Item per (page, form) where the
 // form carries an action attribute that resolves to a same-origin URL.
 // Bounded at 8 to keep big sites manageable.
-func apiSpecItems(sourceURL string, m *mindmap.Map) []plan.Item {
+func apiSpecItems(sourceURL string, m *mindmap.Map, projectLabel string) []plan.Item {
 	const cap = 8
 	var out []plan.Item
 	for _, pURL := range m.Order {
@@ -1440,7 +1475,7 @@ func apiSpecItems(sourceURL string, m *mindmap.Map) []plan.Item {
 			}
 			host := parseHost(endpoint)
 			stub := ast.Symbol{
-				Name:     hostToName(host),
+				Name:     projectName(projectLabel, host),
 				Kind:     ast.KindComponent,
 				File:     endpoint,
 				Language: "ts",
@@ -1493,17 +1528,17 @@ func sameOriginAsSource(sourceURL, endpoint string) bool {
 }
 
 // apiSpecStem builds a filesystem-safe stem for an API spec. The index
-// keeps multi-form pages from colliding on disk.
+// keeps multi-form pages from colliding on disk. Host-less; the project
+// dir carries that context.
 func apiSpecStem(endpoint string, idx int) string {
 	u, err := url.Parse(endpoint)
 	if err != nil || u == nil {
 		return fmt.Sprintf("api-%d", idx)
 	}
-	host := strings.TrimPrefix(strings.ReplaceAll(u.Hostname(), ".", "-"), "www-")
-	slug := pathSlug(endpoint)
-	stem := host
-	if slug != "" {
-		stem += "-" + slug
+	_ = u
+	stem := pathSlug(endpoint)
+	if stem == "" {
+		stem = "landing"
 	}
 	if idx > 0 {
 		stem += fmt.Sprintf("-%d", idx)
@@ -1558,16 +1593,16 @@ func buildCatalogue(sourceURL string, m *mindmap.Map, journeyItems, fuzzItems []
 // carries non-empty DOMHTML. Outpath is tests/e2e/_dom/<slug>.html. Lets
 // reviewers see what the browser actually rendered without re-running the
 // probe — and gives Playwright trace-viewer something to diff against.
-func domSnapshotItems(sourceURL string, m *mindmap.Map) []plan.Item {
+func domSnapshotItems(sourceURL string, m *mindmap.Map, projectLabel string) []plan.Item {
 	var out []plan.Item
 	for _, pURL := range m.Order {
 		p := m.Pages[pURL]
 		if p == nil || p.DOMHTML == "" {
 			continue
 		}
-		stem := domSnapshotStem(p.URL)
+		stem := pageStem(p.URL)
 		stub := ast.Symbol{
-			Name:     hostToName(parseHost(p.URL)),
+			Name:     projectName(projectLabel, parseHost(p.URL)),
 			Kind:     ast.KindComponent,
 			File:     p.URL,
 			Language: "ts",
@@ -1608,20 +1643,20 @@ func parseHost(rawURL string) string {
 	return u.Hostname()
 }
 
-// companionItems returns the suite-wide files reviewqa drops alongside the
+// companionItems returns the suite-wide files quail drops alongside the
 // per-journey specs: tests/e2e/_fixtures.ts, playwright.config.ts,
 // tests/e2e/README.md, the Steps API helper, and (when a catalogue is
 // supplied) the stakeholder-facing test catalogue + work-summary deck.
 // The PageURL on each item is the probed origin so the templates can
 // render baseURL defaults and a relevant README intro.
-func companionItems(sourceURL string, m *mindmap.Map, cat *plan.Catalogue) []plan.Item {
+func companionItems(sourceURL string, m *mindmap.Map, cat *plan.Catalogue, projectLabel string) []plan.Item {
 	parsed, _ := url.Parse(sourceURL)
 	host := ""
 	if parsed != nil {
 		host = parsed.Hostname()
 	}
 	stub := ast.Symbol{
-		Name:     hostToName(host),
+		Name:     projectName(projectLabel, host),
 		Kind:     ast.KindComponent,
 		File:     sourceURL,
 		Language: "ts",
@@ -1685,7 +1720,7 @@ func companionItems(sourceURL string, m *mindmap.Map, cat *plan.Catalogue) []pla
 			Symbols:  []ast.Symbol{stub},
 			PageURL:  originOnly,
 			Template: plan.TmplPlaywrightStepsBDD,
-			OutPath:  "tests/e2e/steps/reviewqa.steps.ts",
+			OutPath:  "tests/e2e/steps/quail.steps.ts",
 		},
 		{
 			Symbol:        stub,
@@ -1734,14 +1769,14 @@ func mindmapFetcher(_ context.Context) mindmap.Fetcher {
 // Symbols carry the page chain; first symbol has empty EnteredVia
 // (visited via direct goto), subsequent ones carry the path that was
 // clicked to reach them.
-func itemFromJourney(j mindmap.Journey, sourceURL string) plan.Item {
+func itemFromJourney(j mindmap.Journey, sourceURL string, projectLabel string) plan.Item {
 	if len(j.Steps) == 0 {
 		return plan.Item{}
 	}
 	first := j.Steps[0].Page
 	syms := make([]ast.Symbol, 0, len(j.Steps))
 	for idx, step := range j.Steps {
-		s := symbolFromPage(step.Page)
+		s := symbolFromPage(step.Page, projectLabel)
 		s.EnteredVia = step.EnteredVia
 		s.AbsoluteURL = step.Page.URL
 		// If the EnteredVia path isn't a clickable link on the previous
@@ -1763,7 +1798,8 @@ func itemFromJourney(j mindmap.Journey, sourceURL string) plan.Item {
 		}
 		syms = append(syms, s)
 	}
-	stem := outPathStemForJourney(j, first)
+	stem := outPathStemForJourney(j)
+	_ = sourceURL
 	return plan.Item{
 		Symbol:      syms[0],
 		Symbols:     syms,
@@ -1806,14 +1842,18 @@ func withoutForm(s ast.Symbol) ast.Symbol {
 	return s
 }
 
-func symbolFromPage(p *mindmap.Page) ast.Symbol {
-	u, _ := url.Parse(p.URL)
-	host := ""
-	if u != nil {
-		host = u.Hostname()
+func symbolFromPage(p *mindmap.Page, projectLabel string) ast.Symbol {
+	name := strings.TrimSpace(projectLabel)
+	if name == "" {
+		u, _ := url.Parse(p.URL)
+		host := ""
+		if u != nil {
+			host = u.Hostname()
+		}
+		name = hostToName(host)
 	}
 	return ast.Symbol{
-		Name:         hostToName(host),
+		Name:         name,
 		Kind:         ast.KindComponent,
 		File:         p.URL,
 		Language:     "ts",
@@ -1893,14 +1933,18 @@ func pageHasInputType(p *mindmap.Page, types ...string) bool {
 // fuzzItemForPage builds the plan.Item that drives pw_fuzz.tmpl. The
 // item's Symbol carries the page's inputs + interactions (the template
 // loops over them with bounded caps inside).
-func fuzzItemForPage(p *mindmap.Page, sourceURL string) plan.Item {
+func fuzzItemForPage(p *mindmap.Page, sourceURL string, projectLabel string) plan.Item {
 	u, _ := url.Parse(p.URL)
 	host := ""
 	if u != nil {
 		host = u.Hostname()
 	}
+	name := strings.TrimSpace(projectLabel)
+	if name == "" {
+		name = hostToName(host)
+	}
 	sym := ast.Symbol{
-		Name:         hostToName(host),
+		Name:         name,
 		Kind:         ast.KindComponent,
 		File:         p.URL,
 		Language:     "ts",
@@ -1908,29 +1952,23 @@ func fuzzItemForPage(p *mindmap.Page, sourceURL string) plan.Item {
 		Interactions: p.Interactions,
 		PageTitle:    p.Title,
 	}
-	hostStem := strings.TrimPrefix(strings.ReplaceAll(host, ".", "-"), "www-")
-	stem := hostStem
+	stem := "fuzz"
 	if slug := pathSlug(p.URL); slug != "" {
-		stem += "-" + slug
+		stem = slug + "-fuzz"
 	}
+	_ = sourceURL
 	return plan.Item{
 		Symbol:      sym,
 		Symbols:     []ast.Symbol{sym},
 		PageURL:     p.URL,
 		Template:    plan.TmplPlaywrightFuzz,
-		OutPath:     "tests/e2e/" + stem + "-fuzz.spec.ts",
+		OutPath:     "tests/e2e/" + stem + ".spec.ts",
 		JourneyKind: "fuzz",
 	}
 }
 
-func outPathStemForJourney(j mindmap.Journey, first *mindmap.Page) string {
-	u, _ := url.Parse(first.URL)
-	host := ""
-	if u != nil {
-		host = u.Hostname()
-	}
-	hostStem := strings.TrimPrefix(strings.ReplaceAll(host, ".", "-"), "www-")
-	stem := hostStem + "-" + string(j.Kind)
+func outPathStemForJourney(j mindmap.Journey) string {
+	stem := string(j.Kind)
 	// Disambiguate multiple journeys of the same kind by the terminal page
 	// slug. Multi-step journeys naturally have a non-landing terminal;
 	// exercise journeys are single-step but still need the slug because
