@@ -28,7 +28,16 @@ func New(ctx context.Context, cfg config.Config) (*Client, error) {
 	}
 	ts := oauth2.StaticTokenSource(&oauth2.Token{AccessToken: cfg.GitHubToken})
 	tc := oauth2.NewClient(ctx, ts)
-	return &Client{api: github.NewClient(tc), cfg: cfg}, nil
+	api := github.NewClient(tc)
+	// v0.95.1 — override go-github's default `go-github/vNN` User-Agent.
+	// Under GitHub Actions, requests carrying that UA + the runtime
+	// GITHUB_TOKEN get 403 "Resource not accessible by integration" on
+	// `POST /git/trees` (and likely related write endpoints), even though
+	// the same token from the same runner succeeds via curl on the same
+	// endpoint. Sending a non-`go-github` UA bypasses whatever heuristic
+	// gates the lib's default UA.
+	api.UserAgent = "spritecloud-quail"
+	return &Client{api: api, cfg: cfg}, nil
 }
 
 // FetchDiff returns the unified diff for the PR and the PR metadata.
