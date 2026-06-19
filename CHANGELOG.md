@@ -7,6 +7,32 @@ shipped the depth-parity arc (Contract, Integration, Mobile, A11y trio).
 v0.61–v0.62 are the live-execution + composer-validation arc — first
 real-site run + composer destination-DOM enforcement.
 
+## v0.94.0 — Windows build + double-click serve launcher
+
+Re-enables the Windows target dropped in v0.93. Goreleaser now ships
+`quail_windows_amd64.zip` with `quail.exe`, a `quail-serve.bat`
+launcher, LICENSE, and README. Double-clicking the .bat starts
+`quail serve` and opens the default browser at `http://127.0.0.1:8765/`.
+
+The single Unix-only call site (`syscall.Flock` on the Playwright
+runner-cache install lock) is split behind build tags:
+
+- `internal/probe/browser/flock_unix.go` keeps the real `Flock`.
+- `internal/probe/browser/flock_windows.go` ships a no-op stub. The
+  lock is best-effort cross-process; on Windows two concurrent
+  probes might race on `npm install`, costing time but not state.
+  Upgrade path: `golang.org/x/sys/windows` `LockFileEx`.
+
+Windows arm64 is skipped (low demand). amd64 builds and tests
+clean — runtime smoke is informal until someone reports a path /
+shell-quoting issue under `cmd.exe`.
+
+Landing-page install snippet (`web/index.html`) replaced — the
+multi-line curl with `\` line-continuation was getting clipboard-
+mangled to `$\(uname -s …)` in some terminals/browsers. New form
+is a single line with the URL wrapped in `"…"`, and a separate
+Windows PowerShell block using `iwr` + `Expand-Archive`.
+
 ## v0.93.1 — Param Outline `with-quotes` row uses single-quotes only
 
 Deterministic `@kind:param` Scenario Outline emitted a row whose

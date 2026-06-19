@@ -9,7 +9,6 @@ import (
 	"path/filepath"
 	"strings"
 	"sync"
-	"syscall"
 
 	"github.com/spriteCloud/quail/internal/log"
 )
@@ -106,10 +105,10 @@ func EnsureRunner(ctx context.Context, engine string) (string, error) {
 		return dir, fmt.Errorf("%w: open lock %s: %v", ErrBrowserUnavailable, lockPath, err)
 	}
 	defer lock.Close()
-	if err := syscall.Flock(int(lock.Fd()), syscall.LOCK_EX); err != nil {
-		return dir, fmt.Errorf("%w: flock %s: %v", ErrBrowserUnavailable, lockPath, err)
+	if err := lockRunner(lock); err != nil {
+		return dir, fmt.Errorf("%w: lock %s: %v", ErrBrowserUnavailable, lockPath, err)
 	}
-	defer syscall.Flock(int(lock.Fd()), syscall.LOCK_UN)
+	defer unlockRunner(lock)
 
 	// Re-check post-lock — another process may have finished while
 	// we waited.
