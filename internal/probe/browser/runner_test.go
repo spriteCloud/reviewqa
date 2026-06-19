@@ -4,6 +4,7 @@ import (
 	"context"
 	"os"
 	"path/filepath"
+	"reflect"
 	"testing"
 )
 
@@ -149,4 +150,25 @@ func errorsIs(err, target error) bool {
 		return false
 	}
 	return false
+}
+func TestEnsureRunner(t *testing.T) {
+	t.Run("happy path", func(t *testing.T) {
+		got, err := EnsureRunner(nil, "")
+		if err != nil {
+			t.Fatalf("unexpected error: %v", err)
+		}
+		if reflect.DeepEqual(got, *new(string)) {
+			t.Fatalf("got zero value: %#v", got)
+		}
+	})
+
+	t.Run("returns expected type", func(t *testing.T) {
+		got, err := EnsureRunner(nil, "")
+		if err != nil {
+			t.Fatalf("unexpected error: %v", err)
+		}
+		if got, want := reflect.TypeOf(got), reflect.TypeOf(*new(string)); got != want {
+			t.Fatalf("type = %v, want %v", got, want)
+		}
+	})
 }
