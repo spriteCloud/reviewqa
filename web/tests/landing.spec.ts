@@ -1,6 +1,6 @@
 import { test, expect } from '@playwright/test';
 
-test.describe('reviewqa landing page', () => {
+test.describe('quail landing page', () => {
   test.beforeEach(async ({ page }) => {
     await page.goto('.');
   });
@@ -42,11 +42,11 @@ test.describe('reviewqa landing page', () => {
     await expect(cta).toBeVisible();
     await expect(cta).toHaveAttribute(
       'href',
-      'https://github.com/marketplace/actions/reviewqa',
+      'https://github.com/marketplace/actions/quail',
     );
   });
 
-  test('usage snippet references spriteCloud/reviewqa', async ({ page }) => {
-    await expect(page.getByTestId('snippet')).toContainText('spriteCloud/reviewqa@v1');
+  test('usage snippet references spriteCloud/quail', async ({ page }) => {
+    await expect(page.getByTestId('snippet')).toContainText('spriteCloud/quail@v1');
   });
 });

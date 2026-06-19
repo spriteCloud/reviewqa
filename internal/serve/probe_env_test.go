@@ -31,17 +31,17 @@ func TestProbeSubprocessEnv_EnabledForwardsSettings(t *testing.T) {
 	}})
 	env := probeSubprocessEnv()
 
-	if got := findEnv(env, "REVIEWQA_LLM"); got != "http://100.82.34.115:11434" {
-		t.Errorf("REVIEWQA_LLM = %q, want endpoint", got)
+	if got := findEnv(env, "QUAIL_LLM"); got != "http://100.82.34.115:11434" {
+		t.Errorf("QUAIL_LLM = %q, want endpoint", got)
 	}
-	if got := findEnv(env, "REVIEWQA_MODEL"); got != "qwen3-coder-next:latest" {
-		t.Errorf("REVIEWQA_MODEL = %q, want model", got)
+	if got := findEnv(env, "QUAIL_MODEL"); got != "qwen3-coder-next:latest" {
+		t.Errorf("QUAIL_MODEL = %q, want model", got)
 	}
 	if got := findEnv(env, "OPENAI_API_KEY"); got != "ollama" {
 		t.Errorf("OPENAI_API_KEY = %q, want ollama (keyless local fallback)", got)
 	}
-	if got := findEnv(env, "REVIEWQA_LLM_TIMEOUT"); got != "90s" {
-		t.Errorf("REVIEWQA_LLM_TIMEOUT = %q, want 90s", got)
+	if got := findEnv(env, "QUAIL_LLM_TIMEOUT"); got != "90s" {
+		t.Errorf("QUAIL_LLM_TIMEOUT = %q, want 90s", got)
 	}
 }
 

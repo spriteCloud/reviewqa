@@ -22,7 +22,7 @@ func TestPickProbeDestination_RepProbeInPlace(t *testing.T) {
 	parent := t.TempDir()
 	current := filepath.Join(parent, "spritecloud")
 	fixtureProjectAt(t, current)
-	got := pickProbeDestination(current, mustParseURL(t, "https://www.spritecloud.com"))
+	got := pickProbeDestination(current, mustParseURL(t, "https://www.spritecloud.com"), "")
 	if got != current {
 		t.Errorf("got %q, want re-probe in place %q", got, current)
 	}
@@ -34,7 +34,7 @@ func TestPickProbeDestination_NewBrandCreatesSibling(t *testing.T) {
 	parent := t.TempDir()
 	current := filepath.Join(parent, "spritecloud")
 	fixtureProjectAt(t, current)
-	got := pickProbeDestination(current, mustParseURL(t, "https://petstore3.swagger.io"))
+	got := pickProbeDestination(current, mustParseURL(t, "https://petstore3.swagger.io"), "")
 	want := filepath.Join(parent, "petstore3.swagger")
 	if got != want {
 		t.Errorf("got %q, want %q", got, want)
@@ -44,9 +44,9 @@ func TestPickProbeDestination_NewBrandCreatesSibling(t *testing.T) {
 	}
 }
 
-// A pre-existing NON-reviewqa squatter dir should NOT be probed
+// A pre-existing NON-quail squatter dir should NOT be probed
 // into. We pick a -1 suffix instead.
-func TestPickProbeDestination_CollidesWithNonReviewqaDir(t *testing.T) {
+func TestPickProbeDestination_CollidesWithNonQuailDir(t *testing.T) {
 	parent := t.TempDir()
 	current := filepath.Join(parent, "spritecloud")
 	fixtureProjectAt(t, current)
@@ -54,7 +54,7 @@ func TestPickProbeDestination_CollidesWithNonReviewqaDir(t *testing.T) {
 	if err := os.MkdirAll(filepath.Join(squatter, "random-files"), 0o755); err != nil {
 		t.Fatal(err)
 	}
-	got := pickProbeDestination(current, mustParseURL(t, "https://petstore3.swagger.io"))
+	got := pickProbeDestination(current, mustParseURL(t, "https://petstore3.swagger.io"), "")
 	want := filepath.Join(parent, "petstore3.swagger-1")
 	if got != want {
 		t.Errorf("got %q, want %q (squatter present)", got, want)
@@ -64,7 +64,7 @@ func TestPickProbeDestination_CollidesWithNonReviewqaDir(t *testing.T) {
 // v0.87: An EMPTY squatter directory should be reused, not
 // bumped to a `-1` suffix. Covers the v0.85→v0.86 case where a
 // scratch-mode verification step left an empty
-// `~/reviewqa-projects/<brand>/` behind.
+// `~/quail-projects/<brand>/` behind.
 func TestPickProbeDestination_EmptyDirIsReused(t *testing.T) {
 	parent := t.TempDir()
 	current := filepath.Join(parent, "spritecloud")
@@ -73,22 +73,22 @@ func TestPickProbeDestination_EmptyDirIsReused(t *testing.T) {
 	if err := os.MkdirAll(emptyDest, 0o755); err != nil {
 		t.Fatal(err)
 	}
-	got := pickProbeDestination(current, mustParseURL(t, "https://petstore3.swagger.io"))
+	got := pickProbeDestination(current, mustParseURL(t, "https://petstore3.swagger.io"), "")
 	if got != emptyDest {
 		t.Errorf("got %q, want %q (empty squatter should be reused)", got, emptyDest)
 	}
 }
 
-// A pre-existing reviewqa project for the same brand should
+// A pre-existing quail project for the same brand should
 // re-probe in place (no -1 suffix).
-func TestPickProbeDestination_CollidesWithReviewqaSibling(t *testing.T) {
+func TestPickProbeDestination_CollidesWithQuailSibling(t *testing.T) {
 	parent := t.TempDir()
 	current := filepath.Join(parent, "spritecloud")
 	fixtureProjectAt(t, current)
 	sibling := filepath.Join(parent, "petstore3.swagger")
 	fixtureProjectAt(t, sibling)
-	got := pickProbeDestination(current, mustParseURL(t, "https://petstore3.swagger.io"))
+	got := pickProbeDestination(current, mustParseURL(t, "https://petstore3.swagger.io"), "")
 	if got != sibling {
-		t.Errorf("got %q, want %q (existing reviewqa sibling)", got, sibling)
+		t.Errorf("got %q, want %q (existing quail sibling)", got, sibling)
 	}
 }

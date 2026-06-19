@@ -1,8 +1,8 @@
 package integration
 
 import (
-	"github.com/reviewqa/reviewqa/internal/ast"
-	"github.com/reviewqa/reviewqa/internal/plan"
+	"github.com/spriteCloud/quail/internal/ast"
+	"github.com/spriteCloud/quail/internal/plan"
 )
 
 // EmitItems materializes one plan.Item per declared resource in the
@@ -104,5 +104,5 @@ func EmitItems(cfg *Config) []plan.Item {
 }
 
 func stub(name string) ast.Symbol {
-	return ast.Symbol{Name: name, Kind: ast.KindFunction, Language: "ts", File: "reviewqa.yml"}
+	return ast.Symbol{Name: name, Kind: ast.KindFunction, Language: "ts", File: "quail.yml"}
 }

@@ -8,23 +8,23 @@ import (
 	"os"
 	"strings"
 
-	"github.com/reviewqa/reviewqa/internal/config"
-	"github.com/reviewqa/reviewqa/internal/llm"
+	"github.com/spriteCloud/quail/internal/config"
+	"github.com/spriteCloud/quail/internal/llm"
 )
 
 // llmConfigFromEnv mirrors the `applyLLMOverride` logic from
-// cmd/reviewqa/main.go so the serve subcommand can pick up the same
-// REVIEWQA_LLM env conventions: REVIEWQA_LLM sets the endpoint,
-// REVIEWQA_MODEL overrides the model, an "ollama" sentinel populates
+// cmd/quail/main.go so the serve subcommand can pick up the same
+// QUAIL_LLM env conventions: QUAIL_LLM sets the endpoint,
+// QUAIL_MODEL overrides the model, an "ollama" sentinel populates
 // the API key when none is provided.
 //
-// Saved settings from ~/.config/reviewqa/serve.json overlay the env-
+// Saved settings from ~/.config/quail/serve.json overlay the env-
 // var defaults so a user can edit them from the Settings page without
 // restarting. Settings.LLM.Enabled = false zeroes the API key,
 // disabling the LLM regardless of env.
 func llmConfigFromEnv() config.Config {
 	cfg := config.FromEnv()
-	if llm := strings.TrimSpace(os.Getenv("REVIEWQA_LLM")); llm != "" {
+	if llm := strings.TrimSpace(os.Getenv("QUAIL_LLM")); llm != "" {
 		cfg.OpenAIBaseURL = strings.TrimRight(llm, "/") + "/v1"
 		if cfg.Model == "" || cfg.Model == "gpt-4o-mini" {
 			cfg.Model = "qwen3-coder-next:latest"
@@ -69,7 +69,7 @@ type ComposeResult struct {
 
 // ComposeSteps takes the user's hand-written Gherkin (likely natural
 // language) and produces a valid Scenario block whose steps match the
-// registered step patterns. Uses the LLM if REVIEWQA_LLM is set;
+// registered step patterns. Uses the LLM if QUAIL_LLM is set;
 // otherwise returns a permissive deterministic mapping plus a note.
 func ComposeSteps(ctx context.Context, in ComposeInput) (*ComposeResult, error) {
 	if strings.TrimSpace(in.Gherkin) == "" {
@@ -102,7 +102,7 @@ func ComposeSteps(ctx context.Context, in ComposeInput) (*ComposeResult, error) 
 		}
 	}
 	res := composeDeterministic(in.Gherkin, lm)
-	res.Notes = "LLM not configured (REVIEWQA_LLM unset). Used deterministic step-to-DOM matching; review and refine manually."
+	res.Notes = "LLM not configured (QUAIL_LLM unset). Used deterministic step-to-DOM matching; review and refine manually."
 	return res, nil
 }
 

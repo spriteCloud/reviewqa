@@ -104,8 +104,8 @@ func (c Cache) Put(key string, scenarios []ExtraScenario) error {
 
 // ResolveCacheDir picks the cache directory. Precedence:
 //   1. Explicit dir argument (e.g. from --llm-cache flag)
-//   2. REVIEWQA_LLM_CACHE env var
-//   3. ".reviewqa-cache" under the work dir (off by default — empty
+//   2. QUAIL_LLM_CACHE env var
+//   3. ".quail-cache" under the work dir (off by default — empty
 //      string returned when no signal opts in)
 //
 // Empty string return DISABLES the cache. This keeps the cache
@@ -114,9 +114,9 @@ func ResolveCacheDir(explicit, workDir string) string {
 	if explicit = strings.TrimSpace(explicit); explicit != "" {
 		return explicit
 	}
-	if env := strings.TrimSpace(os.Getenv("REVIEWQA_LLM_CACHE")); env != "" {
+	if env := strings.TrimSpace(os.Getenv("QUAIL_LLM_CACHE")); env != "" {
 		if env == "auto" {
-			return filepath.Join(workDir, ".reviewqa-cache")
+			return filepath.Join(workDir, ".quail-cache")
 		}
 		return env
 	}

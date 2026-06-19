@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>reviewqa stakeholder summary — https://books.toscrape.com</title>
+<title>quail stakeholder summary — https://books.toscrape.com</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Sora:wght@400;500;600;700;800&family=Inter:wght@400;500;600;900&family=Fira+Code:wght@400;500;600&display=swap" rel="stylesheet">
@@ -66,12 +66,60 @@
   .cover h1 {
     font-family: 'Sora', sans-serif;
     font-weight: 800;
-    font-size: clamp(36px, 4.6vw, 52px);
-    line-height: 1.04;
-    letter-spacing: -0.035em;
+    font-size: clamp(26px, 2.8vw, 36px);
+    line-height: 1.1;
+    letter-spacing: -0.025em;
     color: var(--white);
-    margin: 12px 0 18px;
-    word-break: break-word;
+    margin: 10px 0 14px;
+    overflow-wrap: anywhere;
+  }
+  .cover .origin {
+    font-family: 'Fira Code', monospace;
+    font-size: 12px;
+    color: var(--copper);
+    word-break: break-all;
+    margin-bottom: 10px;
+    display: block;
+  }
+  /* Risk strip — three KPI tiles right under the cover band. */
+  .risk-strip {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 0;
+    background: var(--charcoal);
+    color: var(--white);
+    padding: 0;
+  }
+  .risk-tile {
+    padding: 18px 24px;
+    border-right: 1px solid rgba(255,255,255,0.08);
+  }
+  .risk-tile:last-child { border-right: 0; }
+  .risk-tile .num {
+    font-family: 'Sora', sans-serif;
+    font-weight: 800;
+    font-size: 32px;
+    letter-spacing: -0.02em;
+    line-height: 1;
+  }
+  .risk-tile .label {
+    font-family: 'Fira Code', monospace;
+    font-size: 10px;
+    letter-spacing: 0.16em;
+    text-transform: uppercase;
+    color: var(--copper);
+    display: block;
+    margin-bottom: 8px;
+  }
+  .risk-tile .sub {
+    font-size: 11px;
+    color: var(--mist);
+    margin-top: 4px;
+  }
+  @media (max-width: 720px) {
+    .risk-strip { grid-template-columns: 1fr; }
+    .risk-tile { border-right: 0; border-bottom: 1px solid rgba(255,255,255,0.08); }
+    .risk-tile:last-child { border-bottom: 0; }
   }
   .cover-meta {
     display: flex;
@@ -301,18 +349,35 @@
 
   <header class="cover">
     <div class="cover-head">
-      <span class="label">reviewqa · stakeholder summary</span>
+      <span class="label">quail · stakeholder summary</span>
       <span class="wm"><span class="s">sprite</span><span class="c">Cloud</span></span>
     </div>
-    <h1>https://books.toscrape.com</h1>
+    <h1>Coverage map for books.toscrape.</h1>
+    <span class="origin">https://books.toscrape.com</span>
     <div class="cover-meta">
       <span>Generated </span>
       <span class="dot">·</span>
       <span class="pill">standard coverage</span>
-      <span class="dot">·</span>
-      <span>30 pages · 3 journeys · 0 fuzz specs</span>
     </div>
   </header>
+
+  <section class="risk-strip" aria-label="Risk snapshot">
+    <div class="risk-tile">
+      <span class="label">Gated on release</span>
+      <div class="num">0</div>
+      <div class="sub">critical journeys the suite blocks shipping on</div>
+    </div>
+    <div class="risk-tile">
+      <span class="label">Standard regression</span>
+      <div class="num">3</div>
+      <div class="sub">standard journeys monitored every nightly</div>
+    </div>
+    <div class="risk-tile">
+      <span class="label">Awaiting wireup</span>
+      <div class="num">1</div>
+      <div class="sub">Integration layer is scaffold-only until `quail.yml` wires the backing resource</div>
+    </div>
+  </section>
 
   <div class="pixel-rail" aria-hidden="true">
     <div class="pixel-rail-inner">
@@ -328,19 +393,23 @@
     <section class="section">
       <div class="section-head">
         <span class="label">At a glance</span>
-        <h2>What reviewqa did on this site.</h2>
+        <h2>What's green-lit, what's gated, what's unverified.</h2>
       </div>
       <div class="glance">
         <p>
-          reviewqa crawled <span class="num">30</span> pages on <strong>https://books.toscrape.com</strong>
-          and identified <span class="num">3</span> user journeys, classified by business priority. <span class="num">3</span> are <strong>standard</strong> &mdash; nightly regression coverage.
+          quail observed <span class="num">30</span> pages
+          on this surface and translated them into <span class="num">3</span> user
+          journeys. <strong>3</strong> run on nightly regression &mdash; the early-warning net.
         </p>
         <p>
-          The emitted suite spans <strong>standard</strong> coverage:
-          a Playwright + Gherkin journey suite (one .feature file per journey),
-          an accessibility trio on every crawled page (5 axe-core gates, 5 landmark checks, 5 keyboard gestures),
-          responsive / performance / security / health / observability quality specs,
-          a 4-device × 2-orientation mobile matrix, and adversarial fuzz specs (only emitted when a form is present).
+          Beyond the journey suite, every crawled page is checked for accessibility
+          (5 axe-core gates, 5 landmark, 5 keyboard), mobile rendering on 4 devices ×
+          2 orientations, network resilience, security headers, and performance budgets. Fuzz specs sit dormant &mdash; no form was discovered on the crawl.
+        </p>
+        <p>
+          <strong>Unverified surface:</strong> the Integration layer (DB / cache / auth /
+          observability) ships as scaffolds that skip until <code>quail.yml</code> binds them
+          to the backing resources. Until then, the suite cannot prove cross-system contracts.
         </p>
       </div>
     </section>
@@ -378,7 +447,7 @@
             <h3>Integration</h3>
             <span class="pill-state state-stub">scaffold only</span>
           </div>
-          <div class="layer-desc">5 scaffolds (api / db / cache / observability / auth) × 3 wireable blocks each. Tests skip until <code>reviewqa.yml</code> wires the backing resource.</div>
+          <div class="layer-desc">5 scaffolds (api / db / cache / observability / auth) × 3 wireable blocks each. Tests skip until <code>quail.yml</code> wires the backing resource.</div>
         </div>
         <div class="layer-card">
           <div class="layer-head">
@@ -425,7 +494,7 @@
           <div class="journey-body">
             <div class="journey-kind">browse</div>
             <div class="journey-blurb">users navigate marketing content.</div>
-            <div class="journey-meta">→ <code>tests/e2e/features/books-toscrape-com-browse-index.html.feature</code></div>
+            <div class="journey-meta">→ <code>tests/e2e/features/browse-index.html.feature</code></div>
           </div>
           <div class="journey-steps">2<small>steps</small></div>
         </div>
@@ -434,7 +503,7 @@
           <div class="journey-body">
             <div class="journey-kind">browse</div>
             <div class="journey-blurb">users navigate marketing content.</div>
-            <div class="journey-meta">→ <code>tests/e2e/features/books-toscrape-com-browse-catalogue-category-books_1-index.html.feature</code></div>
+            <div class="journey-meta">→ <code>tests/e2e/features/browse-catalogue-category-books_1-index.html.feature</code></div>
           </div>
           <div class="journey-steps">2<small>steps</small></div>
         </div>
@@ -443,7 +512,7 @@
           <div class="journey-body">
             <div class="journey-kind">browse</div>
             <div class="journey-blurb">users navigate marketing content.</div>
-            <div class="journey-meta">→ <code>tests/e2e/features/books-toscrape-com-browse-catalogue-category-books-travel_2-index.html.feature</code></div>
+            <div class="journey-meta">→ <code>tests/e2e/features/browse-catalogue-category-books-travel_2-index.html.feature</code></div>
           </div>
           <div class="journey-steps">2<small>steps</small></div>
         </div>
@@ -452,7 +521,7 @@
     <section class="section">
       <div class="section-head">
         <span class="label">Pages crawled</span>
-        <h2>30 pages reviewqa observed on this site.</h2>
+        <h2>30 pages quail observed on this site.</h2>
       </div>
       <table>
         <thead><tr><th>URL</th><th>Title</th></tr></thead>
@@ -543,21 +612,21 @@
           <span class="n">3</span>
           <div>
             <h4>Triage failures</h4>
-            <p>Open <code>tests/e2e/docs/findings.md</code> after each run. <code>reviewqa ledger update --report playwright-report.json</code> deduplicates failures by (spec, test) and surfaces them risk-weighted by priority — survives across runs.</p>
+            <p>Open <code>tests/e2e/docs/findings.md</code> after each run. <code>quail ledger update --report playwright-report.json</code> deduplicates failures by (spec, test) and surfaces them risk-weighted by priority — survives across runs.</p>
           </div>
         </div>
         <div class="next-step">
           <span class="n">4</span>
           <div>
             <h4>Re-probe on change</h4>
-            <p>Re-run <code>reviewqa probe</code> after feature merges to track coverage drift — new pages and new forms get picked up automatically; removed surfaces drop out.</p>
+            <p>Re-run <code>quail probe</code> after feature merges to track coverage drift — new pages and new forms get picked up automatically; removed surfaces drop out.</p>
           </div>
         </div>
         <div class="next-step">
           <span class="n">5</span>
           <div>
             <h4>Tailor in the browser</h4>
-            <p><code>reviewqa serve --workdir .</code> opens a local UI where stakeholders can delete journeys, refine Scenarios via chat, suggest locators from the live DOM, and run individual Scenarios — no IDE required.</p>
+            <p><code>quail serve --workdir .</code> opens a local UI where stakeholders can delete journeys, refine Scenarios via chat, suggest locators from the live DOM, and run individual Scenarios — no IDE required.</p>
           </div>
         </div>
       </div>
@@ -565,8 +634,8 @@
   </main>
 
   <footer>
-    <span>Re-generate with <code>reviewqa probe</code> · published by reviewqa &mdash; by spriteCloud.</span>
-    <a href="https://github.com/spriteCloud/reviewqa">github.com/spriteCloud/reviewqa</a>
+    <span>Re-generate with <code>quail probe</code> · published by quail &mdash; by spriteCloud.</span>
+    <a href="https://github.com/spriteCloud/quail">github.com/spriteCloud/quail</a>
   </footer>
 </body>
 </html>

@@ -7,12 +7,12 @@ import (
 
 func TestFromEnvDefaults(t *testing.T) {
 	for _, k := range []string{
-		"REVIEWQA_GITHUB_TOKEN", "GITHUB_TOKEN", "GITHUB_REPOSITORY",
-		"OPENAI_BASE_URL", "OPENAI_API_KEY", "REVIEWQA_MODEL",
-		"REVIEWQA_LLM_TIMEOUT", "REVIEWQA_LLM_TOKEN_CAP",
-		"REVIEWQA_HEAL_MODE", "REVIEWQA_ALLOW_DIFF_TO_LLM",
-		"REVIEWQA_BRANCH_PREFIX", "REVIEWQA_PLAYWRIGHT_REPORT",
-		"REVIEWQA_WORKDIR", "REVIEWQA_PR",
+		"QUAIL_GITHUB_TOKEN", "GITHUB_TOKEN", "GITHUB_REPOSITORY",
+		"OPENAI_BASE_URL", "OPENAI_API_KEY", "QUAIL_MODEL",
+		"QUAIL_LLM_TIMEOUT", "QUAIL_LLM_TOKEN_CAP",
+		"QUAIL_HEAL_MODE", "QUAIL_ALLOW_DIFF_TO_LLM",
+		"QUAIL_BRANCH_PREFIX", "QUAIL_PLAYWRIGHT_REPORT",
+		"QUAIL_WORKDIR", "QUAIL_PR",
 	} {
 		t.Setenv(k, "")
 	}
@@ -32,7 +32,7 @@ func TestFromEnvDefaults(t *testing.T) {
 	if c.HealMode != HealOnFailure {
 		t.Errorf("HealMode default: %q", c.HealMode)
 	}
-	if c.BranchPrefix != "reviewqa" {
+	if c.BranchPrefix != "quail" {
 		t.Errorf("BranchPrefix default: %q", c.BranchPrefix)
 	}
 	if c.WorkDir != "." {
@@ -44,19 +44,19 @@ func TestFromEnvDefaults(t *testing.T) {
 }
 
 func TestFromEnvOverrides(t *testing.T) {
-	t.Setenv("REVIEWQA_GITHUB_TOKEN", "tok")
+	t.Setenv("QUAIL_GITHUB_TOKEN", "tok")
 	t.Setenv("GITHUB_REPOSITORY", "acme/widget")
 	t.Setenv("OPENAI_BASE_URL", "http://local:8000/v1")
 	t.Setenv("OPENAI_API_KEY", "key")
-	t.Setenv("REVIEWQA_MODEL", "qwen")
-	t.Setenv("REVIEWQA_LLM_TIMEOUT", "45s")
-	t.Setenv("REVIEWQA_LLM_TOKEN_CAP", "1200")
-	t.Setenv("REVIEWQA_HEAL_MODE", "proactive")
-	t.Setenv("REVIEWQA_ALLOW_DIFF_TO_LLM", "1")
-	t.Setenv("REVIEWQA_BRANCH_PREFIX", "qa")
-	t.Setenv("REVIEWQA_PLAYWRIGHT_REPORT", "out/pw.json")
-	t.Setenv("REVIEWQA_WORKDIR", "/tmp/repo")
-	t.Setenv("REVIEWQA_PR", "42")
+	t.Setenv("QUAIL_MODEL", "qwen")
+	t.Setenv("QUAIL_LLM_TIMEOUT", "45s")
+	t.Setenv("QUAIL_LLM_TOKEN_CAP", "1200")
+	t.Setenv("QUAIL_HEAL_MODE", "proactive")
+	t.Setenv("QUAIL_ALLOW_DIFF_TO_LLM", "1")
+	t.Setenv("QUAIL_BRANCH_PREFIX", "qa")
+	t.Setenv("QUAIL_PLAYWRIGHT_REPORT", "out/pw.json")
+	t.Setenv("QUAIL_WORKDIR", "/tmp/repo")
+	t.Setenv("QUAIL_PR", "42")
 	c := FromEnv()
 	if c.GitHubToken != "tok" || c.Repo != "acme/widget" {
 		t.Errorf("auth: %+v", c)

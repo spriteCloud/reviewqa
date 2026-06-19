@@ -7,7 +7,7 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/reviewqa/reviewqa/internal/plan"
+	"github.com/spriteCloud/quail/internal/plan"
 )
 
 func v044TestServer(t *testing.T, body string) *httptest.Server {
@@ -27,7 +27,7 @@ func v044TestServer(t *testing.T, body string) *httptest.Server {
 }
 
 func TestRunAll_EmitsFileUploadOnlyWhenFileInputDetected(t *testing.T) {
-	t.Setenv("REVIEWQA_PROBE_ALLOW_LOOPBACK", "1")
+	t.Setenv("QUAIL_PROBE_ALLOW_LOOPBACK", "1")
 	withFile := v044TestServer(t, `<html><head><title>Home</title></head><body><h1>Home</h1><a href="/about">About</a><form><input type="file" name="avatar"><button type="submit">Upload</button></form></body></html>`)
 	defer withFile.Close()
 	items, _ := RunAll(context.Background(), []string{withFile.URL + "/"})
@@ -56,7 +56,7 @@ func TestRunAll_EmitsFileUploadOnlyWhenFileInputDetected(t *testing.T) {
 }
 
 func TestRunAll_EmitsIframeOnlyWhenIframePresent(t *testing.T) {
-	t.Setenv("REVIEWQA_PROBE_ALLOW_LOOPBACK", "1")
+	t.Setenv("QUAIL_PROBE_ALLOW_LOOPBACK", "1")
 	withIframe := v044TestServer(t, `<html><head><title>Home</title></head><body><h1>Home</h1><a href="/about">About</a><iframe src="//example.com/widget"></iframe></body></html>`)
 	defer withIframe.Close()
 	items, _ := RunAll(context.Background(), []string{withIframe.URL + "/"})
@@ -72,7 +72,7 @@ func TestRunAll_EmitsIframeOnlyWhenIframePresent(t *testing.T) {
 }
 
 func TestRunAll_EmitsPWAOnlyWhenManifestLink(t *testing.T) {
-	t.Setenv("REVIEWQA_PROBE_ALLOW_LOOPBACK", "1")
+	t.Setenv("QUAIL_PROBE_ALLOW_LOOPBACK", "1")
 	withManifest := v044TestServer(t, `<html><head><title>Home</title><link rel="manifest" href="/manifest.json"></head><body><h1>Home</h1><a href="/about">About</a></body></html>`)
 	defer withManifest.Close()
 	items, _ := RunAll(context.Background(), []string{withManifest.URL + "/"})
@@ -88,7 +88,7 @@ func TestRunAll_EmitsPWAOnlyWhenManifestLink(t *testing.T) {
 }
 
 func TestRunAll_AlwaysEmitsHistoryDepth(t *testing.T) {
-	t.Setenv("REVIEWQA_PROBE_ALLOW_LOOPBACK", "1")
+	t.Setenv("QUAIL_PROBE_ALLOW_LOOPBACK", "1")
 	srv := v044TestServer(t, `<html><head><title>Home</title></head><body><h1>Home</h1><a href="/about">About</a></body></html>`)
 	defer srv.Close()
 	items, _ := RunAll(context.Background(), []string{srv.URL + "/"})

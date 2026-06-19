@@ -4,7 +4,7 @@ import (
 	"sort"
 	"strings"
 
-	"github.com/reviewqa/reviewqa/internal/ast"
+	"github.com/spriteCloud/quail/internal/ast"
 )
 
 // JourneyKind names the user goal a generated test reflects.

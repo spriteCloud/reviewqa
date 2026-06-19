@@ -11,7 +11,7 @@ import (
 	"sync"
 	"syscall"
 
-	"github.com/reviewqa/reviewqa/internal/log"
+	"github.com/spriteCloud/quail/internal/log"
 )
 
 // ErrBrowserUnavailable is returned when the browser probe can't run
@@ -26,7 +26,7 @@ var ErrBrowserUnavailable = errors.New("browser probe: runner unavailable")
 // stealth dependencies are installed in node_modules. Separate from
 // the per-engine binary sentinels because npm install runs once;
 // `npx playwright install <engine>` runs per requested engine.
-const nodeDepsSentinel = ".reviewqa-node-deps-ready"
+const nodeDepsSentinel = ".quail-node-deps-ready"
 
 // supportedEngines is the set of engines EnsureRunner accepts. We
 // validate the arg so a typo doesn't reach `npx playwright install`
@@ -39,16 +39,16 @@ var supportedEngines = map[string]struct{}{
 
 // RunnerDir returns the canonical Playwright runner cache root.
 // Honours XDG_CACHE_HOME for users who relocate caches; otherwise
-// uses ~/.cache/reviewqa/playwright-runner.
+// uses ~/.cache/quail/playwright-runner.
 func RunnerDir() string {
 	if base := strings.TrimSpace(os.Getenv("XDG_CACHE_HOME")); base != "" {
-		return filepath.Join(base, "reviewqa", "playwright-runner")
+		return filepath.Join(base, "quail", "playwright-runner")
 	}
 	home, err := os.UserHomeDir()
 	if err != nil {
-		return filepath.Join(os.TempDir(), "reviewqa-playwright-runner")
+		return filepath.Join(os.TempDir(), "quail-playwright-runner")
 	}
-	return filepath.Join(home, ".cache", "reviewqa", "playwright-runner")
+	return filepath.Join(home, ".cache", "quail", "playwright-runner")
 }
 
 // ensureRunnerMu serialises concurrent EnsureRunner calls within the
@@ -123,7 +123,7 @@ func EnsureRunner(ctx context.Context, engine string) (string, error) {
 		log.Info("playwright runner: installing node deps once, ~30s (cached at "+dir+")", "dir", dir)
 		pkgPath := filepath.Join(dir, "package.json")
 		if _, err := os.Stat(pkgPath); err != nil {
-			body := []byte(`{"name":"reviewqa-playwright-runner","private":true,"version":"1.0.0"}` + "\n")
+			body := []byte(`{"name":"quail-playwright-runner","private":true,"version":"1.0.0"}` + "\n")
 			if werr := os.WriteFile(pkgPath, body, 0o600); werr != nil {
 				return dir, fmt.Errorf("%w: write %s: %v", ErrBrowserUnavailable, pkgPath, werr)
 			}
@@ -160,7 +160,7 @@ func EnsureRunner(ctx context.Context, engine string) (string, error) {
 }
 
 func engineSentinelPath(dir, engine string) string {
-	return filepath.Join(dir, ".reviewqa-engine-"+engine+"-ready")
+	return filepath.Join(dir, ".quail-engine-"+engine+"-ready")
 }
 
 func engineSentinelExists(dir, engine string) bool {

@@ -6,11 +6,11 @@ import (
 	"net/http/httptest"
 	"testing"
 
-	"github.com/reviewqa/reviewqa/internal/plan"
+	"github.com/spriteCloud/quail/internal/plan"
 )
 
 func TestRunAll_EmitsDragDropOnlyWhenDraggablePresent(t *testing.T) {
-	t.Setenv("REVIEWQA_PROBE_ALLOW_LOOPBACK", "1")
+	t.Setenv("QUAIL_PROBE_ALLOW_LOOPBACK", "1")
 	withDrag := v044TestServer(t, `<html><head><title>Home</title></head><body><h1>Home</h1><a href="/about">About</a><div draggable="true">drag me</div><div data-dropzone>drop here</div></body></html>`)
 	defer withDrag.Close()
 	items, _ := RunAll(context.Background(), []string{withDrag.URL + "/"})
@@ -35,7 +35,7 @@ func TestRunAll_EmitsDragDropOnlyWhenDraggablePresent(t *testing.T) {
 }
 
 func TestRunAll_AlwaysEmitsTouchAndAuthExpiry(t *testing.T) {
-	t.Setenv("REVIEWQA_PROBE_ALLOW_LOOPBACK", "1")
+	t.Setenv("QUAIL_PROBE_ALLOW_LOOPBACK", "1")
 	srv := v044TestServer(t, `<html><head><title>Home</title></head><body><h1>Home</h1><a href="/about">About</a></body></html>`)
 	defer srv.Close()
 	items, _ := RunAll(context.Background(), []string{srv.URL + "/"})
@@ -57,7 +57,7 @@ func TestRunAll_AlwaysEmitsTouchAndAuthExpiry(t *testing.T) {
 }
 
 func TestRunAll_LocaleSwitchOnlyWhenHreflangSiblings(t *testing.T) {
-	t.Setenv("REVIEWQA_PROBE_ALLOW_LOOPBACK", "1")
+	t.Setenv("QUAIL_PROBE_ALLOW_LOOPBACK", "1")
 	mux := http.NewServeMux()
 	mux.HandleFunc("/", func(w http.ResponseWriter, r *http.Request) {
 		if r.URL.Path != "/" {

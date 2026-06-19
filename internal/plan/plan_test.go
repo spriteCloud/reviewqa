@@ -5,11 +5,11 @@ import (
 	"path/filepath"
 	"testing"
 
-	_ "github.com/reviewqa/reviewqa/internal/ast/golang"
-	_ "github.com/reviewqa/reviewqa/internal/ast/java"
-	_ "github.com/reviewqa/reviewqa/internal/ast/python"
-	_ "github.com/reviewqa/reviewqa/internal/ast/ts"
-	"github.com/reviewqa/reviewqa/internal/diff"
+	_ "github.com/spriteCloud/quail/internal/ast/golang"
+	_ "github.com/spriteCloud/quail/internal/ast/java"
+	_ "github.com/spriteCloud/quail/internal/ast/python"
+	_ "github.com/spriteCloud/quail/internal/ast/ts"
+	"github.com/spriteCloud/quail/internal/diff"
 )
 
 func TestBuildPicksTemplatesPerLanguage(t *testing.T) {
@@ -84,7 +84,7 @@ export function Counter() {
 		{Path: counterPath, Added: []diff.Range{{Start: 1, End: 20}}, Status: "added"},
 		{Path: faqPath, Added: []diff.Range{{Start: 1, End: 10}}, Status: "added"},
 	}
-	t.Setenv("REVIEWQA_E2E_STYLE", "")
+	t.Setenv("QUAIL_E2E_STYLE", "")
 	items := Build(files, Detect(dir))
 
 	var flow *Item
@@ -200,7 +200,7 @@ export default function Home() { return (<main><Counter /><FAQ /></main>) }
 		{Path: counterPath, Added: []diff.Range{{Start: 1, End: 5}}, Status: "added"},
 		{Path: faqPath, Added: []diff.Range{{Start: 1, End: 5}}, Status: "added"},
 	}
-	t.Setenv("REVIEWQA_E2E_STYLE", "per-component")
+	t.Setenv("QUAIL_E2E_STYLE", "per-component")
 	items := Build(files, Detect(dir))
 	for _, it := range items {
 		if it.Template == TmplPlaywrightHappyFlow {

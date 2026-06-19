@@ -11,12 +11,12 @@ import (
 )
 
 // useTempSettings points the LoadSettings/SaveSettings pair at a
-// throwaway file under t.TempDir() via REVIEWQA_SETTINGS_PATH so
-// tests never touch the real ~/.config/reviewqa/serve.json.
+// throwaway file under t.TempDir() via QUAIL_SETTINGS_PATH so
+// tests never touch the real ~/.config/quail/serve.json.
 func useTempSettings(t *testing.T) string {
 	t.Helper()
 	path := filepath.Join(t.TempDir(), "settings.json")
-	t.Setenv("REVIEWQA_SETTINGS_PATH", path)
+	t.Setenv("QUAIL_SETTINGS_PATH", path)
 	return path
 }
 
@@ -133,8 +133,8 @@ func TestLLMTestEndpoint_RejectsEmptyEndpoint(t *testing.T) {
 
 func TestLLMConfigFromEnv_SettingsOverrideEnv(t *testing.T) {
 	useTempSettings(t)
-	t.Setenv("REVIEWQA_LLM", "http://from-env")
-	t.Setenv("REVIEWQA_MODEL", "")
+	t.Setenv("QUAIL_LLM", "http://from-env")
+	t.Setenv("QUAIL_MODEL", "")
 	t.Setenv("OPENAI_API_KEY", "")
 	_ = SaveSettings(Settings{
 		LLM: LLMSettings{
@@ -155,7 +155,7 @@ func TestLLMConfigFromEnv_SettingsOverrideEnv(t *testing.T) {
 
 func TestLLMConfigFromEnv_DisabledStripsKey(t *testing.T) {
 	useTempSettings(t)
-	t.Setenv("REVIEWQA_LLM", "http://env-only")
+	t.Setenv("QUAIL_LLM", "http://env-only")
 	t.Setenv("OPENAI_API_KEY", "real-key")
 	_ = SaveSettings(Settings{
 		LLM: LLMSettings{Enabled: false, Endpoint: "http://saved", APIKey: "saved-key"},

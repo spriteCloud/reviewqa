@@ -7,8 +7,8 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/reviewqa/reviewqa/internal/mindmap"
-	"github.com/reviewqa/reviewqa/internal/plan"
+	"github.com/spriteCloud/quail/internal/mindmap"
+	"github.com/spriteCloud/quail/internal/plan"
 )
 
 // TestRunAll_EmitsStepsCatalogueAndSummary verifies the v0.19 companion
@@ -16,7 +16,7 @@ import (
 // summary deck. Also asserts that the catalogue carries the journeys
 // emitted by the rest of the run.
 func TestRunAll_EmitsStepsCatalogueAndSummary(t *testing.T) {
-	t.Setenv("REVIEWQA_PROBE_ALLOW_LOOPBACK", "1")
+	t.Setenv("QUAIL_PROBE_ALLOW_LOOPBACK", "1")
 	mux := http.NewServeMux()
 	mux.HandleFunc("/", func(w http.ResponseWriter, r *http.Request) {
 		if r.URL.Path != "/" {
@@ -78,7 +78,7 @@ func TestDomSnapshotItems_OnlyEmitsWhenDOMHTMLSet(t *testing.T) {
 			"https://x.test/about": {URL: "https://x.test/about", DOMHTML: "<html></html>"}, // browser-mode
 		},
 	}
-	items := domSnapshotItems("https://x.test", m)
+	items := domSnapshotItems("https://x.test", m, "")
 	if len(items) != 1 {
 		t.Fatalf("expected 1 DOM-snapshot item (only the page with DOMHTML); got %d", len(items))
 	}
@@ -89,7 +89,7 @@ func TestDomSnapshotItems_OnlyEmitsWhenDOMHTMLSet(t *testing.T) {
 	if !strings.HasPrefix(it.OutPath, "tests/e2e/_dom/") {
 		t.Errorf("DOM snapshot must land under tests/e2e/_dom/; got %s", it.OutPath)
 	}
-	if !strings.HasSuffix(it.OutPath, "-about.html") {
+	if !strings.HasSuffix(it.OutPath, "/about.html") {
 		t.Errorf("DOM snapshot stem should include the path slug; got %s", it.OutPath)
 	}
 	if string(it.RawContent) != "<html></html>" {

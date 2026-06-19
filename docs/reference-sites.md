@@ -1,7 +1,7 @@
 # Reference sites for `verify-references.yml`
 
 The `verify-references` workflow probes a fixed matrix of public sites to
-measure reviewqa's fitness across diverse shapes (SaaS docs, OSS marketing,
+measure quail's fitness across diverse shapes (SaaS docs, OSS marketing,
 e-commerce, non-English content). The output is a Markdown fitness report
 in each job's summary tab — not a gating CI check.
 
@@ -58,7 +58,7 @@ exercises our English-only nav vocabulary fallback.
 
 ### New in v0.15.0
 
-- **Playwright-driven probe mode (opt-in)** via `REVIEWQA_BROWSER_PROBE=1`. The Go binary execs an embedded Node.js script that drives Chromium, dismisses cookie banners, expands `aria-haspopup` dropdowns, and emits rendered DOM JSON. Surfaces dropdown-only routes the static probe can't see, and uses real visibility checks instead of HTML class hints. Falls back to static crawl on any error (missing Node, missing @playwright/test, browser timeout).
+- **Playwright-driven probe mode (opt-in)** via `QUAIL_BROWSER_PROBE=1`. The Go binary execs an embedded Node.js script that drives Chromium, dismisses cookie banners, expands `aria-haspopup` dropdowns, and emits rendered DOM JSON. Surfaces dropdown-only routes the static probe can't see, and uses real visibility checks instead of HTML class hints. Falls back to static crawl on any error (missing Node, missing @playwright/test, browser timeout).
 - **Cross-host redirects now respected when within the same registrable domain** (eTLD+1 via `golang.org/x/net/publicsuffix`). `www.example.com ↔ example.com`, `http://example.com → https://www.example.com` etc all follow now. SSRF guards still applied per-hop. Fixed: probing a www-stripping marketing site previously returned zero pages.
 - **`Sitemap:` directives in robots.txt** now feed the sitemap discovery pipeline. Sites that publish non-default sitemap paths (`/wp-sitemap.xml`, `/sitemap-posts.xml`) are now discovered.
 - **New `authenticate` journey**: landing → `/login` (auth-tagged page with password input) → fill credentials → submit. Single spec per detected auth page.
@@ -130,7 +130,7 @@ exercises our English-only nav vocabulary fallback.
 
 - It is **not** an attack surface or load test. The probe issues
   small-N (≤20) sequential GETs with a polite User-Agent
-  (`reviewqa-probe/1 (+https://github.com/spriteCloud/reviewqa)`) and
+  (`quail-probe/1 (+https://github.com/spriteCloud/quail)`) and
   respects same-origin / no-private-IP guards.
 - It is **not** continuous — `workflow_dispatch` only. We trigger it
   before notable releases or when changing heuristics, not on every push.

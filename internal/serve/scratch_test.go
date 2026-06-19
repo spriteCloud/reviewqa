@@ -55,13 +55,13 @@ func TestLoadProject_FlagsScratchForEmptyPath(t *testing.T) {
 	}
 }
 
-// pickProbeDestination should land in ~/reviewqa-projects/<brand>
+// pickProbeDestination should land in ~/quail-projects/<brand>
 // when the workdir is empty (scratch mode).
 func TestPickProbeDestination_ScratchUsesHomeProjects(t *testing.T) {
 	t.Setenv("HOME", t.TempDir())
 	u, _ := url.Parse("https://www.example.com/path")
-	got := pickProbeDestination("", u)
-	want := filepath.Join(os.Getenv("HOME"), "reviewqa-projects", "example")
+	got := pickProbeDestination("", u, "")
+	want := filepath.Join(os.Getenv("HOME"), "quail-projects", "example")
 	if got != want {
 		t.Errorf("pickProbeDestination(scratch) = %q, want %q", got, want)
 	}

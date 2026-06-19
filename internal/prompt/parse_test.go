@@ -3,7 +3,7 @@ package prompt
 import (
 	"testing"
 
-	"github.com/reviewqa/reviewqa/internal/mindmap"
+	"github.com/spriteCloud/quail/internal/mindmap"
 )
 
 func TestParse_MapsKeywordsToKinds(t *testing.T) {

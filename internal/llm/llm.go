@@ -18,9 +18,9 @@ import (
 	"sync"
 	"time"
 
-	"github.com/reviewqa/reviewqa/internal/composer"
-	"github.com/reviewqa/reviewqa/internal/config"
-	"github.com/reviewqa/reviewqa/internal/log"
+	"github.com/spriteCloud/quail/internal/composer"
+	"github.com/spriteCloud/quail/internal/config"
+	"github.com/spriteCloud/quail/internal/log"
 )
 
 type Client struct {
@@ -53,15 +53,15 @@ type chatResp struct {
 // modified content on success, or the original content unchanged on any
 // error. The contract: same structure, only title/comment strings differ.
 //
-// v0.47 — honors REVIEWQA_HUMANIZE=0 to short-circuit this pass even
+// v0.47 — honors QUAIL_HUMANIZE=0 to short-circuit this pass even
 // when the LLM client is otherwise enabled. Useful when the composer
 // (which also uses the LLM) is needed for scenario generation but
 // humanizing every emitted spec is too slow for the run budget. The
 // composer remains active in that mode.
 func (c *Client) Humanize(ctx context.Context, lang, symbolName string, content []byte) []byte {
-	if os.Getenv("REVIEWQA_HUMANIZE") == "0" {
+	if os.Getenv("QUAIL_HUMANIZE") == "0" {
 		c.announceOnce.Do(func() {
-			log.Info("llm humanization disabled (REVIEWQA_HUMANIZE=0); using deterministic output")
+			log.Info("llm humanization disabled (QUAIL_HUMANIZE=0); using deterministic output")
 		})
 		return content
 	}

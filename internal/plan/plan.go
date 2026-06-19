@@ -6,8 +6,8 @@ import (
 	"path/filepath"
 	"strings"
 
-	"github.com/reviewqa/reviewqa/internal/ast"
-	"github.com/reviewqa/reviewqa/internal/diff"
+	"github.com/spriteCloud/quail/internal/ast"
+	"github.com/spriteCloud/quail/internal/diff"
 )
 
 type Template string
@@ -97,7 +97,7 @@ const (
 	TmplPlaywrightHTTPChains        Template = "pw_http_chains"
 	// v0.43 — integration-layer scaffold emitted per origin when an
 	// API endpoint is detected. Test.skip()s until the consumer wires
-	// a real backing resource via reviewqa.yml.
+	// a real backing resource via quail.yml.
 	TmplPlaywrightIntegrationStub Template = "pw_integration_api_stub"
 	// v0.44 — gated edge templates: emitted when the probe sees the
 	// matching signal on the page.
@@ -172,7 +172,7 @@ type Item struct {
 	// LLMModel is the model identifier embedded as a comment above the
 	// composed scenarios block. Empty when ExtraScenarios is empty.
 	LLMModel string
-	// Integration carries reviewqa.yml-derived data for the v0.27
+	// Integration carries quail.yml-derived data for the v0.27
 	// integration-test family. Populated only for integration Items.
 	Integration *IntegrationCtx
 }
@@ -348,7 +348,7 @@ func Build(files []diff.File, layout Layout) []Item {
 			items = append(items, fanOutAspects(s, layout)...)
 		}
 	}
-	if os.Getenv("REVIEWQA_E2E_STYLE") != "per-component" {
+	if os.Getenv("QUAIL_E2E_STYLE") != "per-component" {
 		items = groupByPage(items, files, layout)
 	}
 	return items
@@ -464,7 +464,7 @@ func BuildCompat(files []diff.File, compare CompatComparator) []Item {
 
 // CompatComparator classifies a schema file and returns a list of
 // regressions (kind + detail). Concrete implementations live in
-// cmd/reviewqa so internal/plan stays free of the openapi/proto/
+// cmd/quail so internal/plan stays free of the openapi/proto/
 // asyncapi dependencies — this keeps the package graph thin.
 type CompatComparator func(path string, old, new_ []byte) (kind string, regressions []CompatRegression, err error)
 

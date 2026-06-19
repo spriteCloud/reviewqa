@@ -31,8 +31,8 @@ go.work.sum
 # .idea/
 # .vscode/
 
-# reviewqa build output
-/reviewqa
+# quail build output
+/quail
 /dist/
 playwright-report.json
 
@@ -43,8 +43,8 @@ web/playwright-report/
 web/playwright-report.json
 web/.cache/
 
-# reviewqa serve per-edit backups — local-only, never committed
-**/.reviewqa-history/
+# quail serve per-edit backups — local-only, never committed
+**/.quail-history/
 
 # Local install / run artifacts inside example projects
 examples/*/node_modules/
@@ -52,4 +52,4 @@ examples/*/test-results/
 examples/*/playwright-report/
 examples/*/package-lock.json
 examples/*/.features-gen/
-examples/*/tests/e2e/.reviewqa-runs/
+examples/*/tests/e2e/.quail-runs/

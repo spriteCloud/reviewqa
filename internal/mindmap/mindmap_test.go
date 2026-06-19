@@ -4,7 +4,7 @@ import (
 	"context"
 	"testing"
 
-	"github.com/reviewqa/reviewqa/internal/ast"
+	"github.com/spriteCloud/quail/internal/ast"
 )
 
 // fakeFetcher returns canned HTML per URL — lets us write deterministic

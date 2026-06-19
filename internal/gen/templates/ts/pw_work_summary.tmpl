@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>reviewqa stakeholder summary — {{.Catalogue.Origin}}</title>
+<title>quail stakeholder summary — {{.Catalogue.Origin}}</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Sora:wght@400;500;600;700;800&family=Inter:wght@400;500;600;900&family=Fira+Code:wght@400;500;600&display=swap" rel="stylesheet">
@@ -355,7 +355,7 @@
 
   <header class="cover">
     <div class="cover-head">
-      <span class="label">reviewqa · stakeholder summary</span>
+      <span class="label">quail · stakeholder summary</span>
       <span class="wm"><span class="s">sprite</span><span class="c">Cloud</span></span>
     </div>
     <h1>Coverage map for {{brandFromOrigin .Catalogue.Origin}}.</h1>
@@ -381,7 +381,7 @@
     <div class="risk-tile">
       <span class="label">Awaiting wireup</span>
       <div class="num">1</div>
-      <div class="sub">Integration layer is scaffold-only until `reviewqa.yml` wires the backing resource</div>
+      <div class="sub">Integration layer is scaffold-only until `quail.yml` wires the backing resource</div>
     </div>
   </section>
 
@@ -403,7 +403,7 @@
       </div>
       <div class="glance">
         <p>
-          reviewqa observed <span class="num">{{$pages}}</span> {{if eq $pages 1}}page{{else}}pages{{end}}
+          quail observed <span class="num">{{$pages}}</span> {{if eq $pages 1}}page{{else}}pages{{end}}
           on this surface and translated them into <span class="num">{{$total}}</span> user
           {{if eq $total 1}}journey{{else}}journeys{{end}}.
           {{- if gt $crit 0 }} <strong>{{$crit}}</strong> {{if eq $crit 1}}gates{{else}}gate{{end}} the release &mdash; every PR must pass these before merge.{{- end }}
@@ -418,7 +418,7 @@
         </p>
         <p>
           <strong>Unverified surface:</strong> the Integration layer (DB / cache / auth /
-          observability) ships as scaffolds that skip until <code>reviewqa.yml</code> binds them
+          observability) ships as scaffolds that skip until <code>quail.yml</code> binds them
           to the backing resources. Until then, the suite cannot prove cross-system contracts.
         </p>
       </div>
@@ -461,7 +461,7 @@
             <h3>Integration</h3>
             <span class="pill-state state-stub">scaffold only</span>
           </div>
-          <div class="layer-desc">5 scaffolds (api / db / cache / observability / auth) × 3 wireable blocks each. Tests skip until <code>reviewqa.yml</code> wires the backing resource.</div>
+          <div class="layer-desc">5 scaffolds (api / db / cache / observability / auth) × 3 wireable blocks each. Tests skip until <code>quail.yml</code> wires the backing resource.</div>
         </div>
         <div class="layer-card">
           <div class="layer-head">
@@ -528,7 +528,7 @@
     <section class="section">
       <div class="section-head">
         <span class="label">Pages crawled</span>
-        <h2>{{$pages}} pages reviewqa observed on this site.</h2>
+        <h2>{{$pages}} pages quail observed on this site.</h2>
       </div>
       <table>
         <thead><tr><th>URL</th><th>Title</th></tr></thead>
@@ -565,21 +565,21 @@
           <span class="n">3</span>
           <div>
             <h4>Triage failures</h4>
-            <p>Open <code>tests/e2e/docs/findings.md</code> after each run. <code>reviewqa ledger update --report playwright-report.json</code> deduplicates failures by (spec, test) and surfaces them risk-weighted by priority — survives across runs.</p>
+            <p>Open <code>tests/e2e/docs/findings.md</code> after each run. <code>quail ledger update --report playwright-report.json</code> deduplicates failures by (spec, test) and surfaces them risk-weighted by priority — survives across runs.</p>
           </div>
         </div>
         <div class="next-step">
           <span class="n">4</span>
           <div>
             <h4>Re-probe on change</h4>
-            <p>Re-run <code>reviewqa probe</code> after feature merges to track coverage drift — new pages and new forms get picked up automatically; removed surfaces drop out.</p>
+            <p>Re-run <code>quail probe</code> after feature merges to track coverage drift — new pages and new forms get picked up automatically; removed surfaces drop out.</p>
           </div>
         </div>
         <div class="next-step">
           <span class="n">5</span>
           <div>
             <h4>Tailor in the browser</h4>
-            <p><code>reviewqa serve --workdir .</code> opens a local UI where stakeholders can delete journeys, refine Scenarios via chat, suggest locators from the live DOM, and run individual Scenarios — no IDE required.</p>
+            <p><code>quail serve --workdir .</code> opens a local UI where stakeholders can delete journeys, refine Scenarios via chat, suggest locators from the live DOM, and run individual Scenarios — no IDE required.</p>
           </div>
         </div>
       </div>
@@ -587,8 +587,8 @@
   </main>
 
   <footer>
-    <span>Re-generate with <code>reviewqa probe</code> · published by reviewqa &mdash; by spriteCloud.</span>
-    <a href="https://github.com/spriteCloud/reviewqa">github.com/spriteCloud/reviewqa</a>
+    <span>Re-generate with <code>quail probe</code> · published by quail &mdash; by spriteCloud.</span>
+    <a href="https://github.com/spriteCloud/quail">github.com/spriteCloud/quail</a>
   </footer>
 </body>
 </html>

@@ -8,11 +8,11 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/reviewqa/reviewqa/internal/plan"
+	"github.com/spriteCloud/quail/internal/plan"
 )
 
 func TestRunAll_EmitsVisualSpecs(t *testing.T) {
-	t.Setenv("REVIEWQA_PROBE_ALLOW_LOOPBACK", "1")
+	t.Setenv("QUAIL_PROBE_ALLOW_LOOPBACK", "1")
 	mux := http.NewServeMux()
 	mux.HandleFunc("/", func(w http.ResponseWriter, r *http.Request) {
 		if r.URL.Path != "/" {
@@ -42,7 +42,7 @@ func TestRunAll_EmitsVisualSpecs(t *testing.T) {
 }
 
 func TestGraphQLContractItems_EmitsWhenIntrospectionResponds(t *testing.T) {
-	t.Setenv("REVIEWQA_PROBE_ALLOW_LOOPBACK", "1")
+	t.Setenv("QUAIL_PROBE_ALLOW_LOOPBACK", "1")
 	mux := http.NewServeMux()
 	mux.HandleFunc("/graphql", func(w http.ResponseWriter, r *http.Request) {
 		if r.Method != http.MethodPost {
@@ -71,7 +71,7 @@ func TestGraphQLContractItems_EmitsWhenIntrospectionResponds(t *testing.T) {
 	srv := httptest.NewServer(mux)
 	defer srv.Close()
 
-	items := graphQLContractItems(context.Background(), srv.URL+"/")
+	items := graphQLContractItems(context.Background(), srv.URL+"/", "")
 	if len(items) != 1 {
 		t.Fatalf("expected 1 GraphQL item; got %d", len(items))
 	}
@@ -81,7 +81,7 @@ func TestGraphQLContractItems_EmitsWhenIntrospectionResponds(t *testing.T) {
 }
 
 func TestWebhookContractItems_EmitsFromOpenAPI(t *testing.T) {
-	t.Setenv("REVIEWQA_PROBE_ALLOW_LOOPBACK", "1")
+	t.Setenv("QUAIL_PROBE_ALLOW_LOOPBACK", "1")
 	mux := http.NewServeMux()
 	mux.HandleFunc("/openapi.json", func(w http.ResponseWriter, r *http.Request) {
 		w.Header().Set("Content-Type", "application/json")
@@ -97,7 +97,7 @@ func TestWebhookContractItems_EmitsFromOpenAPI(t *testing.T) {
 	srv := httptest.NewServer(mux)
 	defer srv.Close()
 
-	items := webhookContractItems(context.Background(), srv.URL+"/")
+	items := webhookContractItems(context.Background(), srv.URL+"/", "")
 	if len(items) != 1 {
 		t.Fatalf("expected 1 webhook item; got %d", len(items))
 	}

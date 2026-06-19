@@ -6,19 +6,18 @@ import (
 	"encoding/json"
 	"net/http"
 	"net/url"
-	"strings"
 	"time"
 
-	"github.com/reviewqa/reviewqa/internal/ast"
-	"github.com/reviewqa/reviewqa/internal/graphql"
-	"github.com/reviewqa/reviewqa/internal/log"
-	"github.com/reviewqa/reviewqa/internal/plan"
+	"github.com/spriteCloud/quail/internal/ast"
+	"github.com/spriteCloud/quail/internal/graphql"
+	"github.com/spriteCloud/quail/internal/log"
+	"github.com/spriteCloud/quail/internal/plan"
 )
 
 // graphQLContractItems probes for a GraphQL endpoint at the origin and,
 // when one responds to the introspection query, emits a contract spec
 // per top-level Query / Mutation. Capped to keep probe cost bounded.
-func graphQLContractItems(ctx context.Context, sourceURL string) []plan.Item {
+func graphQLContractItems(ctx context.Context, sourceURL string, projectLabel string) []plan.Item {
 	const cap = 16
 	parsed, err := url.Parse(sourceURL)
 	if err != nil || parsed == nil {
@@ -58,7 +57,6 @@ func graphQLContractItems(ctx context.Context, sourceURL string) []plan.Item {
 		ops = ops[:cap]
 	}
 	host := parsed.Hostname()
-	hostSlug := strings.TrimPrefix(strings.ReplaceAll(host, ".", "-"), "www-")
 
 	// Pack ops into the Symbol.Anchors slice — the template uses
 	// (Tag, Name, CSS) for (Parent, OpName, SampleArgs).
@@ -71,7 +69,7 @@ func graphQLContractItems(ctx context.Context, sourceURL string) []plan.Item {
 		})
 	}
 	stub := ast.Symbol{
-		Name:     hostToName(host),
+		Name:     projectName(projectLabel, host),
 		Kind:     ast.KindComponent,
 		File:     endpoint,
 		Language: "ts",
@@ -82,7 +80,7 @@ func graphQLContractItems(ctx context.Context, sourceURL string) []plan.Item {
 		Symbols:  []ast.Symbol{stub},
 		PageURL:  endpoint,
 		Template: plan.TmplPlaywrightGraphQL,
-		OutPath:  "tests/e2e/contract/" + hostSlug + "-graphql.contract.spec.ts",
+		OutPath:  "tests/e2e/contract/graphql.contract.spec.ts",
 	}}
 }
 

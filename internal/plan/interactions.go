@@ -4,7 +4,7 @@ import (
 	"regexp"
 	"strings"
 
-	"github.com/reviewqa/reviewqa/internal/ast"
+	"github.com/spriteCloud/quail/internal/ast"
 )
 
 // Interaction-extractor regexes. Match the OPEN tag of each interactive

@@ -10,13 +10,13 @@ import (
 	"testing"
 )
 
-// fixtureProject sets up a minimal reviewqa-shaped project tree under
+// fixtureProject sets up a minimal quail-shaped project tree under
 // t.TempDir() and returns its absolute path.
 func fixtureProject(t *testing.T) string {
 	t.Helper()
 	root := t.TempDir()
 	mustWrite(t, filepath.Join(root, "tests", "e2e", "features", "demo.feature"), sampleFeature)
-	mustWrite(t, filepath.Join(root, "tests", "e2e", "steps", "reviewqa.steps.ts"), sampleSteps)
+	mustWrite(t, filepath.Join(root, "tests", "e2e", "steps", "quail.steps.ts"), sampleSteps)
 	mustWrite(t, filepath.Join(root, "tests", "e2e", "docs", "test-catalogue.md"), "# Catalogue\n\nDemo content.\n")
 	mustWrite(t, filepath.Join(root, "tests", "e2e", "docs", "findings.md"), "# Findings\n\nNone yet.\n")
 	return root
@@ -138,7 +138,7 @@ func TestHandler_IndexServed(t *testing.T) {
 	}
 	body := make([]byte, 4096)
 	n, _ := resp.Body.Read(body)
-	if !strings.Contains(string(body[:n]), "reviewqa") {
+	if !strings.Contains(string(body[:n]), "quail") {
 		t.Errorf("index missing brand: got %q", body[:n])
 	}
 }

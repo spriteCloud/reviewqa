@@ -6,7 +6,7 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/reviewqa/reviewqa/internal/plan"
+	"github.com/spriteCloud/quail/internal/plan"
 )
 
 func TestLoad_MissingFileReturnsNil(t *testing.T) {
@@ -32,7 +32,7 @@ caches:
   - kind: redis
     image: redis:7-alpine
 `)
-	if err := os.WriteFile(filepath.Join(dir, "reviewqa.yml"), body, 0o644); err != nil {
+	if err := os.WriteFile(filepath.Join(dir, "quail.yml"), body, 0o644); err != nil {
 		t.Fatal(err)
 	}
 	cfg, err := Load(dir)

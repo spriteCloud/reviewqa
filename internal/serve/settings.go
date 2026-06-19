@@ -10,7 +10,7 @@ import (
 )
 
 // Settings is the user-tunable serve configuration persisted to
-// ~/.config/reviewqa/serve.json. Loaded once per Get() call (no
+// ~/.config/quail/serve.json. Loaded once per Get() call (no
 // long-lived cache) so a user can edit it from the UI and the next
 // request sees the change without restarting the binary.
 //
@@ -57,14 +57,14 @@ var settingsMu sync.Mutex
 // XDG_CONFIG_HOME (or ~/.config as the fallback). The file may not
 // exist yet — LoadSettings tolerates that.
 func SettingsPath() (string, error) {
-	if base := strings.TrimSpace(os.Getenv("REVIEWQA_SETTINGS_PATH")); base != "" {
+	if base := strings.TrimSpace(os.Getenv("QUAIL_SETTINGS_PATH")); base != "" {
 		return base, nil
 	}
 	dir, err := os.UserConfigDir()
 	if err != nil {
 		return "", err
 	}
-	return filepath.Join(dir, "reviewqa", "serve.json"), nil
+	return filepath.Join(dir, "quail", "serve.json"), nil
 }
 
 // LoadSettings reads the settings file, returning a zero-valued

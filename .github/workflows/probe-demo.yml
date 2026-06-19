@@ -1,6 +1,6 @@
 name: probe-demo
 
-# Dedicated workflow that demonstrates reviewqa's proactive probe mode
+# Dedicated workflow that demonstrates quail's proactive probe mode
 # against a live URL. Fires only on the demo branch or via manual
 # workflow_dispatch so it does not interfere with regular PR runs.
 
@@ -36,12 +36,12 @@ jobs:
         with:
           fetch-depth: 0
 
-      - uses: spriteCloud/reviewqa@v1
+      - uses: spriteCloud/quail@v1
         with:
           pr: ${{ github.event.inputs.pr || github.event.pull_request.number }}
           openai-base-url: ${{ vars.OPENAI_BASE_URL || 'https://api.openai.com/v1' }}
           openai-api-key: ${{ secrets.OPENAI_API_KEY }}
-          model: ${{ vars.REVIEWQA_MODEL || 'gpt-4o-mini' }}
+          model: ${{ vars.QUAIL_MODEL || 'gpt-4o-mini' }}
           heal-mode: 'off'
           log-level: info
           target-urls: ${{ github.event.inputs.url || 'https://www.spritecloud.com' }}

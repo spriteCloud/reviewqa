@@ -3,7 +3,7 @@
 // "templates are fixed; can scenarios be composed from parts to find
 // more user flows?" — the deterministic baseline stays, and the model
 // is constrained to compose Scenarios using ONLY the Given/When/Then
-// patterns already registered in reviewqa.steps.ts.
+// patterns already registered in quail.steps.ts.
 //
 // The composer is strictly OPT-IN. Default is off; the consumer must
 // pass --llm <url>. The LLM is consulted at generation time only —

@@ -7,11 +7,11 @@ import (
 	"strings"
 	"time"
 
-	"github.com/reviewqa/reviewqa/internal/llm"
+	"github.com/spriteCloud/quail/internal/llm"
 )
 
 // handleSettings implements GET (load) and POST (save) for the user
-// Settings file at ~/.config/reviewqa/serve.json.
+// Settings file at ~/.config/quail/serve.json.
 //
 // The API key is returned as-is — the serve UI is local-only and the
 // browser already speaks to 127.0.0.1; masking it here would force a

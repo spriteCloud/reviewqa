@@ -10,7 +10,7 @@ import (
 func TestRunnerDir_RespectsXDG(t *testing.T) {
 	t.Setenv("XDG_CACHE_HOME", "/custom/cache")
 	got := RunnerDir()
-	want := "/custom/cache/reviewqa/playwright-runner"
+	want := "/custom/cache/quail/playwright-runner"
 	if got != want {
 		t.Errorf("RunnerDir = %q, want %q", got, want)
 	}
@@ -23,7 +23,7 @@ func TestRunnerDir_DefaultsToUserCache(t *testing.T) {
 		t.Skip("no home dir on this platform")
 	}
 	got := RunnerDir()
-	want := filepath.Join(home, ".cache", "reviewqa", "playwright-runner")
+	want := filepath.Join(home, ".cache", "quail", "playwright-runner")
 	if got != want {
 		t.Errorf("RunnerDir = %q, want %q", got, want)
 	}
@@ -38,7 +38,7 @@ func TestEnsureRunner_NoopWhenReady(t *testing.T) {
 	cache := t.TempDir()
 	t.Setenv("XDG_CACHE_HOME", cache)
 
-	runner := filepath.Join(cache, "reviewqa", "playwright-runner")
+	runner := filepath.Join(cache, "quail", "playwright-runner")
 	if err := os.MkdirAll(filepath.Join(runner, "node_modules", "@playwright", "test"), 0o755); err != nil {
 		t.Fatal(err)
 	}
@@ -107,7 +107,7 @@ func TestEnsureRunner_PerEngineSentinel(t *testing.T) {
 	cache := t.TempDir()
 	t.Setenv("XDG_CACHE_HOME", cache)
 
-	runner := filepath.Join(cache, "reviewqa", "playwright-runner")
+	runner := filepath.Join(cache, "quail", "playwright-runner")
 	if err := os.MkdirAll(filepath.Join(runner, "node_modules", "@playwright", "test"), 0o755); err != nil {
 		t.Fatal(err)
 	}

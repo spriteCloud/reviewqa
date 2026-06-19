@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>reviewqa stakeholder summary — https://es.wikipedia.org</title>
+<title>quail stakeholder summary — https://es.wikipedia.org</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Sora:wght@400;500;600;700;800&family=Inter:wght@400;500;600;900&family=Fira+Code:wght@400;500;600&display=swap" rel="stylesheet">
@@ -66,12 +66,60 @@
   .cover h1 {
     font-family: 'Sora', sans-serif;
     font-weight: 800;
-    font-size: clamp(36px, 4.6vw, 52px);
-    line-height: 1.04;
-    letter-spacing: -0.035em;
+    font-size: clamp(26px, 2.8vw, 36px);
+    line-height: 1.1;
+    letter-spacing: -0.025em;
     color: var(--white);
-    margin: 12px 0 18px;
-    word-break: break-word;
+    margin: 10px 0 14px;
+    overflow-wrap: anywhere;
+  }
+  .cover .origin {
+    font-family: 'Fira Code', monospace;
+    font-size: 12px;
+    color: var(--copper);
+    word-break: break-all;
+    margin-bottom: 10px;
+    display: block;
+  }
+  /* Risk strip — three KPI tiles right under the cover band. */
+  .risk-strip {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 0;
+    background: var(--charcoal);
+    color: var(--white);
+    padding: 0;
+  }
+  .risk-tile {
+    padding: 18px 24px;
+    border-right: 1px solid rgba(255,255,255,0.08);
+  }
+  .risk-tile:last-child { border-right: 0; }
+  .risk-tile .num {
+    font-family: 'Sora', sans-serif;
+    font-weight: 800;
+    font-size: 32px;
+    letter-spacing: -0.02em;
+    line-height: 1;
+  }
+  .risk-tile .label {
+    font-family: 'Fira Code', monospace;
+    font-size: 10px;
+    letter-spacing: 0.16em;
+    text-transform: uppercase;
+    color: var(--copper);
+    display: block;
+    margin-bottom: 8px;
+  }
+  .risk-tile .sub {
+    font-size: 11px;
+    color: var(--mist);
+    margin-top: 4px;
+  }
+  @media (max-width: 720px) {
+    .risk-strip { grid-template-columns: 1fr; }
+    .risk-tile { border-right: 0; border-bottom: 1px solid rgba(255,255,255,0.08); }
+    .risk-tile:last-child { border-bottom: 0; }
   }
   .cover-meta {
     display: flex;
@@ -301,18 +349,35 @@
 
   <header class="cover">
     <div class="cover-head">
-      <span class="label">reviewqa · stakeholder summary</span>
+      <span class="label">quail · stakeholder summary</span>
       <span class="wm"><span class="s">sprite</span><span class="c">Cloud</span></span>
     </div>
-    <h1>https://es.wikipedia.org</h1>
+    <h1>Coverage map for es.wikipedia.</h1>
+    <span class="origin">https://es.wikipedia.org</span>
     <div class="cover-meta">
       <span>Generated </span>
       <span class="dot">·</span>
       <span class="pill">standard coverage</span>
-      <span class="dot">·</span>
-      <span>30 pages · 4 journeys · 5 fuzz specs</span>
     </div>
   </header>
+
+  <section class="risk-strip" aria-label="Risk snapshot">
+    <div class="risk-tile">
+      <span class="label">Gated on release</span>
+      <div class="num">2</div>
+      <div class="sub">critical journeys the suite blocks shipping on</div>
+    </div>
+    <div class="risk-tile">
+      <span class="label">Standard regression</span>
+      <div class="num">5</div>
+      <div class="sub">standard journeys monitored every nightly</div>
+    </div>
+    <div class="risk-tile">
+      <span class="label">Awaiting wireup</span>
+      <div class="num">1</div>
+      <div class="sub">Integration layer is scaffold-only until `quail.yml` wires the backing resource</div>
+    </div>
+  </section>
 
   <div class="pixel-rail" aria-hidden="true">
     <div class="pixel-rail-inner">
@@ -328,19 +393,23 @@
     <section class="section">
       <div class="section-head">
         <span class="label">At a glance</span>
-        <h2>What reviewqa did on this site.</h2>
+        <h2>What's green-lit, what's gated, what's unverified.</h2>
       </div>
       <div class="glance">
         <p>
-          reviewqa crawled <span class="num">30</span> pages on <strong>https://es.wikipedia.org</strong>
-          and identified <span class="num">4</span> user journeys, classified by business priority. <span class="num">4</span> are <strong>standard</strong> &mdash; nightly regression coverage.
+          quail observed <span class="num">30</span> pages
+          on this surface and translated them into <span class="num">7</span> user
+          journeys. <strong>2</strong> gate the release &mdash; every PR must pass these before merge. <strong>5</strong> run on nightly regression &mdash; the early-warning net.
         </p>
         <p>
-          The emitted suite spans <strong>standard</strong> coverage:
-          a Playwright + Gherkin journey suite (one .feature file per journey),
-          an accessibility trio on every crawled page (5 axe-core gates, 5 landmark checks, 5 keyboard gestures),
-          responsive / performance / security / health / observability quality specs,
-          a 4-device × 2-orientation mobile matrix, and <span class="num">5</span> adversarial fuzz specs per form.
+          Beyond the journey suite, every crawled page is checked for accessibility
+          (5 axe-core gates, 5 landmark, 5 keyboard), mobile rendering on 4 devices ×
+          2 orientations, network resilience, security headers, and performance budgets. <span class="num">5</span> adversarial fuzz specs hammer the discovered forms with 9 negative payloads each.
+        </p>
+        <p>
+          <strong>Unverified surface:</strong> the Integration layer (DB / cache / auth /
+          observability) ships as scaffolds that skip until <code>quail.yml</code> binds them
+          to the backing resources. Until then, the suite cannot prove cross-system contracts.
         </p>
       </div>
     </section>
@@ -378,7 +447,7 @@
             <h3>Integration</h3>
             <span class="pill-state state-stub">scaffold only</span>
           </div>
-          <div class="layer-desc">5 scaffolds (api / db / cache / observability / auth) × 3 wireable blocks each. Tests skip until <code>reviewqa.yml</code> wires the backing resource.</div>
+          <div class="layer-desc">5 scaffolds (api / db / cache / observability / auth) × 3 wireable blocks each. Tests skip until <code>quail.yml</code> wires the backing resource.</div>
         </div>
         <div class="layer-card">
           <div class="layer-head">
@@ -400,16 +469,16 @@
     <section class="section">
       <div class="section-head">
         <span class="label">Priority mix</span>
-        <h2>How the work splits across 4 journeys.</h2>
+        <h2>How the work splits across 7 journeys.</h2>
       </div>
       <div class="pri-bar" aria-label="Priority distribution bar">
-        <span style="width: 0%; background: var(--bad-fg)"></span>
-        <span style="width: 100%; background: var(--deep-water)"></span>
+        <span style="width: 28%; background: var(--bad-fg)"></span>
+        <span style="width: 71%; background: var(--deep-water)"></span>
         <span style="width: 0%; background: var(--mist)"></span>
       </div>
       <div class="pri-legend">
-        <span><i style="background: var(--bad-fg)"></i>critical (0)</span>
-        <span><i style="background: var(--deep-water)"></i>standard (4)</span>
+        <span><i style="background: var(--bad-fg)"></i>critical (2)</span>
+        <span><i style="background: var(--deep-water)"></i>standard (5)</span>
         <span><i style="background: var(--mist)"></i>nice-to-have (0)</span>
       </div>
     </section>
@@ -421,11 +490,20 @@
       </div>
       <div class="journey-list">
         <div class="journey-card">
+          <span class="pri pri-critical">critical</span>
+          <div class="journey-body">
+            <div class="journey-kind">convert</div>
+            <div class="journey-blurb">users submit the lead / contact form.</div>
+            <div class="journey-meta">→ <code>tests/e2e/features/convert-wiki-Especial-LoQueEnlazaAqu-Wikipedia-Portada.feature</code></div>
+          </div>
+          <div class="journey-steps">2<small>steps</small></div>
+        </div>
+        <div class="journey-card">
           <span class="pri pri-standard">standard</span>
           <div class="journey-body">
             <div class="journey-kind">exercise</div>
             <div class="journey-blurb">users complete an interactive task.</div>
-            <div class="journey-meta">→ <code>tests/e2e/features/es-wikipedia-org-exercise-wiki-Madrid.feature</code></div>
+            <div class="journey-meta">→ <code>tests/e2e/features/exercise-wiki-Madrid.feature</code></div>
           </div>
           <div class="journey-steps">1<small>steps</small></div>
         </div>
@@ -434,7 +512,7 @@
           <div class="journey-body">
             <div class="journey-kind">exercise</div>
             <div class="journey-blurb">users complete an interactive task.</div>
-            <div class="journey-meta">→ <code>tests/e2e/features/es-wikipedia-org-exercise-wiki-Wikipedia-Portada.feature</code></div>
+            <div class="journey-meta">→ <code>tests/e2e/features/exercise-wiki-Wikipedia-Portada.feature</code></div>
           </div>
           <div class="journey-steps">1<small>steps</small></div>
         </div>
@@ -443,16 +521,34 @@
           <div class="journey-body">
             <div class="journey-kind">exercise</div>
             <div class="journey-blurb">users complete an interactive task.</div>
-            <div class="journey-meta">→ <code>tests/e2e/features/es-wikipedia-org-exercise-wiki-Portal-Comunidad.feature</code></div>
+            <div class="journey-meta">→ <code>tests/e2e/features/exercise-wiki-Portal-Comunidad.feature</code></div>
           </div>
           <div class="journey-steps">1<small>steps</small></div>
+        </div>
+        <div class="journey-card">
+          <span class="pri pri-critical">critical</span>
+          <div class="journey-body">
+            <div class="journey-kind">contact</div>
+            <div class="journey-blurb">users reach a support / contact channel.</div>
+            <div class="journey-meta">→ <code>tests/e2e/features/contact-wiki-Wikipedia-Contacto.feature</code></div>
+          </div>
+          <div class="journey-steps">2<small>steps</small></div>
         </div>
         <div class="journey-card">
           <span class="pri pri-standard">standard</span>
           <div class="journey-body">
             <div class="journey-kind">browse</div>
             <div class="journey-blurb">users navigate marketing content.</div>
-            <div class="journey-meta">→ <code>tests/e2e/features/es-wikipedia-org-browse-wiki-Especial-P-ginasEspeciales.feature</code></div>
+            <div class="journey-meta">→ <code>tests/e2e/features/browse-wiki-Portal-Comunidad.feature</code></div>
+          </div>
+          <div class="journey-steps">3<small>steps</small></div>
+        </div>
+        <div class="journey-card">
+          <span class="pri pri-standard">standard</span>
+          <div class="journey-body">
+            <div class="journey-kind">browse</div>
+            <div class="journey-blurb">users navigate marketing content.</div>
+            <div class="journey-meta">→ <code>tests/e2e/features/browse-wiki-Wikipedia-Portada.feature</code></div>
           </div>
           <div class="journey-steps">3<small>steps</small></div>
         </div>
@@ -461,7 +557,7 @@
     <section class="section">
       <div class="section-head">
         <span class="label">Pages crawled</span>
-        <h2>30 pages reviewqa observed on this site.</h2>
+        <h2>30 pages quail observed on this site.</h2>
       </div>
       <table>
         <thead><tr><th>URL</th><th>Title</th></tr></thead>
@@ -470,32 +566,32 @@
           <tr><td><code>https://es.wikipedia.org/wiki/Wikipedia:Portada</code></td><td>Wikipedia, la enciclopedia libre</td></tr>
           <tr><td><code>https://es.wikipedia.org/wiki/Portal:Comunidad</code></td><td>Portal:Comunidad - Wikipedia, la enciclopedia libre</td></tr>
           <tr><td><code>https://es.wikipedia.org/wiki/Portal:Actualidad</code></td><td>Portal:Actualidad - Wikipedia, la enciclopedia libre</td></tr>
-          <tr><td><code>https://es.wikipedia.org/wiki/Especial:CambiosRecientes</code></td><td>Cambios recientes - Wikipedia, la enciclopedia libre</td></tr>
+          <tr><td><code>https://es.wikipedia.org/wiki/Especial:CambiosRecientes?hidebots=1&hidecategorization=1&hideWikibase=1&limit=50&days=1&urlversion=2</code></td><td>Cambios recientes - Wikipedia, la enciclopedia libre</td></tr>
           <tr><td><code>https://es.wikipedia.org/wiki/Especial:P%C3%A1ginasNuevas</code></td><td>Páginas nuevas - Wikipedia, la enciclopedia libre</td></tr>
-          <tr><td><code>https://es.wikipedia.org/wiki/Divisiones_Regionales_de_la_Regi%C3%B3n_de_Murcia_2016-17</code></td><td>Divisiones Regionales de la Región de Murcia 2016-17 - Wikipedia, la enciclopedia libre</td></tr>
+          <tr><td><code>https://es.wikipedia.org/wiki/Drombus_triangularis</code></td><td>Drombus triangularis - Wikipedia, la enciclopedia libre</td></tr>
           <tr><td><code>https://es.wikipedia.org/wiki/Ayuda:Contenidos</code></td><td>Ayuda:Contenidos - Wikipedia, la enciclopedia libre</td></tr>
           <tr><td><code>https://es.wikipedia.org/wiki/Wikipedia:Informes_de_error</code></td><td>Wikipedia:Informes de error - Wikipedia, la enciclopedia libre</td></tr>
           <tr><td><code>https://es.wikipedia.org/wiki/Especial:P%C3%A1ginasEspeciales</code></td><td>Páginas especiales - Wikipedia, la enciclopedia libre</td></tr>
           <tr><td><code>https://es.wikipedia.org/wiki/Especial:Buscar</code></td><td>Buscar - Wikipedia, la enciclopedia libre</td></tr>
-          <tr><td><code>https://es.wikipedia.org/wiki/Discusi%C3%B3n:Madrid</code></td><td>Discusión:Madrid - Wikipedia, la enciclopedia libre</td></tr>
-          <tr><td><code>https://es.wikipedia.org/wiki/Especial:LoQueEnlazaAqu%C3%AD/Madrid</code></td><td>Páginas que enlazan con «Madrid» - Wikipedia, la enciclopedia libre</td></tr>
-          <tr><td><code>https://es.wikipedia.org/wiki/Especial:CambiosEnEnlazadas/Madrid</code></td><td>Cambios en enlazadas - Wikipedia, la enciclopedia libre</td></tr>
-          <tr><td><code>https://es.wikipedia.org/wiki/Wikipedia:Art%C3%ADculos_destacados</code></td><td>Wikipedia:Artículos destacados - Wikipedia, la enciclopedia libre</td></tr>
-          <tr><td><code>https://es.wikipedia.org/wiki/Coordenadas_geogr%C3%A1ficas</code></td><td>Coordenadas geográficas - Wikipedia, la enciclopedia libre</td></tr>
-          <tr><td><code>https://es.wikipedia.org/wiki/Madrid_%28desambiguaci%C3%B3n%29</code></td><td>Madrid (desambiguación) - Wikipedia, la enciclopedia libre</td></tr>
-          <tr><td><code>https://es.wikipedia.org/wiki/Municipio_de_Espa%C3%B1a</code></td><td>Municipio (España) - Wikipedia, la enciclopedia libre</td></tr>
-          <tr><td><code>https://es.wikipedia.org/wiki/Capital_%28pol%C3%ADtica%29</code></td><td>Capital (política) - Wikipedia, la enciclopedia libre</td></tr>
-          <tr><td><code>https://es.wikipedia.org/wiki/Espa%C3%B1a</code></td><td>España - Wikipedia, la enciclopedia libre</td></tr>
-          <tr><td><code>https://es.wikipedia.org/wiki/Archivo:Bandera_de_la_ciudad_de_Madrid.svg</code></td><td>Archivo:Bandera de la ciudad de Madrid.svg - Wikipedia, la enciclopedia libre</td></tr>
-          <tr><td><code>https://es.wikipedia.org/wiki/Bandera_de_Madrid</code></td><td>Bandera de Madrid - Wikipedia, la enciclopedia libre</td></tr>
-          <tr><td><code>https://es.wikipedia.org/wiki/Archivo:Coat_of_Arms_of_Madrid_City.svg</code></td><td>Archivo:Coat of Arms of Madrid City.svg - Wikipedia, la enciclopedia libre</td></tr>
-          <tr><td><code>https://es.wikipedia.org/wiki/Escudo_de_Madrid</code></td><td>Escudo de Madrid - Wikipedia, la enciclopedia libre</td></tr>
-          <tr><td><code>https://es.wikipedia.org/wiki/Archivo:Palaciorealycatedraldelaalmudena_retouched.jpg</code></td><td>Archivo:Palaciorealycatedraldelaalmudena retouched.jpg - Wikipedia, la enciclopedia libre</td></tr>
-          <tr><td><code>https://es.wikipedia.org/wiki/Archivo:Plaza_Mayor_De_Madrid_(215862629)_edited.jpeg</code></td><td>Archivo:Plaza Mayor De Madrid (215862629) edited.jpeg - Wikipedia, la enciclopedia libre</td></tr>
-          <tr><td><code>https://es.wikipedia.org/wiki/Archivo:Barajas_Airport_(Madrid)_(4684560779).jpg</code></td><td>Archivo:Barajas Airport (Madrid) (4684560779).jpg - Wikipedia, la enciclopedia libre</td></tr>
-          <tr><td><code>https://es.wikipedia.org/wiki/Archivo:Madrid_May_2014-45a_edited.jpg</code></td><td>Archivo:Madrid May 2014-45a edited.jpg - Wikipedia, la enciclopedia libre</td></tr>
-          <tr><td><code>https://es.wikipedia.org/wiki/Archivo:Escultura_del_Oso_y_el_Madro%C3%B1o,_Puerta_del_Sol,_Madrid,_Espa%C3%B1a,_Spain.jpg</code></td><td>Archivo:Escultura del Oso y el Madroño, Puerta del Sol, Madrid, España, Spain.jpg - Wikipedia, la enciclopedia libre</td></tr>
-          <tr><td><code>https://es.wikipedia.org/wiki/Archivo:Museo_del_Prado_2016_(25185969599).jpg</code></td><td>Archivo:Museo del Prado 2016 (25185969599).jpg - Wikipedia, la enciclopedia libre</td></tr>
+          <tr><td><code>https://es.wikipedia.org/wiki/Evento:Mes_del_Orgullo_2026</code></td><td>Evento:Mes del Orgullo 2026 - Wikipedia, la enciclopedia libre</td></tr>
+          <tr><td><code>https://es.wikipedia.org/wiki/Wikipedia_discusi%C3%B3n:Portada</code></td><td>Wikipedia discusión:Portada - Wikipedia, la enciclopedia libre</td></tr>
+          <tr><td><code>https://es.wikipedia.org/wiki/Especial:LoQueEnlazaAqu%C3%AD/Wikipedia:Portada</code></td><td>Páginas que enlazan con «Wikipedia:Portada» - Wikipedia, la enciclopedia libre</td></tr>
+          <tr><td><code>https://es.wikipedia.org/wiki/Especial:CambiosEnEnlazadas?hidebots=1&hidecategorization=1&hideWikibase=1&target=Wikipedia%3APortada&limit=50&days=1&urlversion=2</code></td><td>Cambios en enlazadas - Wikipedia, la enciclopedia libre</td></tr>
+          <tr><td><code>https://es.wikipedia.org/wiki/Wikipedia:Bienvenidos</code></td><td>Wikipedia:Bienvenidos - Wikipedia, la enciclopedia libre</td></tr>
+          <tr><td><code>https://es.wikipedia.org/wiki/Ayuda:Introducci%C3%B3n</code></td><td>Ayuda:Introducción - Wikipedia, la enciclopedia libre</td></tr>
+          <tr><td><code>https://es.wikipedia.org/wiki/Especial:Estad%C3%ADsticas</code></td><td>Estadísticas - Wikipedia, la enciclopedia libre</td></tr>
+          <tr><td><code>https://es.wikipedia.org/wiki/Wikipedia_en_espa%C3%B1ol</code></td><td>Wikipedia en español - Wikipedia, la enciclopedia libre</td></tr>
+          <tr><td><code>https://es.wikipedia.org/wiki/Wikipedia:Caf%C3%A9</code></td><td>Wikipedia:Café - Wikipedia, la enciclopedia libre</td></tr>
+          <tr><td><code>https://es.wikipedia.org/wiki/Ayuda:C%C3%B3mo_puedes_colaborar</code></td><td>Ayuda:Cómo puedes colaborar - Wikipedia, la enciclopedia libre</td></tr>
+          <tr><td><code>https://es.wikipedia.org/wiki/Wikipedia:Contacto</code></td><td>Wikipedia:Contacto - Wikipedia, la enciclopedia libre</td></tr>
+          <tr><td><code>https://es.wikipedia.org/wiki/The_Confessions_Tour</code></td><td>The Confessions Tour - Wikipedia, la enciclopedia libre</td></tr>
+          <tr><td><code>https://es.wikipedia.org/wiki/Archivo:Madonna_The_Confessions_Tour_CD.jpg</code></td><td>Archivo:Madonna The Confessions Tour CD.jpg - Wikipedia, la enciclopedia libre</td></tr>
+          <tr><td><code>https://es.wikipedia.org/wiki/%C3%81lbum_en_vivo</code></td><td>Álbum en vivo - Wikipedia, la enciclopedia libre</td></tr>
+          <tr><td><code>https://es.wikipedia.org/wiki/Madonna</code></td><td>Madonna - Wikipedia, la enciclopedia libre</td></tr>
+          <tr><td><code>https://es.wikipedia.org/wiki/Wembley_Arena</code></td><td>Wembley Arena - Wikipedia, la enciclopedia libre</td></tr>
+          <tr><td><code>https://es.wikipedia.org/wiki/Londres</code></td><td>Londres - Wikipedia, la enciclopedia libre</td></tr>
+          <tr><td><code>https://es.wikipedia.org/wiki/Confessions_Tour</code></td><td>Confessions Tour - Wikipedia, la enciclopedia libre</td></tr>
+          <tr><td><code>https://es.wikipedia.org/wiki/%C3%81lbum_de_estudio</code></td><td>Álbum de estudio - Wikipedia, la enciclopedia libre</td></tr>
         </tbody>
       </table>
     </section>
@@ -524,21 +620,21 @@
           <span class="n">3</span>
           <div>
             <h4>Triage failures</h4>
-            <p>Open <code>tests/e2e/docs/findings.md</code> after each run. <code>reviewqa ledger update --report playwright-report.json</code> deduplicates failures by (spec, test) and surfaces them risk-weighted by priority — survives across runs.</p>
+            <p>Open <code>tests/e2e/docs/findings.md</code> after each run. <code>quail ledger update --report playwright-report.json</code> deduplicates failures by (spec, test) and surfaces them risk-weighted by priority — survives across runs.</p>
           </div>
         </div>
         <div class="next-step">
           <span class="n">4</span>
           <div>
             <h4>Re-probe on change</h4>
-            <p>Re-run <code>reviewqa probe</code> after feature merges to track coverage drift — new pages and new forms get picked up automatically; removed surfaces drop out.</p>
+            <p>Re-run <code>quail probe</code> after feature merges to track coverage drift — new pages and new forms get picked up automatically; removed surfaces drop out.</p>
           </div>
         </div>
         <div class="next-step">
           <span class="n">5</span>
           <div>
             <h4>Tailor in the browser</h4>
-            <p><code>reviewqa serve --workdir .</code> opens a local UI where stakeholders can delete journeys, refine Scenarios via chat, suggest locators from the live DOM, and run individual Scenarios — no IDE required.</p>
+            <p><code>quail serve --workdir .</code> opens a local UI where stakeholders can delete journeys, refine Scenarios via chat, suggest locators from the live DOM, and run individual Scenarios — no IDE required.</p>
           </div>
         </div>
       </div>
@@ -546,8 +642,8 @@
   </main>
 
   <footer>
-    <span>Re-generate with <code>reviewqa probe</code> · published by reviewqa &mdash; by spriteCloud.</span>
-    <a href="https://github.com/spriteCloud/reviewqa">github.com/spriteCloud/reviewqa</a>
+    <span>Re-generate with <code>quail probe</code> · published by quail &mdash; by spriteCloud.</span>
+    <a href="https://github.com/spriteCloud/quail">github.com/spriteCloud/quail</a>
   </footer>
 </body>
 </html>

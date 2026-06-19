@@ -95,7 +95,7 @@ func readLines(path string) ([]string, error) {
 
 // writeLinesAtomic writes the lines to path via a tmpfile + rename in
 // the same directory. Trailing newline preserved. Before write, the
-// existing file (if any) is copied into the .reviewqa-history backup
+// existing file (if any) is copied into the .quail-history backup
 // tree so the user has an undo trail.
 //
 // historyRoot lets callers point the backup tree somewhere other than
@@ -105,7 +105,7 @@ func writeLinesAtomic(path string, lines []string, historyRoot string) error {
 		return err
 	}
 	dir := filepath.Dir(path)
-	tmp, err := os.CreateTemp(dir, ".reviewqa-edit-*")
+	tmp, err := os.CreateTemp(dir, ".quail-edit-*")
 	if err != nil {
 		return err
 	}
@@ -234,7 +234,7 @@ func AppendScenario(featurePath, newBlock, historyRoot string) (string, error) {
 // at least one step. Anything else (multiple Scenarios, an embedded
 // Feature header, no steps) is rejected to keep edits well-formed.
 func validateScenarioBlock(block string) error {
-	wrapper := "Feature: __reviewqa_edit_validate__\n\n" + block + "\n"
+	wrapper := "Feature: __quail_edit_validate__\n\n" + block + "\n"
 	feat, err := ParseFeatureBytes([]byte(wrapper))
 	if err != nil {
 		return fmt.Errorf("invalid Gherkin: %w", err)
@@ -278,5 +278,5 @@ func trimTrailingBlanks(lines []string) []string {
 }
 
 func historyRootFor(workdir string) string {
-	return filepath.Join(workdir, "tests", "e2e", ".reviewqa-history")
+	return filepath.Join(workdir, "tests", "e2e", ".quail-history")
 }

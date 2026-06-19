@@ -9,7 +9,7 @@ import (
 )
 
 // SpecRef is a vanilla Playwright spec file surfaced to the sidebar
-// alongside the reviewqa-native FeatureRef. The shape mirrors
+// alongside the quail-native FeatureRef. The shape mirrors
 // FeatureRef so the frontend can render both with the same code.
 type SpecRef struct {
 	Path  string     `json:"path"`
@@ -165,14 +165,14 @@ func pickTitleFromPositions(src string, mp []int) string {
 // Quiet on errors — a spec dir might not exist, or a single file
 // might be unreadable; we skip and keep going.
 //
-// v0.84: returns nil for reviewqa-generated projects. The
+// v0.84: returns nil for quail-generated projects. The
 // `tests/e2e/*.spec.ts` files under such a project are layer
 // artifacts (a11y / mobile / contract / security / …) emitted
 // alongside the .feature files; they're already covered by Run
 // from the feature view and surfacing them as a separate "Tests"
 // sidebar section just clutters the UI.
 func loadSpecs(workdir string) []SpecRef {
-	if isReviewqaProject(workdir) {
+	if isQuailProject(workdir) {
 		return nil
 	}
 	idx := LoadLastRunIndex(workdir)
@@ -218,14 +218,14 @@ func loadSpecs(workdir string) []SpecRef {
 	return out
 }
 
-// isReviewqaProject returns true ONLY for reviewqa-generated
-// workdirs — those with a .feature file or the reviewqa steps
-// module on disk. Distinct from `looksLikeReviewqaProject` (which
+// isQuailProject returns true ONLY for quail-generated
+// workdirs — those with a .feature file or the quail steps
+// module on disk. Distinct from `looksLikeQuailProject` (which
 // is broader and ALSO accepts vanilla Playwright projects), this
-// one says "yes, reviewqa emitted into this tree." Used by
+// one says "yes, quail emitted into this tree." Used by
 // loadSpecs to skip the Tests sidebar section for native projects.
-func isReviewqaProject(workdir string) bool {
-	if _, err := os.Stat(filepath.Join(workdir, "tests", "e2e", "steps", "reviewqa.steps.ts")); err == nil {
+func isQuailProject(workdir string) bool {
+	if _, err := os.Stat(filepath.Join(workdir, "tests", "e2e", "steps", "quail.steps.ts")); err == nil {
 		return true
 	}
 	if matches, _ := filepath.Glob(filepath.Join(workdir, "tests", "e2e", "features", "*.feature")); len(matches) > 0 {

@@ -6,8 +6,8 @@ import (
 	"fmt"
 	"strings"
 
-	"github.com/reviewqa/reviewqa/internal/composer"
-	"github.com/reviewqa/reviewqa/internal/llm"
+	"github.com/spriteCloud/quail/internal/composer"
+	"github.com/spriteCloud/quail/internal/llm"
 )
 
 // ChatMessage is one turn in the conversation maintained client-side.
@@ -94,7 +94,7 @@ func Chat(ctx context.Context, in ChatInput) (*ChatResult, error) {
 	}
 	cfg := llmConfigFromEnv()
 	if cfg.OpenAIAPIKey == "" {
-		return nil, errors.New("LLM not configured; set REVIEWQA_LLM to a chat-completions endpoint")
+		return nil, errors.New("LLM not configured; set QUAIL_LLM to a chat-completions endpoint")
 	}
 	client := llm.New(cfg)
 	if !client.Enabled() {
@@ -141,7 +141,7 @@ func Chat(ctx context.Context, in ChatInput) (*ChatResult, error) {
 // produce any steps — that case is already trapped upstream by
 // validateScenarioBlock).
 func firstUnregisteredStep(block string) string {
-	wrapped := "Feature: __reviewqa_chat_validate__\n\n" + block + "\n"
+	wrapped := "Feature: __quail_chat_validate__\n\n" + block + "\n"
 	feat, err := ParseFeatureBytes([]byte(wrapped))
 	if err != nil || len(feat.Scenarios) == 0 {
 		return ""

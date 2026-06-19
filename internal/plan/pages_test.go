@@ -5,9 +5,9 @@ import (
 	"path/filepath"
 	"testing"
 
-	_ "github.com/reviewqa/reviewqa/internal/ast/ts"
-	"github.com/reviewqa/reviewqa/internal/ast"
-	"github.com/reviewqa/reviewqa/internal/diff"
+	_ "github.com/spriteCloud/quail/internal/ast/ts"
+	"github.com/spriteCloud/quail/internal/ast"
+	"github.com/spriteCloud/quail/internal/diff"
 )
 
 func write(t *testing.T, dir, rel, body string) string {
@@ -229,7 +229,7 @@ func TestPageURLsEnvOverride(t *testing.T) {
 	// page root.
 	body := `<form><input type="email" name="email" /></form>`
 	write(t, dir, "src/screens/Bespoke.html", body)
-	t.Setenv("REVIEWQA_PAGE_URLS", `{"src/screens/Bespoke.html":"/bespoke"}`)
+	t.Setenv("QUAIL_PAGE_URLS", `{"src/screens/Bespoke.html":"/bespoke"}`)
 	files := []diff.File{
 		{Path: "src/screens/Bespoke.html", Added: []diff.Range{{Start: 1, End: 5}}, Status: "added", NewBlob: body},
 	}

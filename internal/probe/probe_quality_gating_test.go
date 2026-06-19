@@ -7,7 +7,7 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/reviewqa/reviewqa/internal/plan"
+	"github.com/spriteCloud/quail/internal/plan"
 )
 
 func v043TestServer(t *testing.T) *httptest.Server {
@@ -27,7 +27,7 @@ func v043TestServer(t *testing.T) *httptest.Server {
 }
 
 func TestRunAll_EmitsMobileUnconditionally(t *testing.T) {
-	t.Setenv("REVIEWQA_PROBE_ALLOW_LOOPBACK", "1")
+	t.Setenv("QUAIL_PROBE_ALLOW_LOOPBACK", "1")
 	srv := v043TestServer(t)
 	defer srv.Close()
 
@@ -47,7 +47,7 @@ func TestRunAll_EmitsMobileUnconditionally(t *testing.T) {
 }
 
 func TestRunAll_EmitsIntegrationStubPerOrigin(t *testing.T) {
-	t.Setenv("REVIEWQA_PROBE_ALLOW_LOOPBACK", "1")
+	t.Setenv("QUAIL_PROBE_ALLOW_LOOPBACK", "1")
 	srv := v043TestServer(t)
 	defer srv.Close()
 
@@ -66,7 +66,7 @@ func TestRunAll_EmitsIntegrationStubPerOrigin(t *testing.T) {
 // v0.57 — four new per-kind integration stubs emit unconditionally
 // per origin alongside the catch-all integration_api_stub from v0.43.
 func TestRunAll_EmitsAllPerKindIntegrationStubs_v057(t *testing.T) {
-	t.Setenv("REVIEWQA_PROBE_ALLOW_LOOPBACK", "1")
+	t.Setenv("QUAIL_PROBE_ALLOW_LOOPBACK", "1")
 	srv := v043TestServer(t)
 	defer srv.Close()
 

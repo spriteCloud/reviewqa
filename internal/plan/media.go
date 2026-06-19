@@ -4,8 +4,8 @@ import (
 	"regexp"
 	"strings"
 
-	"github.com/reviewqa/reviewqa/internal/ast"
-	"github.com/reviewqa/reviewqa/internal/plan/patterns"
+	"github.com/spriteCloud/quail/internal/ast"
+	"github.com/spriteCloud/quail/internal/plan/patterns"
 )
 
 // reImgOpen matches an <img …> tag. Multiline attribute lists are fine.

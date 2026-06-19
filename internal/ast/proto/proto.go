@@ -6,8 +6,8 @@
 package proto
 
 import (
-	"github.com/reviewqa/reviewqa/internal/ast"
-	rgrpc "github.com/reviewqa/reviewqa/internal/grpc"
+	"github.com/spriteCloud/quail/internal/ast"
+	rgrpc "github.com/spriteCloud/quail/internal/grpc"
 )
 
 type extractor struct{}

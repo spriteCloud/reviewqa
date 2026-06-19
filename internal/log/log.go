@@ -1,5 +1,5 @@
 // Package log wraps log/slog with a single process-wide logger whose level
-// is driven by REVIEWQA_LOG_LEVEL (debug|info|warn|error). All structured
+// is driven by QUAIL_LOG_LEVEL (debug|info|warn|error). All structured
 // output goes to stderr so stdout stays clean for piped use.
 package log
 
@@ -16,10 +16,10 @@ var (
 )
 
 // Logger returns the package-level slog logger, initializing it once from
-// REVIEWQA_LOG_LEVEL.
+// QUAIL_LOG_LEVEL.
 func Logger() *slog.Logger {
 	once.Do(func() {
-		lvl := parseLevel(os.Getenv("REVIEWQA_LOG_LEVEL"))
+		lvl := parseLevel(os.Getenv("QUAIL_LOG_LEVEL"))
 		h := slog.NewTextHandler(os.Stderr, &slog.HandlerOptions{Level: lvl})
 		logger = slog.New(h)
 	})

@@ -44,7 +44,7 @@ var webFS embed.FS
 
 // Options configures a single serve session.
 type Options struct {
-	Workdir   string // root of the reviewqa-generated project to load
+	Workdir   string // root of the quail-generated project to load
 	Addr      string // listen address; default 127.0.0.1:8765
 	NoBrowser bool   // skip the auto-open
 	Logf      func(format string, args ...any)
@@ -68,10 +68,10 @@ func Run(ctx context.Context, opts Options) error {
 	// (or isn't a directory), we keep going anyway. The UI opens on
 	// HOME with Probe + Import as the only meaningful affordances;
 	// disk readers tolerate a missing path and return empty results.
-	// A user launching `reviewqa serve` from an empty dir lands in
+	// A user launching `quail serve` from an empty dir lands in
 	// scratch mode automatically.
 	if info, statErr := os.Stat(workdir); statErr != nil || !info.IsDir() {
-		opts.Logf("reviewqa serve: workdir %q not present — starting in scratch mode", workdir)
+		opts.Logf("quail serve: workdir %q not present — starting in scratch mode", workdir)
 	}
 	handler := Handler(workdir)
 	srv := &http.Server{
@@ -80,7 +80,7 @@ func Run(ctx context.Context, opts Options) error {
 		ReadHeaderTimeout: 5 * time.Second,
 	}
 	url := "http://" + opts.Addr + "/"
-	opts.Logf("reviewqa serve listening on %s (workdir %s)", url, workdir)
+	opts.Logf("quail serve listening on %s (workdir %s)", url, workdir)
 	errCh := make(chan error, 1)
 	go func() { errCh <- srv.ListenAndServe() }()
 	if !opts.NoBrowser {
@@ -572,8 +572,8 @@ func loadProject(workdir string) Project {
 	sort.Slice(p.Features, func(i, j int) bool { return p.Features[i].Path < p.Features[j].Path })
 
 	// v0.80 — surface vanilla Playwright *.spec.{ts,js} alongside the
-	// reviewqa-native .feature files so existing projects can be
-	// onboarded into the UI without a reviewqa-style layout.
+	// quail-native .feature files so existing projects can be
+	// onboarded into the UI without a quail-style layout.
 	p.Specs = loadSpecs(workdir)
 
 	docsDir := filepath.Join(workdir, "tests", "e2e", "docs")
@@ -620,7 +620,7 @@ func loadProject(workdir string) Project {
 }
 
 func loadSteps(workdir string) []StepPattern {
-	path := filepath.Join(workdir, "tests", "e2e", "steps", "reviewqa.steps.ts")
+	path := filepath.Join(workdir, "tests", "e2e", "steps", "quail.steps.ts")
 	pats, err := ParseStepsFile(path)
 	if err != nil {
 		return nil

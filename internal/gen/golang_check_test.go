@@ -4,9 +4,9 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/reviewqa/reviewqa/internal/ast"
-	"github.com/reviewqa/reviewqa/internal/gen"
-	"github.com/reviewqa/reviewqa/internal/plan"
+	"github.com/spriteCloud/quail/internal/ast"
+	"github.com/spriteCloud/quail/internal/gen"
+	"github.com/spriteCloud/quail/internal/plan"
 )
 
 func TestGoUnitWithErrorAndResult(t *testing.T) {

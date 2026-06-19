@@ -4,8 +4,8 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/reviewqa/reviewqa/internal/ast"
-	"github.com/reviewqa/reviewqa/internal/plan"
+	"github.com/spriteCloud/quail/internal/ast"
+	"github.com/spriteCloud/quail/internal/plan"
 )
 
 func TestIntegrationStubTemplate(t *testing.T) {
@@ -13,7 +13,7 @@ func TestIntegrationStubTemplate(t *testing.T) {
 	body := renderQuality(t, plan.TmplPlaywrightIntegrationStub, sym, "https://x.test/")
 	mustContain(t, body, "@kind:integration-stub")
 	mustContain(t, body, "test.skip")
-	mustContain(t, body, "reviewqa.yml")
+	mustContain(t, body, "quail.yml")
 }
 
 func TestI18nTemplate_AlwaysEmitsFallbackHtmlLangCheck(t *testing.T) {
@@ -25,7 +25,7 @@ func TestI18nTemplate_AlwaysEmitsFallbackHtmlLangCheck(t *testing.T) {
 }
 
 // v0.57 — each per-kind stub ships 3 test.skip() blocks with concrete
-// TODOs for the consumer to flip on once reviewqa.yml declares the
+// TODOs for the consumer to flip on once quail.yml declares the
 // backing resource.
 
 func TestIntegrationDBStubTemplate_v057(t *testing.T) {
@@ -95,7 +95,7 @@ func TestIntegrationAuthStubTemplate_v057(t *testing.T) {
 		"@unauth",
 		"@valid-token",
 		"@expired",
-		"REVIEWQA_AUTH_TOKEN",
+		"QUAIL_AUTH_TOKEN",
 	} {
 		if !strings.Contains(body, needle) {
 			t.Errorf("integration-auth stub missing %q", needle)

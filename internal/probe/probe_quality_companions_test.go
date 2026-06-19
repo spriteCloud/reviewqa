@@ -7,11 +7,11 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/reviewqa/reviewqa/internal/plan"
+	"github.com/spriteCloud/quail/internal/plan"
 )
 
 func TestRunAll_EmitsQualityCompanions(t *testing.T) {
-	t.Setenv("REVIEWQA_PROBE_ALLOW_LOOPBACK", "1")
+	t.Setenv("QUAIL_PROBE_ALLOW_LOOPBACK", "1")
 	mux := http.NewServeMux()
 	mux.HandleFunc("/", func(w http.ResponseWriter, r *http.Request) {
 		if r.URL.Path != "/" {
@@ -42,7 +42,7 @@ func TestRunAll_EmitsQualityCompanions(t *testing.T) {
 	}
 	for _, it := range items {
 		for k := range have {
-			if strings.Contains(it.OutPath, "/"+k+"/") && strings.HasSuffix(it.OutPath, "."+k+".spec.ts") {
+			if strings.Contains(it.OutPath, "/"+k+"/") && strings.HasSuffix(it.OutPath, k+".spec.ts") {
 				have[k]++
 			}
 		}
@@ -58,7 +58,7 @@ func TestRunAll_EmitsQualityCompanions(t *testing.T) {
 // cap and emit on EVERY crawled page. Validates the Pass-A / Pass-B
 // split in qualityCompanions.
 func TestRunAll_A11yTrioUncapped_v059(t *testing.T) {
-	t.Setenv("REVIEWQA_PROBE_ALLOW_LOOPBACK", "1")
+	t.Setenv("QUAIL_PROBE_ALLOW_LOOPBACK", "1")
 	// Build a server with 8 distinct pages, all linked from /. The
 	// breadth coverage cap is 3, so before v0.59 only 3 pages would
 	// get the quality companions; with the cap lifted on the a11y
@@ -114,7 +114,7 @@ func TestRunAll_A11yTrioUncapped_v059(t *testing.T) {
 // even on sites with no hreflang siblings. The old assertion (no spec
 // emitted) is no longer the desired contract.
 func TestRunAll_EmitsI18nFallbackWhenNoHreflang(t *testing.T) {
-	t.Setenv("REVIEWQA_PROBE_ALLOW_LOOPBACK", "1")
+	t.Setenv("QUAIL_PROBE_ALLOW_LOOPBACK", "1")
 	mux := http.NewServeMux()
 	mux.HandleFunc("/", func(w http.ResponseWriter, r *http.Request) {
 		if r.URL.Path != "/" {

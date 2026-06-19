@@ -5,10 +5,10 @@ import (
 	"net/url"
 	"strings"
 
-	"github.com/reviewqa/reviewqa/internal/ast"
-	"github.com/reviewqa/reviewqa/internal/log"
-	"github.com/reviewqa/reviewqa/internal/openapi"
-	"github.com/reviewqa/reviewqa/internal/plan"
+	"github.com/spriteCloud/quail/internal/ast"
+	"github.com/spriteCloud/quail/internal/log"
+	"github.com/spriteCloud/quail/internal/openapi"
+	"github.com/spriteCloud/quail/internal/plan"
 )
 
 // webhookContractItems detects webhook endpoints from two sources:
@@ -22,7 +22,7 @@ import (
 //      from a real webhook receiver).
 //
 // One spec per detected endpoint. Bounded at 8 endpoints per probe.
-func webhookContractItems(ctx context.Context, sourceURL string) []plan.Item {
+func webhookContractItems(ctx context.Context, sourceURL string, projectLabel string) []plan.Item {
 	const cap = 8
 	parsed, err := url.Parse(sourceURL)
 	if err != nil || parsed == nil {
@@ -30,7 +30,6 @@ func webhookContractItems(ctx context.Context, sourceURL string) []plan.Item {
 	}
 	origin := parsed.Scheme + "://" + parsed.Host
 	host := parsed.Hostname()
-	hostSlug := strings.TrimPrefix(strings.ReplaceAll(host, ".", "-"), "www-")
 
 	seen := map[string]bool{}
 	endpoints := []string{}
@@ -88,7 +87,7 @@ func webhookContractItems(ctx context.Context, sourceURL string) []plan.Item {
 	log.Info("webhook endpoints detected", "count", len(endpoints))
 
 	stub := ast.Symbol{
-		Name:     hostToName(host),
+		Name:     projectName(projectLabel, host),
 		Kind:     ast.KindComponent,
 		File:     origin,
 		Language: "ts",
@@ -111,7 +110,7 @@ func webhookContractItems(ctx context.Context, sourceURL string) []plan.Item {
 		Symbols:  []ast.Symbol{stub},
 		PageURL:  origin,
 		Template: plan.TmplPlaywrightWebhook,
-		OutPath:  "tests/e2e/webhooks/" + hostSlug + ".webhook.spec.ts",
+		OutPath:  "tests/e2e/webhooks/webhook.spec.ts",
 	}}
 }
 

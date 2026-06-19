@@ -9,7 +9,7 @@ import (
 	"testing"
 	"time"
 
-	"github.com/reviewqa/reviewqa/internal/config"
+	"github.com/spriteCloud/quail/internal/config"
 )
 
 func TestHumanize_FallsBackOnStructureMismatch(t *testing.T) {

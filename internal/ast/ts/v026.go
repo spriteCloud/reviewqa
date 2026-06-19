@@ -4,7 +4,7 @@ import (
 	"regexp"
 	"strings"
 
-	"github.com/reviewqa/reviewqa/internal/ast"
+	"github.com/spriteCloud/quail/internal/ast"
 )
 
 // v0.26 diff-mode signal extractors. Lightweight regex-based detection

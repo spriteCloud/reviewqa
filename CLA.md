@@ -1,6 +1,6 @@
 # Contributor License Agreement
 
-Thank you for your interest in contributing to **reviewqa**, a project of
+Thank you for your interest in contributing to **quail**, a project of
 spriteCloud (the "Project").
 
 To keep the project's dual-licensing model viable — community AGPL-3.0 plus a
