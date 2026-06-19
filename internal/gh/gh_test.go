@@ -13,6 +13,7 @@ import (
 
 	"github.com/google/go-github/v66/github"
 	"github.com/spriteCloud/quail/internal/config"
+	"reflect"
 )
 
 func TestIsAlreadyExists(t *testing.T) {
@@ -327,4 +328,25 @@ func TestIsPRAlreadyExists(t *testing.T) {
 	if !isPRAlreadyExists(resp) {
 		t.Error("422 + 'A pull request already exists' should match")
 	}
+}
+func TestNew(t *testing.T) {
+	t.Run("happy path", func(t *testing.T) {
+		got, err := New(nil, nil)
+		if err != nil {
+			t.Fatalf("unexpected error: %v", err)
+		}
+		if reflect.DeepEqual(got, *new(*Client)) {
+			t.Fatalf("got zero value: %#v", got)
+		}
+	})
+
+	t.Run("returns expected type", func(t *testing.T) {
+		got, err := New(nil, nil)
+		if err != nil {
+			t.Fatalf("unexpected error: %v", err)
+		}
+		if got, want := reflect.TypeOf(got), reflect.TypeOf(*new(*Client)); got != want {
+			t.Fatalf("type = %v, want %v", got, want)
+		}
+	})
 }
