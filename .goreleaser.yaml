@@ -12,16 +12,15 @@ builds:
     binary: quail
     env:
       - CGO_ENABLED=0
+    # ponytail: Windows skipped — internal/probe/browser/runner.go uses
+    # syscall.Flock (Unix-only). Quail targets Linux/macOS CI + dev; if
+    # Windows is ever in scope, port the lock helper behind a build tag.
     goos:
       - linux
       - darwin
-      - windows
     goarch:
       - amd64
       - arm64
-    ignore:
-      - goos: windows
-        goarch: arm64
     ldflags:
       - -s -w -X main.version={{ .Version }}
 
@@ -29,9 +28,6 @@ archives:
   - id: quail
     name_template: "quail_{{ .Os }}_{{ .Arch }}"
     format: tar.gz
-    format_overrides:
-      - goos: windows
-        format: zip
     files:
       - LICENSE
       - README.md
