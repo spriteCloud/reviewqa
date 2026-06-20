@@ -9,6 +9,7 @@ import (
 	"errors"
 	"fmt"
 	"net/http"
+	"os"
 	"strings"
 
 	"github.com/google/go-github/v66/github"
@@ -129,6 +130,31 @@ func (c *Client) OpenPR(ctx context.Context, opts PROpts) (string, error) {
 	owner, repo, ok := c.cfg.SplitRepo()
 	if !ok {
 		return "", fmt.Errorf("gh: invalid GITHUB_REPOSITORY %q", c.cfg.Repo)
+	}
+	// v0.95.9 — under GitHub Actions, drop any .github/workflows/* file
+	// from the bot-PR push. The default GITHUB_TOKEN and a `repo`-scope
+	// PAT both lack the `workflow` permission and the remote rejects
+	// the entire push if even one workflow file is present. Suppress
+	// here, log once, and let the caller advertise it in the PR body.
+	if os.Getenv("GITHUB_ACTIONS") == "true" {
+		var dropped []string
+		for path := range opts.Files {
+			if strings.HasPrefix(path, ".github/workflows/") {
+				dropped = append(dropped, path)
+			}
+		}
+		if len(dropped) > 0 {
+			filtered := make(map[string][]byte, len(opts.Files)-len(dropped))
+			for path, content := range opts.Files {
+				if strings.HasPrefix(path, ".github/workflows/") {
+					continue
+				}
+				filtered[path] = content
+			}
+			opts.Files = filtered
+			log.Info("OpenPR: suppressed workflow files (need `workflow` PAT scope)",
+				"dropped", len(dropped), "first", dropped[0])
+		}
 	}
 	// Shell fallback for GitHub Actions runners (see openpr_shell.go).
 	if c.useShellOpenPR() {
