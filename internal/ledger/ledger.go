@@ -284,6 +284,38 @@ func Merge(existing []byte, fresh []Finding) []byte {
 	return []byte(b.String())
 }
 
+// ParseLedger is the exported entry point used by `quail ledger verify`
+// to load known findings off disk before comparing against a fresh
+// report.
+//
+// v0.97.2.
+func ParseLedger(existing []byte) []Finding {
+	return parseLedger(existing)
+}
+
+// NewFindings returns the subset of `current` whose (Spec, Test) key is
+// not present as an OPEN finding in `baseline`. A baseline row with
+// status `resolved` is treated as no longer accepted — if it
+// reoccurs, NewFindings surfaces it. Used by `quail ledger verify` to
+// distinguish regressions from known-debt.
+//
+// v0.97.2.
+func NewFindings(current, baseline []Finding) []Finding {
+	open := map[string]bool{}
+	for _, b := range baseline {
+		if b.Status == "" || b.Status == "open" {
+			open[b.key()] = true
+		}
+	}
+	var out []Finding
+	for _, c := range current {
+		if !open[c.key()] {
+			out = append(out, c)
+		}
+	}
+	return out
+}
+
 // parseLedger extracts table rows from an existing findings.md. Returns
 // nil on a missing / empty ledger. Header lines are skipped; only
 // data rows (` ` table rows with 7 cells) are kept.

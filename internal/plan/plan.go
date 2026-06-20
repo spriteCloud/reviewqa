@@ -272,6 +272,16 @@ type Layout struct {
 	HasTestsDir  bool
 	HasUnderTest bool // *.test.ts siblings
 	UsesVitest   bool
+	// UsesBDD reports whether the project is set up for
+	// playwright-bdd (Gherkin .feature files compiled into Playwright
+	// tests). Detected via package.json deps, defineBddConfig in
+	// playwright.config.ts, or tests/e2e/features/ + tests/e2e/steps/
+	// directories. When true, quail's generate / probe routes
+	// journey-bearing symbols through .feature templates. When false
+	// (the project uses vanilla @playwright/test only), journeys
+	// emit as .spec.ts so the project's "base framework" stays
+	// consistent. v0.98.
+	UsesBDD bool
 	// Python
 	HasPyTestsDir bool
 	// Java
@@ -301,8 +311,47 @@ func Detect(workDir string) Layout {
 		if strings.Contains(s, `"vitest"`) {
 			l.UsesVitest = true
 		}
+		if strings.Contains(s, `"playwright-bdd"`) {
+			l.UsesBDD = true
+		}
+	}
+	// Project-shape signals — these are authoritative even when
+	// package.json isn't present (e.g. when probe runs against an
+	// existing repo without inspecting deps).
+	if has(workDir, filepath.Join("tests", "e2e", "features")) {
+		l.UsesBDD = true
+	}
+	if has(workDir, filepath.Join("tests", "e2e", "steps")) {
+		l.UsesBDD = true
+	}
+	if b, err := os.ReadFile(filepath.Join(workDir, "playwright.config.ts")); err == nil {
+		if strings.Contains(string(b), "defineBddConfig") {
+			l.UsesBDD = true
+		}
+	}
+	// Default to BDD when no signal at all (greenfield probe in an
+	// empty workdir) — user's stated preference: "prefer bdd ...
+	// when possible".
+	if !l.UsesBDD && !hasAnyPlaywrightSignal(workDir) {
+		l.UsesBDD = true
 	}
 	return l
+}
+
+// hasAnyPlaywrightSignal reports whether the workdir already contains
+// a Playwright project shape (config or test dirs). If false, we're
+// in a greenfield probe and default to BDD; if true, we respect what
+// the project already chose.
+func hasAnyPlaywrightSignal(workDir string) bool {
+	for _, p := range []string{
+		"playwright.config.ts", "playwright.config.js",
+		filepath.Join("tests", "e2e"),
+	} {
+		if has(workDir, p) {
+			return true
+		}
+	}
+	return false
 }
 
 func has(root, sub string) bool {
@@ -557,13 +606,15 @@ func pickTemplate(s ast.Symbol, l Layout) Template {
 		case ast.KindRoute:
 			return TmplJestAPI
 		case ast.KindComponent:
-			// v0.97.0 — TS components emit Gherkin (.feature). The
-			// previous vanilla TmplPlaywrightE2E produced a flat
-			// page.goto + one-role-assert skeleton with no real DOM
-			// context; journeys now flow through pw_feature.tmpl, and
-			// the always-probe affected-pages logic in runGenerate
-			// supplies the matching rich step definitions.
-			return TmplPlaywrightFeature
+			// v0.98 — respect the project's base framework. When the
+			// project uses playwright-bdd, emit Gherkin (the v0.97.0
+			// behavior). When it's a vanilla @playwright/test
+			// project, stay on TmplPlaywrightE2E so the project's
+			// existing test shape is preserved.
+			if l.UsesBDD {
+				return TmplPlaywrightFeature
+			}
+			return TmplPlaywrightE2E
 		default:
 			return TmplJestUnit
 		}

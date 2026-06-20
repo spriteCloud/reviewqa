@@ -146,6 +146,96 @@ func TestBuildEmitsHappyFlowForHTMLPage(t *testing.T) {
 	}
 }
 
+// v0.98 — verify the Component → Feature swap is gated on the
+// project's base framework. When the workdir is a vanilla
+// @playwright/test project (no playwright-bdd dep, no features dir,
+// no defineBddConfig in the config), Component symbols emit the
+// pre-v0.97.0 vanilla .spec.ts shape so the project's "base
+// framework" stays consistent.
+func TestBuildEmitsVanillaWhenNoBDD(t *testing.T) {
+	dir := t.TempDir()
+	must := func(rel, body string) string {
+		full := filepath.Join(dir, rel)
+		os.MkdirAll(filepath.Dir(full), 0o755)
+		os.WriteFile(full, []byte(body), 0o644)
+		return rel
+	}
+	// Vanilla Playwright project shape: config file + tests/e2e dir,
+	// no defineBddConfig, no playwright-bdd dep, no features/steps.
+	must("playwright.config.ts", `import { defineConfig } from '@playwright/test'
+export default defineConfig({})
+`)
+	must("package.json", `{"devDependencies":{"@playwright/test":"^1.49.0"}}`)
+	must("tests/e2e/landing.spec.ts", `import { test } from '@playwright/test'`)
+	counterPath := must("src/Counter.tsx", `export function Counter() {
+  return (<div data-testid="counter-root"></div>)
+}
+`)
+	files := []diff.File{
+		{Path: counterPath, Added: []diff.Range{{Start: 1, End: 5}}, Status: "added"},
+	}
+	layout := Detect(dir)
+	if layout.UsesBDD {
+		t.Fatalf("vanilla project misclassified as BDD: %+v", layout)
+	}
+	items := Build(files, layout)
+	for _, it := range items {
+		if it.Template == TmplPlaywrightFeature {
+			t.Errorf("vanilla project emitted .feature item: %+v", it)
+		}
+	}
+	hasVanilla := false
+	for _, it := range items {
+		if it.Template == TmplPlaywrightE2E || it.Template == TmplPlaywrightHappyFlow {
+			hasVanilla = true
+		}
+	}
+	if !hasVanilla {
+		t.Errorf("expected at least one TmplPlaywrightE2E item; items=%+v", items)
+	}
+}
+
+// v0.98 — verify BDD projects still get Gherkin output.
+func TestBuildEmitsGherkinWhenBDD(t *testing.T) {
+	dir := t.TempDir()
+	must := func(rel, body string) string {
+		full := filepath.Join(dir, rel)
+		os.MkdirAll(filepath.Dir(full), 0o755)
+		os.WriteFile(full, []byte(body), 0o644)
+		return rel
+	}
+	must("playwright.config.ts", `import { defineConfig } from '@playwright/test'
+import { defineBddConfig } from 'playwright-bdd'
+const bdd = defineBddConfig({ features: 'tests/e2e/features/*.feature', steps: 'tests/e2e/steps/*.ts' })
+export default defineConfig({ projects: [{ name: 'bdd', testDir: bdd }] })
+`)
+	must("package.json", `{"devDependencies":{"@playwright/test":"^1.49.0","playwright-bdd":"^9.0.0"}}`)
+	counterPath := must("src/Counter.tsx", `export function Counter() {
+  return (<div data-testid="counter-root"></div>)
+}
+`)
+	files := []diff.File{
+		{Path: counterPath, Added: []diff.Range{{Start: 1, End: 5}}, Status: "added"},
+	}
+	layout := Detect(dir)
+	if !layout.UsesBDD {
+		t.Fatalf("BDD project misclassified as vanilla: %+v", layout)
+	}
+	items := Build(files, layout)
+	hasFeature := false
+	for _, it := range items {
+		if it.Template == TmplPlaywrightFeature {
+			hasFeature = true
+		}
+		if it.Template == TmplPlaywrightE2E {
+			t.Errorf("BDD project emitted vanilla .spec.ts item: %+v", it)
+		}
+	}
+	if !hasFeature {
+		t.Errorf("expected at least one TmplPlaywrightFeature item; items=%+v", items)
+	}
+}
+
 func TestBuildFallsBackToPerComponentWhenNoPage(t *testing.T) {
 	dir := t.TempDir()
 	must := func(rel, body string) string {

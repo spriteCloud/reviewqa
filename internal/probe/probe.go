@@ -901,14 +901,27 @@ func identifyAndFilterJourneys(ctx context.Context, m *mindmap.Map, coverage Cov
 }
 
 // promoteJourneysToFeatures wraps each mindmap.Journey in a plan.Item
-// whose Template is the .feature shape. v0.21 inversion: no .spec.ts
-// sibling — playwright-bdd compiles features into runnable specs.
+// whose Template depends on the workdir's base framework: Gherkin
+// (TmplPlaywrightFeature) when the project uses playwright-bdd, or
+// vanilla TmplPlaywrightHappyFlow .spec.ts otherwise. The check is
+// done by plan.Detect against the current working directory so probe
+// stays in sync with the project shape the user is generating into.
+//
+// v0.21 — Gherkin emission introduced.
+// v0.98 — vanilla fallback when playwright-bdd is absent.
 func promoteJourneysToFeatures(journeys []mindmap.Journey, u string, projectLabel string) []plan.Item {
+	wd, _ := os.Getwd()
+	useBDD := plan.Detect(wd).UsesBDD
 	out := make([]plan.Item, 0, len(journeys))
 	for _, j := range journeys {
 		item := itemFromJourney(j, u, projectLabel)
-		item.Template = plan.TmplPlaywrightFeature
-		item.OutPath = featurePathFor(item.OutPath)
+		if useBDD {
+			item.Template = plan.TmplPlaywrightFeature
+			item.OutPath = featurePathFor(item.OutPath)
+		} else {
+			item.Template = plan.TmplPlaywrightHappyFlow
+			// itemFromJourney already lands on tests/e2e/<stem>.spec.ts
+		}
 		out = append(out, item)
 	}
 	return out
@@ -1708,29 +1721,38 @@ func companionItems(sourceURL string, m *mindmap.Map, cat *plan.Catalogue, proje
 			Template: plan.TmplPlaywrightCIFile,
 			OutPath:  ".github/workflows/e2e.yml",
 		},
-		{
-			Symbol:   stub,
-			Symbols:  []ast.Symbol{stub},
-			PageURL:  originOnly,
-			Template: plan.TmplPlaywrightSteps,
-			OutPath:  "tests/e2e/lib/steps.ts",
-		},
-		{
-			Symbol:   stub,
-			Symbols:  []ast.Symbol{stub},
-			PageURL:  originOnly,
-			Template: plan.TmplPlaywrightStepsBDD,
-			OutPath:  "tests/e2e/steps/quail.steps.ts",
-		},
-		{
-			Symbol:        stub,
-			Symbols:       []ast.Symbol{stub},
-			PageURL:       originOnly,
-			Template:      plan.TmplPlaywrightFindings,
-			OutPath:       "tests/e2e/docs/findings.md",
-			IfMissingOnly: true,
-		},
+		// v0.98 — emit the step-def files only when the project is
+		// BDD-shaped. A vanilla @playwright/test project has no
+		// .feature files for these step-defs to bind to and we'd just
+		// be littering the suite.
 	}
+	wd, _ := os.Getwd()
+	if plan.Detect(wd).UsesBDD {
+		items = append(items,
+			plan.Item{
+				Symbol:   stub,
+				Symbols:  []ast.Symbol{stub},
+				PageURL:  originOnly,
+				Template: plan.TmplPlaywrightSteps,
+				OutPath:  "tests/e2e/lib/steps.ts",
+			},
+			plan.Item{
+				Symbol:   stub,
+				Symbols:  []ast.Symbol{stub},
+				PageURL:  originOnly,
+				Template: plan.TmplPlaywrightStepsBDD,
+				OutPath:  "tests/e2e/steps/quail.steps.ts",
+			},
+		)
+	}
+	items = append(items, plan.Item{
+		Symbol:        stub,
+		Symbols:       []ast.Symbol{stub},
+		PageURL:       originOnly,
+		Template:      plan.TmplPlaywrightFindings,
+		OutPath:       "tests/e2e/docs/findings.md",
+		IfMissingOnly: true,
+	})
 	if cat != nil {
 		items = append(items,
 			plan.Item{
