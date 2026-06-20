@@ -25,7 +25,7 @@ test.describe('{{.Symbol.Name}} — network resilience @ {{.PageURL}}', () => {
   })
 
   test('@kind:network @offline-reload offline reload shows a sensible failure surface', async ({ page, context }) => {
-    await page.goto({{landingPath .PageURL}})
+    await page.goto({{landingPath .PageURL}}, { waitUntil: 'domcontentloaded' })
     await context.setOffline(true)
     // The browser raises a navigation error; we capture it and assert
     // the page didn't silently double-render with stale content.

@@ -13,7 +13,7 @@ import { test, expect } from '@playwright/test'
 test.describe.configure({ mode: 'parallel' })
 test.describe('{{.Symbol.Name}} — dragdrop @ {{.PageURL}}', () => {
   test('@kind:dragdrop @smoke drag-and-drop does not crash the page', async ({ page }) => {
-    await page.goto({{landingPath .PageURL}})
+    await page.goto({{landingPath .PageURL}}, { waitUntil: 'domcontentloaded' })
     const draggable = page.locator('[draggable="true"], [draggable]').first()
     const dropZone = page.locator('[ondrop], [data-dropzone], [role="region"]').first()
     if (await draggable.count() === 0) test.skip()

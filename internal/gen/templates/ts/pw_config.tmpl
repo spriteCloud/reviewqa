@@ -44,6 +44,11 @@ function projectsForBrowser(browser: 'chromium' | 'firefox' | 'webkit') {
 }
 
 export default defineConfig({
+  // v0.97.1 — bumped 30s default → 60s. With navigationTimeout at
+  // 45s for image-heavy sites, a 30s test budget left no headroom
+  // for any assertion past page.goto. 60s is safe; override via
+  // QUAIL_TEST_TIMEOUT.
+  timeout: Number(process.env.QUAIL_TEST_TIMEOUT ?? 60_000),
   fullyParallel: true,
   forbidOnly: !!process.env.CI,
   retries: process.env.CI ? 1 : 0,
@@ -54,7 +59,12 @@ export default defineConfig({
     trace: 'on-first-retry',
     screenshot: 'only-on-failure',
     actionTimeout: 10_000,
-    navigationTimeout: 20_000,
+    // v0.97.1 — bumped 20s → 45s. Webflow / image-heavy marketing
+    // sites routinely take >20s for full `load` and spuriously trip
+    // the assertions further down the spec. 45s leaves headroom for
+    // first-paint and lazy-loaded fonts; tune via QUAIL_NAV_TIMEOUT
+    // for projects with a different perf profile.
+    navigationTimeout: Number(process.env.QUAIL_NAV_TIMEOUT ?? 45_000),
   },
   projects: BROWSERS
     .filter((b): b is 'chromium' | 'firefox' | 'webkit' =>

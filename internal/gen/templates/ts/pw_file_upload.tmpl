@@ -13,7 +13,7 @@ import { test, expect } from '@playwright/test'
 test.describe.configure({ mode: 'parallel' })
 test.describe('{{.Symbol.Name}} — file upload edges @ {{.PageURL}}', () => {
   test('@kind:file-upload @smoke file input accepts a typical small payload', async ({ page }) => {
-    await page.goto({{landingPath .PageURL}})
+    await page.goto({{landingPath .PageURL}}, { waitUntil: 'domcontentloaded' })
     const fileInput = page.locator('input[type="file"]').first()
     if (await fileInput.count() === 0) test.skip()
     await fileInput.setInputFiles({ name: 'sample.txt', mimeType: 'text/plain', buffer: Buffer.from('hello world') })
@@ -22,7 +22,7 @@ test.describe('{{.Symbol.Name}} — file upload edges @ {{.PageURL}}', () => {
   })
 
   test('@kind:file-upload @zero-byte zero-byte file is accepted or rejected gracefully', async ({ page }) => {
-    await page.goto({{landingPath .PageURL}})
+    await page.goto({{landingPath .PageURL}}, { waitUntil: 'domcontentloaded' })
     const fileInput = page.locator('input[type="file"]').first()
     if (await fileInput.count() === 0) test.skip()
     await fileInput.setInputFiles({ name: 'empty.txt', mimeType: 'text/plain', buffer: Buffer.alloc(0) })
@@ -31,7 +31,7 @@ test.describe('{{.Symbol.Name}} — file upload edges @ {{.PageURL}}', () => {
   })
 
   test('@kind:file-upload @unicode-name handles unicode filenames', async ({ page }) => {
-    await page.goto({{landingPath .PageURL}})
+    await page.goto({{landingPath .PageURL}}, { waitUntil: 'domcontentloaded' })
     const fileInput = page.locator('input[type="file"]').first()
     if (await fileInput.count() === 0) test.skip()
     await fileInput.setInputFiles({ name: 'náïve-文件名.txt', mimeType: 'text/plain', buffer: Buffer.from('utf-8 content') })
@@ -39,7 +39,7 @@ test.describe('{{.Symbol.Name}} — file upload edges @ {{.PageURL}}', () => {
   })
 
   test('@kind:file-upload @wrong-mime octet-stream upload does not crash the page', async ({ page }) => {
-    await page.goto({{landingPath .PageURL}})
+    await page.goto({{landingPath .PageURL}}, { waitUntil: 'domcontentloaded' })
     const fileInput = page.locator('input[type="file"]').first()
     if (await fileInput.count() === 0) test.skip()
     await fileInput.setInputFiles({ name: 'binary.bin', mimeType: 'application/octet-stream', buffer: Buffer.from([0x00, 0x01, 0x02, 0x03, 0xff]) })

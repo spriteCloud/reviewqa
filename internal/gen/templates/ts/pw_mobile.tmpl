@@ -30,7 +30,7 @@ for (const deviceName of DEVICES) {
   test(`@kind:mobile @smoke @device:${deviceName} viewport renders without breakage`, async ({ browser }) => {
     const ctx = await browser.newContext({ ...devices[deviceName] })
     const page = await ctx.newPage()
-    await page.goto({{landingPath .PageURL}})
+    await page.goto({{landingPath .PageURL}}, { waitUntil: 'domcontentloaded' })
     await expect(page.locator('h1, [role="heading"][aria-level="1"]').first()).toBeVisible()
     // Touch tap on the primary CTA, when present.
     const cta = page.getByRole('link').first()
@@ -50,7 +50,7 @@ for (const deviceName of DEVICES) {
       viewport: { width: profile.viewport!.height, height: profile.viewport!.width },
     })
     const page = await ctx.newPage()
-    await page.goto({{landingPath .PageURL}})
+    await page.goto({{landingPath .PageURL}}, { waitUntil: 'domcontentloaded' })
     await expect(page.locator('h1, [role="heading"][aria-level="1"]').first()).toBeVisible()
     await ctx.close()
   })
