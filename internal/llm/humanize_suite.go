@@ -131,7 +131,14 @@ func validateSuite(oldSteps, newSteps []byte, newFeatures []SuiteFile, rew suite
 	return "", true
 }
 
-const suiteSystemPrompt = `You are a senior QA engineer humanizing a BDD test suite so it reads naturally to non-technical stakeholders (product owners, business analysts, client demos).
+// suiteSystemPrompt is the strict-JSON instruction we send to the
+// humanizer. Tightened in v0.96.2 to coax local Qwen-class models
+// (which often emit prose around their JSON or stop mid-object) into
+// returning a single, complete JSON object every time. Three additions
+// vs v0.96.0: (1) the response MUST start with `{` and end with `}`;
+// (2) a complete valid example AND a complete valid empty example are
+// both shown; (3) explicit no-prose / no-fence reminder at the end.
+const suiteSystemPrompt = `You are a senior QA engineer humanizing a BDD test suite so it reads naturally to non-technical stakeholders.
 
 You receive a list of .feature files AND the single matching .steps.ts step-definition file. You may rephrase BOTH:
 - Step phrasing in .feature files (Given/When/Then text).
@@ -139,19 +146,33 @@ You receive a list of .feature files AND the single matching .steps.ts step-defi
 
 You MUST keep them in lockstep so every step in every .feature still binds to a step-definition pattern after your rewrites.
 
-Hard rules:
-- Output STRICTLY a JSON object: {"feature_rewrites":[{"from":"...","to":"..."}], "steps_pattern_rewrites":[{"from":"...","to":"..."}]}.
+OUTPUT FORMAT — READ CAREFULLY:
+- Reply with a SINGLE JSON object and NOTHING else.
+- The first character of your reply MUST be "{". The last character MUST be "}".
+- NO prose before or after the JSON. NO markdown fences (no triple-backticks).
+- NO comments inside the JSON.
+- The schema is exactly:
+    {
+      "feature_rewrites":      [ { "from": "...", "to": "..." } ],
+      "steps_pattern_rewrites":[ { "from": "...", "to": "..." } ]
+    }
+- Both arrays MUST be present, even if empty.
+
+Rewrite rules:
 - Each "from" must match EXACTLY a substring already present in the input.
-- NEVER change the parameter / capture group SEQUENCE inside a step-def pattern. If the original is /^I open the page "([^"]+)"$/ the rewrite must still have exactly one ([^"]+) capture in the same position relative to the phrase semantics. {string}/{int} placeholders count as captures.
+- NEVER change the parameter / capture group SEQUENCE inside a step-def pattern. If the original is /^I open the page "([^"]+)"$/ the rewrite must still have exactly one ([^"]+) capture in the same position. {string}/{int} placeholders count as captures.
 - NEVER change a literal-string pattern into a regex pattern or vice versa.
 - NEVER edit anything other than the pattern argument inside Given(...)/When(...)/Then(...) — handler bodies, imports, control flow, indentation stay byte-identical.
 - NEVER add or remove Scenarios / Steps / step definitions.
 - Keep phrasing concise, present-tense, plainly readable.
 
-Example of a valid paired rewrite (one entry in each array):
-  feature_rewrites:        {"from":"I open the page \"contact\"", "to":"I visit the \"contact\" page"}
-  steps_pattern_rewrites:  {"from":"/^I open the page \"([^\"]+)\"$/", "to":"/^I visit the \"([^\"]+)\" page$/"}
-Both arrays may be empty if no humanization is warranted.`
+EXAMPLE 1 — a valid response with one paired rewrite (return exactly these bytes, no fences):
+{"feature_rewrites":[{"from":"I open the page \"contact\"","to":"I visit the \"contact\" page"}],"steps_pattern_rewrites":[{"from":"/^I open the page \"([^\"]+)\"$/","to":"/^I visit the \"([^\"]+)\" page$/"}]}
+
+EXAMPLE 2 — a valid response when no humanization is warranted:
+{"feature_rewrites":[],"steps_pattern_rewrites":[]}
+
+Return one of the two shapes above, populated with your rewrites. Nothing else.`
 
 func buildSuitePrompt(symbol string, features []SuiteFile, steps SuiteFile, patterns []composer.StepPattern) string {
 	var b strings.Builder

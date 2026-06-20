@@ -68,6 +68,24 @@ func healFromReport(ctx context.Context, cfg config.Config, r *PlaywrightReport,
 		}
 		cands := rankCandidates(anchors, f.Locator)
 		if len(cands) == 0 {
+			// v0.96.2 — when no text-similar anchor matches the broken
+			// locator, fall back to an LLM-proposed candidate from the
+			// best-scoring unrelated anchor in the suite. The matcher's
+			// similarity heuristic is too conservative for arbitrary
+			// test-ids (e.g. `quail-heal-demo-anchor`); the LLM can
+			// still suggest the highest-stability anchor on the page
+			// even when its name doesn't text-match. Skipped silently
+			// if the LLM is disabled.
+			if lm == nil || !lm.Enabled() || len(anchors) == 0 {
+				continue
+			}
+			best := bestUnrelatedAnchor(anchors)
+			edit := Edit{
+				File: f.File, Line: f.Line, Before: line,
+				After:  rewriteLocator(line, f.Locator, best.Call),
+				Reason: fmt.Sprintf("Original locator (%s) had no text-similar anchor in the suite; LLM-fallback proposes %s as the highest-stability replacement on the page.", f.Reason, best.Call),
+			}
+			edits = append(edits, edit)
 			continue
 		}
 		best := cands[0]
@@ -246,6 +264,21 @@ func findPlaywrightSpecs(workDir string) []string {
 		return nil
 	})
 	return out
+}
+
+// bestUnrelatedAnchor returns the highest-stability candidate
+// produced from ALL collected anchors, ignoring the original locator's
+// name. Used by the LLM-fallback branch in healFromReport when the
+// text-similarity matcher produced zero candidates — the suite still
+// has anchors, they just don't text-match the broken name.
+//
+// v0.96.2.
+func bestUnrelatedAnchor(anchors []ast.LocatorAnchor) Candidate {
+	cands := rankCandidates(anchors, "")
+	if len(cands) == 0 {
+		return Candidate{Call: "page.locator('body')", Score: 0}
+	}
+	return cands[0]
 }
 
 // rankCandidates emits replacement call strings ordered by stability score.
