@@ -654,9 +654,9 @@ func groupByPage(items []Item, files []diff.File, layout Layout) []Item {
 	}
 	nonE2E, ungroupedE2E, grouped := matchComponentsToRoots(items, roots)
 	out := append([]Item{}, nonE2E...)
-	out = append(out, materializeGroups(grouped, &ungroupedE2E, style)...)
+	out = append(out, materializeGroups(grouped, &ungroupedE2E, style, layout)...)
 	out = append(out, ungroupedE2E...)
-	out = append(out, materializePageRoots(roots, pathsInDiff(files), itemFilePaths(out))...)
+	out = append(out, materializePageRoots(roots, pathsInDiff(files), itemFilePaths(out), layout)...)
 	return chainMultiStep(out)
 }
 
@@ -734,38 +734,61 @@ func mountsComponent(mounted []string, name string) bool {
 	return slices.Contains(mounted, name)
 }
 
-func materializeGroups(grouped map[string]*pageGroup, ungrouped *[]Item, style string) []Item {
+func materializeGroups(grouped map[string]*pageGroup, ungrouped *[]Item, style string, layout Layout) []Item {
 	var out []Item
 	for _, g := range grouped {
 		if len(g.symbols) < 2 && style != "page-flow" {
 			for _, s := range g.symbols {
-				// v0.97.0 — was TmplPlaywrightE2E with .spec.ts.
+				// v0.98 — Gherkin when the project uses
+				// playwright-bdd; vanilla E2E otherwise (was
+				// unconditionally Feature in v0.97.0).
+				tmpl, out := pickJourneyTemplate(layout, s.Name)
 				*ungrouped = append(*ungrouped, Item{
 					Symbol:   s,
-					Template: TmplPlaywrightFeature,
-					OutPath:  filepath.ToSlash(filepath.Join("tests", "e2e", "features", s.Name+".feature")),
+					Template: tmpl,
+					OutPath:  out,
 				})
 			}
 			continue
 		}
 		sort.Slice(g.symbols, func(i, j int) bool { return g.symbols[i].Line < g.symbols[j].Line })
-		// v0.97.0 — was TmplPlaywrightHappyFlow with .spec.ts.
+		tmpl, outPath := pickJourneyTemplate(layout, g.root.Stem)
+		// Page-grouped emission. In BDD-mode this is a Feature
+		// containing one Scenario per symbol; in vanilla-mode it's
+		// the TmplPlaywrightHappyFlow .spec.ts.
+		if !layout.UsesBDD {
+			tmpl = TmplPlaywrightHappyFlow
+		}
 		out = append(out, Item{
 			Symbol:   g.symbols[0],
 			Symbols:  g.symbols,
 			PageURL:  g.root.URL,
-			Template: TmplPlaywrightFeature,
-			OutPath:  filepath.ToSlash(filepath.Join("tests", "e2e", "features", g.root.Stem+".feature")),
+			Template: tmpl,
+			OutPath:  outPath,
 		})
 	}
 	return out
+}
+
+// pickJourneyTemplate returns (template, OutPath) for a journey-bearing
+// item, branching on the project's base framework. Used by both the
+// per-symbol and the page-grouped emission paths.
+//
+// v0.98.
+func pickJourneyTemplate(layout Layout, stem string) (Template, string) {
+	if layout.UsesBDD {
+		return TmplPlaywrightFeature,
+			filepath.ToSlash(filepath.Join("tests", "e2e", "features", stem+".feature"))
+	}
+	return TmplPlaywrightE2E,
+		filepath.ToSlash(filepath.Join("tests", "e2e", stem+".spec.ts"))
 }
 
 // materializePageRoots synthesizes one happy-flow Item for each page root
 // that is in the diff, carries any anchors/inputs/links, and is not already
 // represented by a per-component item (so we don't double-emit for TSX page
 // roots that wrap a real component).
-func materializePageRoots(roots []pageRoot, inDiff, alreadyCovered map[string]bool) []Item {
+func materializePageRoots(roots []pageRoot, inDiff, alreadyCovered map[string]bool, layout Layout) []Item {
 	var out []Item
 	for _, r := range roots {
 		if !inDiff[r.Path] || alreadyCovered[r.Path] {
@@ -784,13 +807,18 @@ func materializePageRoots(roots []pageRoot, inDiff, alreadyCovered map[string]bo
 			Links:    ast.DedupLinks(r.Links),
 			HasForm:  r.HasForm,
 		}
-		// v0.97.0 — was TmplPlaywrightHappyFlow with .spec.ts.
+		// v0.98 — BDD project → .feature; vanilla project →
+		// TmplPlaywrightHappyFlow .spec.ts (the pre-v0.97.0 shape).
+		tmpl, outPath := pickJourneyTemplate(layout, stemOf(r.Stem))
+		if !layout.UsesBDD {
+			tmpl = TmplPlaywrightHappyFlow
+		}
 		out = append(out, Item{
 			Symbol:   synthetic,
 			Symbols:  []ast.Symbol{synthetic},
 			PageURL:  r.URL,
-			Template: TmplPlaywrightFeature,
-			OutPath:  filepath.ToSlash(filepath.Join("tests", "e2e", "features", stemOf(r.Stem)+".feature")),
+			Template: tmpl,
+			OutPath:  outPath,
 		})
 	}
 	return out
