@@ -131,7 +131,7 @@ func (c *Client) OpenPR(ctx context.Context, opts PROpts) (string, error) {
 		return "", fmt.Errorf("gh: invalid GITHUB_REPOSITORY %q", c.cfg.Repo)
 	}
 	// Shell fallback for GitHub Actions runners (see openpr_shell.go).
-	if useShellOpenPR() {
+	if c.useShellOpenPR() {
 		if url, handled, err := c.openPRViaShell(ctx, owner, repo, opts); handled {
 			if err != nil {
 				return "", fmt.Errorf("open pr (shell): %w", err)
