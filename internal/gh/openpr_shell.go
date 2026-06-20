@@ -26,9 +26,6 @@ import (
 // applicable, caller should try the go-github path." Any error is
 // from the shell path itself.
 func (c *Client) openPRViaShell(ctx context.Context, owner, repo string, opts PROpts) (string, bool, error) {
-	if os.Getenv("GITHUB_ACTIONS") != "true" {
-		return "", false, nil
-	}
 	if _, err := exec.LookPath("gh"); err != nil {
 		log.Warn("openPRViaShell: gh CLI not found on PATH; falling back to go-github")
 		return "", false, nil
@@ -193,8 +190,17 @@ func ghAPI(ctx context.Context, token, method, path string, body interface{}) ([
 	return out, nil
 }
 
-// useShellOpenPR is the gate for the shell fallback. Currently: on
-// when running under GitHub Actions. Can later be flipped to also
-// trigger on a heuristic 403 retry, but right now CI is the only
-// known-broken context.
-func useShellOpenPR() bool { return os.Getenv("GITHUB_ACTIONS") == "true" }
+// useShellOpenPR is the gate for the shell fallback. On when running
+// under GitHub Actions AND go-github's client is pointed at the real
+// api.github.com. The BaseURL check is what keeps unit tests (which
+// inject a localhost mock server) out of the shell path even when
+// they themselves run under a GitHub Actions runner.
+func (c *Client) useShellOpenPR() bool {
+	if os.Getenv("GITHUB_ACTIONS") != "true" {
+		return false
+	}
+	if c.api == nil || c.api.BaseURL == nil {
+		return false
+	}
+	return c.api.BaseURL.Host == "api.github.com"
+}
