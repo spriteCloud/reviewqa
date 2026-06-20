@@ -112,3 +112,42 @@ func TestLoadReport_MissingFileIsNotAnError(t *testing.T) {
 		t.Errorf("missing report should return nil")
 	}
 }
+
+// v0.97.2 — NewFindings (regression set) tests.
+
+func TestNewFindings_EmptyBaselineReturnsAll(t *testing.T) {
+	current := []Finding{
+		{Spec: "tests/a.spec.ts", Test: "t1"},
+		{Spec: "tests/b.spec.ts", Test: "t2"},
+	}
+	out := NewFindings(current, nil)
+	if len(out) != 2 {
+		t.Errorf("empty baseline should yield all %d current; got %d", len(current), len(out))
+	}
+}
+
+func TestNewFindings_OpenBaselineMaskedAsKnown(t *testing.T) {
+	current := []Finding{
+		{Spec: "tests/a.spec.ts", Test: "t1"},
+		{Spec: "tests/b.spec.ts", Test: "t2"},
+	}
+	baseline := []Finding{
+		{Spec: "tests/a.spec.ts", Test: "t1", Status: "open"},
+	}
+	out := NewFindings(current, baseline)
+	if len(out) != 1 || out[0].Spec != "tests/b.spec.ts" {
+		t.Errorf("expected only tests/b.spec.ts to remain; got %+v", out)
+	}
+}
+
+func TestNewFindings_ResolvedBaselineIsRegression(t *testing.T) {
+	// A baseline row the user explicitly closed as "resolved" must
+	// surface again if the failure reoccurs — that's a real bug,
+	// not accepted debt.
+	current := []Finding{{Spec: "tests/a.spec.ts", Test: "t1"}}
+	baseline := []Finding{{Spec: "tests/a.spec.ts", Test: "t1", Status: "resolved"}}
+	out := NewFindings(current, baseline)
+	if len(out) != 1 {
+		t.Errorf("resolved row reoccurring should be a regression; got %+v", out)
+	}
+}
