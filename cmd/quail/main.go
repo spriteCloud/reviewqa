@@ -10,6 +10,7 @@ import (
 	"path/filepath"
 	"strconv"
 	"strings"
+	"sync"
 	"syscall"
 	"time"
 
@@ -132,7 +133,7 @@ func compareSchema(path string, old, new_ []byte) (string, []plan.CompatRegressi
 }
 
 var (
-	version = "0.95.9"
+	version = "0.96.0"
 )
 
 func main() {
@@ -437,11 +438,20 @@ func runGenerate(ctx context.Context, cfg config.Config) error {
 	// sentinel test.fail() spec. Resolved findings are skipped.
 	items = append(items, loadSentinelItems(cfg.WorkDir)...)
 	if probeURLs := nonEmptyURLs(os.Getenv("QUAIL_TARGET_URLS")); len(probeURLs) > 0 {
-		probeItems, probeErrs := probe.RunAll(ctx, probeURLs)
-		for _, e := range probeErrs {
-			rlog.Warn("probe url failed", "err", e)
+		force := os.Getenv("QUAIL_FORCE_PROBE") == "1"
+		if !force && probe.SuiteAlreadyCovers(cfg.WorkDir, probeURLs, time.Now()) {
+			rlog.Info("skipping probe — suite already covers target URLs (set QUAIL_FORCE_PROBE=1 to override)",
+				"urls", probeURLs)
+		} else {
+			probeItems, probeErrs := probe.RunAll(ctx, probeURLs)
+			for _, e := range probeErrs {
+				rlog.Warn("probe url failed", "err", e)
+			}
+			items = append(items, probeItems...)
+			if err := probe.WriteState(cfg.WorkDir, probeURLs, version); err != nil {
+				rlog.Warn("could not write probe-state marker", "err", err)
+			}
 		}
-		items = append(items, probeItems...)
 	}
 	if len(items) == 0 {
 		rlog.Info("no symbols in PR diff and no target URLs to probe; nothing to generate")
@@ -453,6 +463,7 @@ func runGenerate(ctx context.Context, cfg config.Config) error {
 		return fmt.Errorf("render: %w", err)
 	}
 	llmClient := llm.New(cfg)
+	pingLLMEndpoint(ctx, llmClient, cfg.OpenAIBaseURL)
 	humanizeWithBudget(ctx, llmClient, rendered)
 	if cfg.DryRun || client == nil {
 		printRendered(rendered)
@@ -597,6 +608,7 @@ func finishProbe(ctx context.Context, cfg config.Config, urls []string, items []
 		return fmt.Errorf("probe render: %w", err)
 	}
 	llmClient := llm.New(cfg)
+	pingLLMEndpoint(ctx, llmClient, cfg.OpenAIBaseURL)
 	humanizeWithBudget(ctx, llmClient, rendered)
 	if cfg.DryRun {
 		printRendered(rendered)
@@ -848,6 +860,35 @@ type prSummary struct {
 // "30s"). Set "0" or "" to disable the cap (legacy behaviour).
 // QUAIL_HUMANIZE=0 still short-circuits before any LLM call,
 // same as before.
+// pingLLMEndpoint logs a one-line visible health-check of the LLM
+// chat endpoint at run start. For api.openai.com we skip the probe
+// (assumed reachable); for self-hosted endpoints (DGX via Netbird,
+// local Ollama, vLLM, etc.) we GET /models with a 5s timeout so a
+// misrouted endpoint surfaces immediately instead of after the full
+// LLMTimeout on the first Humanize call.
+//
+// v0.96.0.
+var pingLLMOnce sync.Once
+
+func pingLLMEndpoint(ctx context.Context, client *llm.Client, baseURL string) {
+	pingLLMOnce.Do(func() {
+		if client == nil || !client.Enabled() {
+			return
+		}
+		if strings.Contains(baseURL, "api.openai.com") {
+			rlog.Info("llm: using public endpoint (skip startup ping)", "endpoint", baseURL)
+			return
+		}
+		ok, status := client.Ping(ctx)
+		if ok {
+			rlog.Info("llm: self-hosted endpoint reachable", "endpoint", baseURL, "status", status)
+		} else {
+			rlog.Warn("llm: self-hosted endpoint UNREACHABLE; humanization will fall back to deterministic",
+				"endpoint", baseURL, "status", status)
+		}
+	})
+}
+
 func humanizeWithBudget(ctx context.Context, client *llm.Client, rendered []gen.Rendered) {
 	if len(rendered) == 0 || client == nil {
 		return

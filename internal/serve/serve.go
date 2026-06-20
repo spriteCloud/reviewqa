@@ -16,6 +16,8 @@ import (
 	"strings"
 	"sync"
 	"time"
+
+	"github.com/spriteCloud/quail/internal/llm"
 )
 
 // workdirState holds the current serve workdir behind an RWMutex so
@@ -253,12 +255,22 @@ func handleScenarioCRUD(state *workdirState) http.HandlerFunc {
 				http.Error(w, err.Error(), http.StatusBadRequest)
 				return
 			}
-			newName, err := ReplaceScenario(path, name, body.Gherkin, history)
+			// v0.96.0 — route the edit through the paired-humanize
+			// machinery so a new step phrase also updates the matching
+			// step-def pattern in tests/e2e/steps/quail.steps.ts.
+			llmClient := llm.New(llmConfigFromEnv())
+			res, err := ReplaceScenarioWithStepRegen(
+				r.Context(), llmClient, workdir, path, name, body.Gherkin, history,
+			)
 			if err != nil {
 				http.Error(w, err.Error(), http.StatusBadRequest)
 				return
 			}
-			writeJSON(w, map[string]any{"name": newName})
+			writeJSON(w, map[string]any{
+				"name":          res.NewName,
+				"steps_updated": res.StepsUpdated,
+				"note":          res.Note,
+			})
 		case http.MethodPost:
 			body, err := readJSONBody(r)
 			if err != nil {

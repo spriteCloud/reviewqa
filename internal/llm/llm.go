@@ -33,6 +33,40 @@ func New(cfg config.Config) *Client {
 	return &Client{cfg: cfg, http: &http.Client{Timeout: cfg.LLMTimeout}}
 }
 
+// Ping issues a short GET to {OPENAI_BASE_URL}/models to confirm the
+// chat endpoint is actually reachable. Useful in CI where a misrouted
+// self-hosted endpoint (wireguard down, wrong port, model not loaded)
+// would otherwise only surface as the first Humanize call timing out
+// after the full LLMTimeout. Returns true on reachable (HTTP 2xx),
+// false otherwise, plus the response status / error string for logs.
+//
+// v0.96.0 — added to make self-hosted endpoints (DGX-via-Netbird in
+// the demo) self-diagnose at startup.
+func (c *Client) Ping(ctx context.Context) (bool, string) {
+	if !c.Enabled() {
+		return false, "client disabled (no OPENAI_API_KEY or no model)"
+	}
+	url := strings.TrimRight(c.cfg.OpenAIBaseURL, "/") + "/models"
+	pingCtx, cancel := context.WithTimeout(ctx, 5*time.Second)
+	defer cancel()
+	req, err := http.NewRequestWithContext(pingCtx, http.MethodGet, url, nil)
+	if err != nil {
+		return false, err.Error()
+	}
+	if c.cfg.OpenAIAPIKey != "" {
+		req.Header.Set("Authorization", "Bearer "+c.cfg.OpenAIAPIKey)
+	}
+	r, err := c.http.Do(req)
+	if err != nil {
+		return false, err.Error()
+	}
+	defer r.Body.Close()
+	if r.StatusCode/100 == 2 {
+		return true, fmt.Sprintf("HTTP %d", r.StatusCode)
+	}
+	return false, fmt.Sprintf("HTTP %d", r.StatusCode)
+}
+
 func (c *Client) Enabled() bool {
 	return c.cfg.OpenAIAPIKey != "" && c.cfg.Model != ""
 }
