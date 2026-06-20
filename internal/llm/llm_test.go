@@ -79,3 +79,8 @@ func TestDisabledWhenNoKey(t *testing.T) {
 		t.Error("should be disabled without api key")
 	}
 }
+func TestPing(t *testing.T) {
+	t.Run("happy path", func(t *testing.T) {
+		Ping(nil)
+	})
+}

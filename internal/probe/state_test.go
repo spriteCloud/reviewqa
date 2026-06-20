@@ -3,6 +3,7 @@ package probe
 import (
 	"os"
 	"path/filepath"
+	"reflect"
 	"testing"
 	"time"
 )

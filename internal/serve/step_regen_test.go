@@ -4,6 +4,7 @@ import (
 	"context"
 	"os"
 	"path/filepath"
+	"reflect"
 	"strings"
 	"testing"
 )
@@ -122,4 +123,25 @@ func TestReplaceScenarioWithStepRegen_MissingStepsFile(t *testing.T) {
 	if !strings.Contains(res.Note, "not found") {
 		t.Errorf("expected note about missing steps; got %q", res.Note)
 	}
+}
+func TestReplaceScenarioWithStepRegen(t *testing.T) {
+	t.Run("happy path", func(t *testing.T) {
+		got, err := ReplaceScenarioWithStepRegen(nil, nil, "", "", "", "", "")
+		if err != nil {
+			t.Fatalf("unexpected error: %v", err)
+		}
+		if reflect.DeepEqual(got, *new(StepRegenResult)) {
+			t.Fatalf("got zero value: %#v", got)
+		}
+	})
+
+	t.Run("returns expected type", func(t *testing.T) {
+		got, err := ReplaceScenarioWithStepRegen(nil, nil, "", "", "", "", "")
+		if err != nil {
+			t.Fatalf("unexpected error: %v", err)
+		}
+		if got, want := reflect.TypeOf(got), reflect.TypeOf(*new(StepRegenResult)); got != want {
+			t.Fatalf("type = %v, want %v", got, want)
+		}
+	})
 }
