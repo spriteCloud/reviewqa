@@ -15,7 +15,7 @@ test.describe.configure({ mode: 'parallel' })
 test.describe('{{.Symbol.Name}} — zoom @ {{.PageURL}}', () => {
   for (const zoom of [2.0, 4.0] as const) {
     test(`@kind:zoom @smoke @zoom:${zoom * 100}% h1 stays visible`, async ({ page }) => {
-      await page.goto({{landingPath .PageURL}})
+      await page.goto({{landingPath .PageURL}}, { waitUntil: 'domcontentloaded' })
       // Playwright doesn't expose a true browser-zoom API; emulate via
       // CSS transform on the body. Real ratio differs slightly but the
       // layout-overflow signal we want is identical.

@@ -257,7 +257,7 @@ func TestRenderPlaywrightHappyFlow(t *testing.T) {
 	body := string(out[0].Content)
 	for _, want := range []string{
 		"test.describe('Counter page happy flow'",
-		"await page.goto('/home')",
+		"await page.goto('/home', { waitUntil: 'domcontentloaded' })",
 		"full user journey (2 step(s))",
 		"// Step 1 — visit",
 		"getByTestId('counter-root')",
@@ -307,7 +307,7 @@ func TestRenderPlaywrightHappyFlow_FillsAndSubmits(t *testing.T) {
 	}
 	body := string(out[0].Content)
 	for _, want := range []string{
-		"await page.goto('/login')",
+		"await page.goto('/login', { waitUntil: 'domcontentloaded' })",
 		".fill('test@example.com')",
 		".fill('Passw0rd!')",
 		"getByTestId('submit-btn').first().click()",
@@ -342,7 +342,7 @@ func TestRenderPlaywrightHappyFlow_AbsoluteURL(t *testing.T) {
 		t.Fatal(err)
 	}
 	body := string(out[0].Content)
-	if !strings.Contains(body, "await page.goto('/')") {
+	if !strings.Contains(body, "await page.goto('/', { waitUntil: 'domcontentloaded' })") {
 		t.Errorf("absolute URL not reduced to path:\n%s", body)
 	}
 	for _, bad := range []string{

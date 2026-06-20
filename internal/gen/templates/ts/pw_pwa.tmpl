@@ -13,7 +13,7 @@ import { test, expect } from '@playwright/test'
 test.describe.configure({ mode: 'parallel' })
 test.describe('{{.Symbol.Name}} — PWA manifest @ {{.PageURL}}', () => {
   test('@kind:pwa @smoke manifest is reachable and well-formed', async ({ page, request }) => {
-    await page.goto({{landingPath .PageURL}})
+    await page.goto({{landingPath .PageURL}}, { waitUntil: 'domcontentloaded' })
     const href = await page.locator('link[rel="manifest"]').first().getAttribute('href')
     if (!href) test.skip()
     const manifestURL = new URL(href!, page.url()).toString()

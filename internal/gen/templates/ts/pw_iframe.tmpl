@@ -16,7 +16,7 @@ test.describe('{{.Symbol.Name}} — iframe @ {{.PageURL}}', () => {
     const errors: string[] = []
     page.on('pageerror', e => errors.push(e.message))
     page.on('console', m => { if (m.type() === 'error') errors.push(m.text()) })
-    await page.goto({{landingPath .PageURL}})
+    await page.goto({{landingPath .PageURL}}, { waitUntil: 'domcontentloaded' })
     const frames = page.locator('iframe')
     const count = await frames.count()
     if (count === 0) test.skip()

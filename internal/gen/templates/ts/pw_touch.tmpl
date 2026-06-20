@@ -20,7 +20,7 @@ test.use({ ...devices['iPhone 13'] })
 test.describe.configure({ mode: 'parallel' })
 test.describe('{{.Symbol.Name}} — touch gestures @ {{.PageURL}}', () => {
   test('@kind:touch @smoke long-press on the primary CTA does not double-fire', async ({ page }) => {
-    await page.goto({{landingPath .PageURL}})
+    await page.goto({{landingPath .PageURL}}, { waitUntil: 'domcontentloaded' })
     const cta = page.getByRole('button').first().or(page.getByRole('link').first())
     if (await cta.count() === 0) test.skip()
     let clicks = 0
@@ -36,7 +36,7 @@ test.describe('{{.Symbol.Name}} — touch gestures @ {{.PageURL}}', () => {
   })
 
   test('@kind:touch @swipe horizontal swipe on the document keeps the page interactive', async ({ page }) => {
-    await page.goto({{landingPath .PageURL}})
+    await page.goto({{landingPath .PageURL}}, { waitUntil: 'domcontentloaded' })
     const viewport = page.viewportSize() || { width: 390, height: 844 }
     // Synthesize a swipe by chaining touchscreen taps; mobile carousels
     // & SPA gestures listen to pointer events anyway.
@@ -46,7 +46,7 @@ test.describe('{{.Symbol.Name}} — touch gestures @ {{.PageURL}}', () => {
   })
 
   test('@kind:touch @pinch-zoom synthesised pinch keeps the page interactive', async ({ page }) => {
-    await page.goto({{landingPath .PageURL}})
+    await page.goto({{landingPath .PageURL}}, { waitUntil: 'domcontentloaded' })
     const viewport = page.viewportSize() || { width: 390, height: 844 }
     const cx = viewport.width / 2
     const cy = viewport.height / 2
@@ -63,7 +63,7 @@ test.describe('{{.Symbol.Name}} — touch gestures @ {{.PageURL}}', () => {
   })
 
   test('@kind:touch @scroll-momentum rapid vertical swipes do not break the layout', async ({ page }) => {
-    await page.goto({{landingPath .PageURL}})
+    await page.goto({{landingPath .PageURL}}, { waitUntil: 'domcontentloaded' })
     const viewport = page.viewportSize() || { width: 390, height: 844 }
     const cx = viewport.width / 2
     // 5 rapid taps top → bottom to mimic flick-scroll. Real momentum
@@ -82,7 +82,7 @@ test.describe('{{.Symbol.Name}} — touch gestures @ {{.PageURL}}', () => {
     if (!profile.viewport) test.skip()
     const ctx = await browser.newContext(profile)
     const page = await ctx.newPage()
-    await page.goto({{landingPath .PageURL}})
+    await page.goto({{landingPath .PageURL}}, { waitUntil: 'domcontentloaded' })
     let clicks = 0
     await page.exposeFunction('__rqRotClicked', () => { clicks++ })
     const cta = page.getByRole('button').first().or(page.getByRole('link').first())

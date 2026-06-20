@@ -23,7 +23,7 @@ test.describe.configure({ mode: 'parallel' })
 test.describe('{{.Symbol.Name}} — date edges @ {{.PageURL}}', () => {
   for (const b of DATE_BOUNDARIES) {
     test(`@kind:date-edges @smoke ${b.label}`, async ({ page }) => {
-      await page.goto({{landingPath .PageURL}})
+      await page.goto({{landingPath .PageURL}}, { waitUntil: 'domcontentloaded' })
       const dateInput = page.locator('input[type="date"], input[type="datetime-local"]').first()
       if (await dateInput.count() === 0) test.skip()
       await dateInput.fill(b.value).catch(() => {})

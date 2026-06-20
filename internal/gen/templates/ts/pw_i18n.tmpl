@@ -27,7 +27,7 @@ test.describe('{{.Symbol.Name}} — i18n locales', () => {
   // the common a11y/SEO regression where lang is dropped during a
   // framework migration.
   test('@kind:i18n @smoke <html lang> attribute is present', async ({ page }) => {
-    await page.goto({{landingPath .PageURL}})
+    await page.goto({{landingPath .PageURL}}, { waitUntil: 'domcontentloaded' })
     const htmlLang = await page.locator('html').getAttribute('lang')
     expect(htmlLang, '<html lang> attribute should be set on every page').not.toBeNull()
     expect((htmlLang || '').trim().length, '<html lang> should be non-empty').toBeGreaterThan(0)

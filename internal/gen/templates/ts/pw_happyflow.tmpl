@@ -25,7 +25,7 @@ test.describe('{{.Symbol.Name}}{{if .JourneyKind}} — {{.JourneyKind}} journey{
   // same suite can run against staging / a PR preview / localhost by
   // setting BASE_URL.
   test.beforeEach(async ({ page }) => {
-    await page.goto({{landingPath .PageURL}})
+    await page.goto({{landingPath .PageURL}}, { waitUntil: 'domcontentloaded' })
   })
 {{- if eq .JourneyKind "exercise" }}
 {{- range $i := .Symbol.Interactions }}

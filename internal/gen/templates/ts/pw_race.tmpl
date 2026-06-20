@@ -14,7 +14,7 @@ import { test, expect } from '@playwright/test'
 test.describe.configure({ mode: 'parallel' })
 test.describe('{{.Symbol.Name}} — race @ {{.PageURL}}', () => {
   test('@kind:race @smoke form survives a rapid double-submit', async ({ page }) => {
-    await page.goto({{landingPath .PageURL}})
+    await page.goto({{landingPath .PageURL}}, { waitUntil: 'domcontentloaded' })
     const form = page.locator('form').first()
     if (await form.count() === 0) test.skip()
     const submit = form.locator('button[type="submit"], input[type="submit"]').first()

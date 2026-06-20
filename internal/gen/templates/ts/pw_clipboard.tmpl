@@ -15,7 +15,7 @@ test.describe.configure({ mode: 'parallel' })
 test.describe('{{.Symbol.Name}} — clipboard @ {{.PageURL}}', () => {
   test('@kind:clipboard @xss formatted-text paste is sanitized', async ({ page, context }) => {
     await context.grantPermissions(['clipboard-read', 'clipboard-write']).catch(() => {})
-    await page.goto({{landingPath .PageURL}})
+    await page.goto({{landingPath .PageURL}}, { waitUntil: 'domcontentloaded' })
     const input = page.locator('input[type="text"], input[type="search"], input:not([type]), textarea').first()
     if (await input.count() === 0) test.skip()
     await input.focus()
