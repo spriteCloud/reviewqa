@@ -10,6 +10,7 @@ import (
 	_ "github.com/spriteCloud/quail/internal/ast/python"
 	_ "github.com/spriteCloud/quail/internal/ast/ts"
 	"github.com/spriteCloud/quail/internal/diff"
+	"reflect"
 )
 
 func TestBuildPicksTemplatesPerLanguage(t *testing.T) {
@@ -318,4 +319,19 @@ func TestLayoutDetection(t *testing.T) {
 	if !l.HasMavenLayout {
 		t.Error("expected HasMavenLayout")
 	}
+}
+func TestDetect(t *testing.T) {
+	t.Run("happy path", func(t *testing.T) {
+		got := Detect("")
+		if reflect.DeepEqual(got, *new(Layout)) {
+			t.Fatalf("got zero value: %#v", got)
+		}
+	})
+
+	t.Run("returns expected type", func(t *testing.T) {
+		got := Detect("")
+		if got, want := reflect.TypeOf(got), reflect.TypeOf(*new(Layout)); got != want {
+			t.Fatalf("type = %v, want %v", got, want)
+		}
+	})
 }
