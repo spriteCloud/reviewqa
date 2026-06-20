@@ -132,7 +132,7 @@ func compareSchema(path string, old, new_ []byte) (string, []plan.CompatRegressi
 }
 
 var (
-	version = "0.95.4"
+	version = "0.95.5"
 )
 
 func main() {
