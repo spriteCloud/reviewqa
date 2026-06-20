@@ -68,6 +68,21 @@ func (c *Client) openPRViaShell(ctx context.Context, owner, repo string, opts PR
 
 	// 3) CreateTree.
 	treeReq := map[string]interface{}{"base_tree": parent, "tree": entries}
+	// v0.95.6 debug — log body size and first-few entries before sending
+	// so a 404 from GitHub doesn't disguise a problematic payload as a
+	// permission error.
+	if raw, err := json.Marshal(treeReq); err == nil {
+		log.Info("openPRViaShell: tree request",
+			"base_tree", parent, "entries", len(entries), "body_bytes", len(raw))
+		for i, e := range entries {
+			if i >= 3 {
+				break
+			}
+			log.Info("openPRViaShell: tree entry sample",
+				"i", i, "path", e.Path, "mode", e.Mode, "type", e.Type,
+				"content_len", len(e.Content))
+		}
+	}
 	treeResp, err := ghAPI(ctx, c.cfg.GitHubToken, "POST",
 		fmt.Sprintf("/repos/%s/%s/git/trees", owner, repo), treeReq)
 	if err != nil {
