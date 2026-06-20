@@ -3,6 +3,7 @@ package gh
 import (
 	"bytes"
 	"context"
+	"encoding/base64"
 	"encoding/json"
 	"fmt"
 	"os"
@@ -47,42 +48,43 @@ func (c *Client) openPRViaShell(ctx context.Context, owner, repo string, opts PR
 	}
 	parent := ref.Object.SHA
 
-	// 2) Build tree entries. Each entry inlines its content; `gh api`
-	// then makes the same POST /git/trees call that the diagnostic
-	// proved succeeds.
-	type entry struct {
-		Path    string `json:"path"`
-		Mode    string `json:"mode"`
-		Type    string `json:"type"`
-		Content string `json:"content"`
+	// 2) v0.95.7 — pre-create blobs and reference them by SHA. The
+	// inline-content path triggers a 404 on this runner / repo
+	// combination once the cumulative body exceeds ~1MB, even though
+	// the same token + endpoint accept a tiny inline tree fine.
+	// Pre-creating blobs keeps each request small, and the resulting
+	// tree request carries only SHAs (a few KB total).
+	type entrySHA struct {
+		Path string `json:"path"`
+		Mode string `json:"mode"`
+		Type string `json:"type"`
+		SHA  string `json:"sha"`
 	}
-	entries := make([]entry, 0, len(opts.Files))
+	shaEntries := make([]entrySHA, 0, len(opts.Files))
 	for path, content := range opts.Files {
-		entries = append(entries, entry{
-			Path:    path,
-			Mode:    "100644",
-			Type:    "blob",
-			Content: string(content),
+		blobReq := map[string]any{
+			"content":  base64.StdEncoding.EncodeToString(content),
+			"encoding": "base64",
+		}
+		blobResp, err := ghAPI(ctx, c.cfg.GitHubToken, "POST",
+			fmt.Sprintf("/repos/%s/%s/git/blobs", owner, repo), blobReq)
+		if err != nil {
+			return "", true, fmt.Errorf("create blob %s: %w", path, err)
+		}
+		var blob struct {
+			SHA string `json:"sha"`
+		}
+		if err := json.Unmarshal(blobResp, &blob); err != nil {
+			return "", true, fmt.Errorf("parse blob %s: %w", path, err)
+		}
+		shaEntries = append(shaEntries, entrySHA{
+			Path: path, Mode: "100644", Type: "blob", SHA: blob.SHA,
 		})
 	}
+	log.Info("openPRViaShell: blobs created", "count", len(shaEntries))
 
-	// 3) CreateTree.
-	treeReq := map[string]interface{}{"base_tree": parent, "tree": entries}
-	// v0.95.6 debug — log body size and first-few entries before sending
-	// so a 404 from GitHub doesn't disguise a problematic payload as a
-	// permission error.
-	if raw, err := json.Marshal(treeReq); err == nil {
-		log.Info("openPRViaShell: tree request",
-			"base_tree", parent, "entries", len(entries), "body_bytes", len(raw))
-		for i, e := range entries {
-			if i >= 3 {
-				break
-			}
-			log.Info("openPRViaShell: tree entry sample",
-				"i", i, "path", e.Path, "mode", e.Mode, "type", e.Type,
-				"content_len", len(e.Content))
-		}
-	}
+	// 3) CreateTree (small body — only SHA refs).
+	treeReq := map[string]any{"base_tree": parent, "tree": shaEntries}
 	treeResp, err := ghAPI(ctx, c.cfg.GitHubToken, "POST",
 		fmt.Sprintf("/repos/%s/%s/git/trees", owner, repo), treeReq)
 	if err != nil {
