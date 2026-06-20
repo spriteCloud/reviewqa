@@ -178,19 +178,30 @@ func ghAPI(ctx context.Context, token, method, path string, body any) ([]byte, e
 		"-H", "Accept: application/vnd.github+json",
 		url,
 	}
+	cmd := exec.CommandContext(ctx, "curl", args...)
 	if body != nil {
 		raw, err := json.Marshal(body)
 		if err != nil {
 			return nil, fmt.Errorf("marshal body: %w", err)
 		}
-		args = append(args, "-d", string(raw))
+		// Inline `-d` puts the body on the kernel argv, capped by
+		// ARG_MAX (~128KB on Linux). The bot-PR tree payload is
+		// routinely several MB. Pipe via stdin instead. `--data-binary`
+		// preserves bytes verbatim and keeps the same default
+		// Content-Type (application/x-www-form-urlencoded) that the
+		// successful curl-diagnostic used.
+		cmd.Args = append(cmd.Args, "--data-binary", "@-")
+		cmd.Stdin = bytes.NewReader(raw)
 	}
-	cmd := exec.CommandContext(ctx, "curl", args...)
 	var stderr bytes.Buffer
 	cmd.Stderr = &stderr
 	out, err := cmd.Output()
 	if err != nil {
-		return nil, fmt.Errorf("curl %s %s: %s", method, path, strings.TrimSpace(stderr.String()))
+		msg := strings.TrimSpace(stderr.String())
+		if msg == "" {
+			msg = err.Error()
+		}
+		return nil, fmt.Errorf("curl %s %s: %s", method, path, msg)
 	}
 	// Parse the trailing "\n__HTTP_CODE__NNN" marker off the body.
 	idx := bytes.LastIndex(out, []byte("__HTTP_CODE__"))
