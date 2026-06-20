@@ -319,12 +319,31 @@ function openEditor (featurePath, currentName, initialGherkin, featureCtx) {
         validateMsg.className = 'validate-msg err'
         return
       }
+      // v0.96.0 — PATCH may regenerate quail.steps.ts in lockstep with
+      // the .feature edit. Surface that to the user before reloading.
+      let toast = ''
+      try {
+        const body = await res.clone().json()
+        if (body && body.steps_updated) toast = '✓ Step definitions regenerated in lockstep'
+        else if (body && body.note) toast = body.note
+      } catch (_) { /* response wasn't json — fine */ }
       overlay.remove()
+      if (toast) showSaveToast(toast)
       await openFeature(featurePath)
     } catch (e) {
       validateMsg.textContent = 'Save failed: ' + e.message
       validateMsg.className = 'validate-msg err'
     }
+  }
+
+  function showSaveToast (text) {
+    const t = el('div', { class: 'save-toast' }, text)
+    document.body.appendChild(t)
+    setTimeout(() => t.classList.add('show'), 10)
+    setTimeout(() => {
+      t.classList.remove('show')
+      setTimeout(() => t.remove(), 400)
+    }, 4500)
   }
 
   const modal = el('div', { class: 'modal' },
