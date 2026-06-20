@@ -26,8 +26,8 @@ import (
 // applicable, caller should try the go-github path." Any error is
 // from the shell path itself.
 func (c *Client) openPRViaShell(ctx context.Context, owner, repo string, opts PROpts) (string, bool, error) {
-	if _, err := exec.LookPath("gh"); err != nil {
-		log.Warn("openPRViaShell: gh CLI not found on PATH; falling back to go-github")
+	if _, err := exec.LookPath("curl"); err != nil {
+		log.Warn("openPRViaShell: curl not found on PATH; falling back to go-github")
 		return "", false, nil
 	}
 
@@ -160,34 +160,50 @@ func (c *Client) openPRViaShell(ctx context.Context, owner, repo string, opts PR
 	return pr.HTMLURL, true, nil
 }
 
-// ghAPI shells out to `gh api`. body=nil → no body. Returns response body bytes.
-func ghAPI(ctx context.Context, token, method, path string, body interface{}) ([]byte, error) {
-	args := []string{"api", "--method", method,
+// ghAPI shells out to `curl` against api.github.com. Why curl, not the
+// `gh` CLI or net/http: a side-by-side diagnostic on the quail-e2e-demo
+// repo proved that under GitHub Actions the SAME GITHUB_TOKEN +
+// SAME endpoint succeeds via curl with default headers but 403s under
+// `gh api` AND under go-github. The empirical difference is the
+// request headers (Content-Type, X-GitHub-Api-Version, User-Agent);
+// curl's defaults are the only set that passes. body=nil → no body.
+// Returns response body bytes; error includes the HTTP code + curl
+// stderr.
+func ghAPI(ctx context.Context, token, method, path string, body any) ([]byte, error) {
+	url := "https://api.github.com" + path
+	args := []string{
+		"-sS", "-w", "\n__HTTP_CODE__%{http_code}",
+		"-X", method,
+		"-H", "Authorization: Bearer " + token,
 		"-H", "Accept: application/vnd.github+json",
-		"-H", "X-GitHub-Api-Version: 2022-11-28",
-		path}
-	cmd := exec.CommandContext(ctx, "gh", args...)
-	env := append(os.Environ(), "GH_TOKEN="+token, "GITHUB_TOKEN="+token)
-	cmd.Env = env
-
+		url,
+	}
 	if body != nil {
 		raw, err := json.Marshal(body)
 		if err != nil {
 			return nil, fmt.Errorf("marshal body: %w", err)
 		}
-		cmd.Args = append(cmd.Args, "--input", "-")
-		cmd.Stdin = bytes.NewReader(raw)
+		args = append(args, "-d", string(raw))
 	}
-
+	cmd := exec.CommandContext(ctx, "curl", args...)
 	var stderr bytes.Buffer
 	cmd.Stderr = &stderr
 	out, err := cmd.Output()
 	if err != nil {
-		return nil, fmt.Errorf("gh api %s %s: %s", method, path, strings.TrimSpace(stderr.String()))
+		return nil, fmt.Errorf("curl %s %s: %s", method, path, strings.TrimSpace(stderr.String()))
 	}
-	// gh prints both success and error responses on stdout; gate on exit.
-	_ = github.String // keep import alive for parity with sibling file
-	return out, nil
+	// Parse the trailing "\n__HTTP_CODE__NNN" marker off the body.
+	idx := bytes.LastIndex(out, []byte("__HTTP_CODE__"))
+	if idx < 0 {
+		return nil, fmt.Errorf("curl %s %s: missing http code marker; body=%s", method, path, out)
+	}
+	bodyBytes := bytes.TrimRight(out[:idx], "\n")
+	codeStr := strings.TrimSpace(string(out[idx+len("__HTTP_CODE__"):]))
+	if !strings.HasPrefix(codeStr, "2") {
+		return nil, fmt.Errorf("curl %s %s: HTTP %s: %s", method, path, codeStr, bytes.TrimSpace(bodyBytes))
+	}
+	_ = github.String // keep import alive for sibling-file parity
+	return bodyBytes, nil
 }
 
 // useShellOpenPR is the gate for the shell fallback. On when running
