@@ -6,6 +6,7 @@ import (
 
 	"github.com/spriteCloud/quail/internal/ast"
 	"github.com/spriteCloud/quail/internal/plan"
+	"reflect"
 )
 
 func TestRenderJestUnit(t *testing.T) {
@@ -688,4 +689,25 @@ func TestRenderJUnit5RestAssured(t *testing.T) {
 			t.Errorf("missing %q in:\n%s", want, body)
 		}
 	}
+}
+func TestRender(t *testing.T) {
+	t.Run("happy path", func(t *testing.T) {
+		got, err := Render(nil, "")
+		if err != nil {
+			t.Fatalf("unexpected error: %v", err)
+		}
+		if reflect.DeepEqual(got, *new([]Rendered)) {
+			t.Fatalf("got zero value: %#v", got)
+		}
+	})
+
+	t.Run("returns expected type", func(t *testing.T) {
+		got, err := Render(nil, "")
+		if err != nil {
+			t.Fatalf("unexpected error: %v", err)
+		}
+		if got, want := reflect.TypeOf(got), reflect.TypeOf(*new([]Rendered)); got != want {
+			t.Fatalf("type = %v, want %v", got, want)
+		}
+	})
 }

@@ -6,14 +6,16 @@ import (
 	"go/token"
 	"strings"
 	"testing"
+
+	// TestKindOf_CoversEveryTemplate parses plan.go and asserts every
+	// declared Tmpl* constant has a templateKinds entry. Adding a new
+	// Template without mapping it to a kind fails the test loudly so the
+	// taxonomy filter (--kinds) doesn't silently drop the new family.
+	//
+	// v0.99.
+	"reflect"
 )
 
-// TestKindOf_CoversEveryTemplate parses plan.go and asserts every
-// declared Tmpl* constant has a templateKinds entry. Adding a new
-// Template without mapping it to a kind fails the test loudly so the
-// taxonomy filter (--kinds) doesn't silently drop the new family.
-//
-// v0.99.
 func TestKindOf_CoversEveryTemplate(t *testing.T) {
 	fset := token.NewFileSet()
 	f, err := parser.ParseFile(fset, "plan.go", nil, parser.AllErrors)
