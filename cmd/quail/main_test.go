@@ -6,11 +6,11 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/spriteCloud/quail-review/internal/ast"
-	"github.com/spriteCloud/quail-review/internal/config"
-	"github.com/spriteCloud/quail-review/internal/gen"
-	"github.com/spriteCloud/quail-review/internal/heal"
-	"github.com/spriteCloud/quail-review/internal/plan"
+	"github.com/spriteCloud/quail-core/ast"
+	"github.com/spriteCloud/quail-core/config"
+	"github.com/spriteCloud/quail-core/gen"
+	"github.com/spriteCloud/quail-core/heal"
+	"github.com/spriteCloud/quail-core/plan"
 )
 
 func TestProbeBranchName_HostSlugForSingleURL(t *testing.T) {
