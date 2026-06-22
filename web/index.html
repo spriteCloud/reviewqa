@@ -324,7 +324,7 @@
         <a href="docs.html">Docs</a>
         <a href="#usage">Usage</a>
         <a href="#faq">FAQ</a>
-        <a href="https://spritecloud.github.io/quail-page/">Suite</a>
+        <a href="https://spritecloud.github.io/quail/">Suite</a>
         <a href="https://github.com/spriteCloud/quail-review">GitHub</a>
         <a class="nav-cta" href="https://github.com/marketplace/actions/quail-review" data-testid="nav-cta">Install action</a>
       </div>
@@ -349,7 +349,7 @@
       </p>
       <p class="lead" style="margin-top: -16px; font-size: 14px; color: var(--graphite);">
         Local UI, on-prem / data-sovereign deploy, and named SLA live in the
-        <a href="https://spritecloud.github.io/quail-page/" style="color: var(--copper); border-bottom: 1px solid var(--copper);"><strong>quail</strong> commercial edition</a>
+        <a href="https://spritecloud.github.io/quail/" style="color: var(--copper); border-bottom: 1px solid var(--copper);"><strong>quail</strong> commercial edition</a>
         — coming soon.
       </p>
       <div class="cta-row">
@@ -558,7 +558,7 @@ quail-review probe --local --url https://your-site.example.com</pre>
     <span class="k">runs-on:</span> <span class="v">ubuntu-latest</span>
     <span class="k">steps:</span>
       - <span class="k">uses:</span> <span class="v">actions/checkout@v4</span>
-      - <span class="k">uses:</span> <span class="v">spriteCloud/quail@v1</span>
+      - <span class="k">uses:</span> <span class="v">spriteCloud/quail-review@v1</span>
         <span class="k">with:</span>
           <span class="k">openai-api-key:</span> <span class="v">${{ secrets.OPENAI_API_KEY }}</span>
           <span class="k">heal-mode:</span> <span class="v">on-failure</span>
