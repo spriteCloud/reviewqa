@@ -8,10 +8,11 @@ OSS PR bot. A small Go binary + GitHub Action that watches a PR (or a live
 URL), opens a follow-up PR with generated Playwright tests + stakeholder
 docs, and heals broken locators when they drift.
 
-> **Looking for the local UI / DGX tunnel / on-prem deploy?** Those live in
-> the commercial [`spriteCloud/quail`](https://github.com/spriteCloud/quail)
-> edition. Both editions share the same engine; the OSS one ships the
-> PR/CI surface only.
+> **Looking for the local UI, on-prem / data-sovereign deploy, or
+> named SLA?** Those live in the commercial
+> [`spriteCloud/quail`](https://github.com/spriteCloud/quail) edition.
+> Both editions share the same engine; the OSS one ships the PR/CI
+> surface only.
 >
 > **Migration notice (v1.0.0):** the repository was renamed from
 > `spriteCloud/quail` to `spriteCloud/quail-review`. The action input
@@ -23,46 +24,18 @@ docs, and heals broken locators when they drift.
 - **Deterministic-first**: regex/AST/HTML extractors emit test scaffolds the
   same way every time. LLM-composed Scenarios are an OPT-IN second layer.
 - **10-layer taxonomy** out of the box: Unit, Component, API, Contract,
-  Integration, Backend, UI, Mobile, Data, Non-functional. See [docs](https://spritecloud.github.io/quail-page/docs.html).
+  Integration, Backend, UI, Mobile, Data, Non-functional. See
+  [docs](https://spritecloud.github.io/quail-review/).
 - **Inference is yours**: any OpenAI-compatible base URL (Ollama, vLLM,
-  DGX-hosted vLLM, OpenAI).
+  OpenAI).
 
 ## See it on real sites
 
-Live output from the **v0.83 binary** is committed under [`examples/`](./examples/).
-Six reference probes covering a spread of site shapes; each is a complete,
-runnable Playwright + Gherkin project. Re-emit on every release via
-[`scripts/refresh-examples.sh`](./scripts/refresh-examples.sh).
+Live output from the v1.0.0 binary is committed under [`examples/`](./examples/) — six reference probes (playwright.dev, gohugo.io, books.toscrape.com, es.wikipedia.org/Madrid, spritecloud.com, petstore.swagger.io). Each is a complete, runnable Playwright + Gherkin project. Full breakdown lives on the [product site](https://spritecloud.github.io/quail-review/).
 
 ## Tailor the generated suite locally (commercial)
 
-The local browser UI (`quail serve` — browsing, editing, running,
-chat-composing Scenarios with SSE log streaming) lives in the
-**commercial** [`spriteCloud/quail`](https://github.com/spriteCloud/quail)
-edition. Same engine, plus `serve` + the DGX-hosted Qwen tunnel +
-on-prem / data-sovereign deploy paths. Contact hello@spritecloud.com.
-
-| Example | Site | Files | Pages w/ a11y | Notes |
-|---|---|---:|---:|---|
-| [`playwright-dev/`](./examples/playwright-dev/) | <https://playwright.dev> | **183** | 30 | SaaS-shaped docs, JS-heavy |
-| [`gohugo-io/`](./examples/gohugo-io/) | <https://gohugo.io> | **196** | 30 | OSS marketing + content |
-| [`books-toscrape-com/`](./examples/books-toscrape-com/) | <https://books.toscrape.com> | **186** | 30 | E-commerce list-and-detail |
-| [`es-wikipedia-org-madrid/`](./examples/es-wikipedia-org-madrid/) | <https://es.wikipedia.org/wiki/Madrid> | **201** | 30 | Non-English content page |
-| [`spritecloud-com-dgx/`](./examples/spritecloud-com-dgx/) | <https://www.spritecloud.com> | **197** | 30 | Marketing + lead-gen, **LLM composer ON** |
-| [`petstore-swagger-io-dgx/`](./examples/petstore-swagger-io-dgx/) | <https://petstore3.swagger.io> | **46** | 1 | API service exposing OpenAPI 3 — **lights up Contract layer with 12 specs × 9 tests each** |
-
-Every example exercises the full template family: a11y trio
-(uncapped) + responsive + perf + visual + visual-states + security + health +
-observability + i18n + mobile (4 devices × 2 orientations) + network +
-storage + zoom + prefs + print + history-depth + touch + auth-expiry +
-integration stubs (api / db / cache / obs / auth) + graphql/webhook stubs.
-
-Layer 4 (Contract) needs an OpenAPI / GraphQL / Webhook surface to populate
-beyond the stubs — that's why **petstore-swagger-io-dgx** is the demo:
-12 contract specs auto-derived from petstore's OpenAPI 3 doc, each with
-9 tests (1 happy + 8 adversarial negatives — wrong-method, oversized-query,
-invalid-json, unicode, sqli, xss, null-byte, rapid-burst). The other 5
-sites have no schema surface so they get the always-attempt stubs only.
+The local browser UI lives in the **commercial** [`spriteCloud/quail`](https://github.com/spriteCloud/quail) edition. Same engine, plus the local-serve UI, on-prem / data-sovereign deploy paths, and named SLA. Contact hello@spritecloud.com.
 
 ## Quick start
 
