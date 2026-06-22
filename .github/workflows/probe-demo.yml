@@ -36,7 +36,7 @@ jobs:
         with:
           fetch-depth: 0
 
-      - uses: spriteCloud/quail@v1
+      - uses: spriteCloud/quail-review@v1
         with:
           pr: ${{ github.event.inputs.pr || github.event.pull_request.number }}
           openai-base-url: ${{ vars.OPENAI_BASE_URL || 'https://api.openai.com/v1' }}

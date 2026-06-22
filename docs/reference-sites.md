@@ -130,7 +130,7 @@ exercises our English-only nav vocabulary fallback.
 
 - It is **not** an attack surface or load test. The probe issues
   small-N (≤20) sequential GETs with a polite User-Agent
-  (`quail-probe/1 (+https://github.com/spriteCloud/quail)`) and
+  (`quail-probe/1 (+https://github.com/spriteCloud/quail-review)`) and
   respects same-origin / no-private-IP guards.
 - It is **not** continuous — `workflow_dispatch` only. We trigger it
   before notable releases or when changing heuristics, not on every push.
