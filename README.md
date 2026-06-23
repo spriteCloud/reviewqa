@@ -31,7 +31,7 @@ docs, and heals broken locators when they drift.
 
 ## See it on real sites
 
-Live output from the v1.0.0 binary is committed under [`examples/`](./examples/) — six reference probes (playwright.dev, gohugo.io, books.toscrape.com, es.wikipedia.org/Madrid, spritecloud.com, petstore.swagger.io). Each is a complete, runnable Playwright + Gherkin project. Full breakdown lives on the [product site](https://spritecloud.github.io/quail-review/).
+The product site at [spritecloud.github.io/quail-review](https://spritecloud.github.io/quail-review/) walks through the emitted shape against reference sites. For a live, current example, dispatch the [`probe-demo`](./.github/workflows/probe-demo.yml) workflow against any URL — the bot opens a PR with the full Playwright + Gherkin suite the binary just generated.
 
 ## Tailor the generated suite locally (commercial)
 
