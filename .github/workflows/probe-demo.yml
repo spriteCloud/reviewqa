@@ -84,6 +84,7 @@ jobs:
           openai-api-key: ollama
           model: ${{ secrets.LLM_MODEL }}
           quail-llm: ${{ secrets.LLM_BASE_URL }}
+          humanize-budget: '10m'
           heal-mode: 'off'
           log-level: info
           target-urls: ${{ github.event.inputs.url || 'https://www.spritecloud.com' }}

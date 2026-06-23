@@ -67,6 +67,13 @@ inputs:
     description: "true to emit the a11y trio on every crawled page (default caps at the per-page fuzz cap)."
     required: false
     default: "false"
+  humanize-budget:
+    description: |
+      Override QUAIL_HUMANIZE_BUDGET (Go duration, e.g. "10m"). Empty =
+      binary default (5m). Bump when probes against larger sites hit the
+      budget cap before humanizing every file.
+    required: false
+    default: ""
   quail-llm:
     description: |
       OpenAI-compatible endpoint used by the LLM composer (adds up to 5
@@ -137,6 +144,7 @@ runs:
         QUAIL_DOM_SNAPSHOTS: ${{ inputs.dom-snapshots == 'true' && '1' || '' }}
         QUAIL_A11Y_UNCAP: ${{ inputs.a11y-uncap == 'true' && '1' || '' }}
         QUAIL_LLM: ${{ inputs.quail-llm }}
+        QUAIL_HUMANIZE_BUDGET: ${{ inputs.humanize-budget }}
       run: quail generate
     - name: quail probe (standalone, no PR)
       # Fires when target-urls is set AND no PR is available (workflow_dispatch
@@ -155,6 +163,7 @@ runs:
         QUAIL_DOM_SNAPSHOTS: ${{ inputs.dom-snapshots == 'true' && '1' || '' }}
         QUAIL_A11Y_UNCAP: ${{ inputs.a11y-uncap == 'true' && '1' || '' }}
         QUAIL_LLM: ${{ inputs.quail-llm }}
+        QUAIL_HUMANIZE_BUDGET: ${{ inputs.humanize-budget }}
       run: quail probe
     - name: quail heal
       if: inputs.run-heal == 'true' && inputs.heal-mode != 'off'
