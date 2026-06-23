@@ -4,8 +4,8 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/spriteCloud/quail-review/internal/ast"
-	"github.com/spriteCloud/quail-review/internal/plan"
+	"github.com/spriteCloud/quail-core/ast"
+	"github.com/spriteCloud/quail-core/plan"
 )
 
 func TestBuildJourneyForComposer_LandingOnly(t *testing.T) {
