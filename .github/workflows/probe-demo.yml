@@ -80,6 +80,12 @@ jobs:
       - uses: ./
         with:
           pr: ${{ github.event.inputs.pr || github.event.pull_request.number }}
+          # PAT with `workflow` scope so the emitted .github/workflows/e2e.yml
+          # lands in the bot PR and Playwright runs on open. Falls back to
+          # GITHUB_TOKEN when no PAT is configured (bot PR still opens; e2e
+          # workflow file is stripped — current pre-v1.0.6 behaviour).
+          github-token: ${{ secrets.QUAIL_PAT || secrets.GITHUB_TOKEN }}
+          keep-workflows: ${{ secrets.QUAIL_PAT != '' && 'true' || 'false' }}
           openai-base-url: ${{ secrets.LLM_BASE_URL }}
           openai-api-key: ollama
           model: ${{ secrets.LLM_MODEL }}

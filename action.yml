@@ -82,6 +82,16 @@ inputs:
       Client.Timeout exceeded and the journey is skipped).
     required: false
     default: ""
+  keep-workflows:
+    description: |
+      'true' to ship .github/workflows/* files (e.g. the bot-emitted
+      tests/e2e CI workflow) in the bot PR. Default is 'false' because
+      the default GITHUB_TOKEN lacks the `workflow` scope and the remote
+      rejects the push. Set to 'true' AND pass a `github-token` carrying
+      the `workflow` scope (a fine-grained PAT or GitHub App) so the
+      emitted e2e.yml lands in the PR and triggers Playwright on open.
+    required: false
+    default: "false"
   quail-llm:
     description: |
       OpenAI-compatible endpoint used by the LLM composer (adds up to 5
@@ -154,6 +164,7 @@ runs:
         QUAIL_LLM: ${{ inputs.quail-llm }}
         QUAIL_HUMANIZE_BUDGET: ${{ inputs.humanize-budget }}
         QUAIL_LLM_TIMEOUT: ${{ inputs.llm-timeout }}
+        QUAIL_KEEP_WORKFLOWS: ${{ inputs.keep-workflows == 'true' && '1' || '' }}
       run: quail generate
     - name: quail probe (standalone, no PR)
       # Fires when target-urls is set AND no PR is available (workflow_dispatch
@@ -174,6 +185,7 @@ runs:
         QUAIL_LLM: ${{ inputs.quail-llm }}
         QUAIL_HUMANIZE_BUDGET: ${{ inputs.humanize-budget }}
         QUAIL_LLM_TIMEOUT: ${{ inputs.llm-timeout }}
+        QUAIL_KEEP_WORKFLOWS: ${{ inputs.keep-workflows == 'true' && '1' || '' }}
       run: quail probe
     - name: quail heal
       if: inputs.run-heal == 'true' && inputs.heal-mode != 'off'
