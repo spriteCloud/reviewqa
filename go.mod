@@ -4,7 +4,7 @@ go 1.25.10
 
 require (
 	github.com/spf13/cobra v1.10.2
-	github.com/spriteCloud/quail-core v0.3.0
+	github.com/spriteCloud/quail-core v0.4.0
 	golang.org/x/net v0.56.0
 	gopkg.in/yaml.v3 v3.0.1
 )

@@ -8,7 +8,7 @@ import (
 
 	"github.com/spf13/cobra"
 
-	"github.com/spriteCloud/quail-review/internal/ledger"
+	"github.com/spriteCloud/quail-core/ledger"
 	rlog "github.com/spriteCloud/quail-core/log"
 )
 
