@@ -55,33 +55,35 @@ jobs:
           fetch-depth: 0
 
       # Bring the runner onto spriteCloud's Netbird mesh so it can reach
-      # the DGX-hosted Ollama at 100.82.34.115:11434. Same action +
-      # pinned SHA as quail-e2e-demo.
+      # the DGX-hosted LLM. Same action + pinned SHA as quail-e2e-demo.
       - name: Connect to Netbird
         uses: Alemiz112/netbird-connect@b2bea073dea42968276f717128c57e739dd514f3
         with:
-          setup-key: ${{ secrets.NETBIRD_SETUP_KEY }}
+          setup-key: ${{ secrets.NETBIRD_EPHEMERAL_KEY }}
           management-url: ${{ secrets.NETBIRD_MANAGEMENT_URL }}
           hostname: gh-quail-probe-demo-${{ github.run_id }}
 
-      - name: Reach DGX through Netbird
+      - name: Reach LLM through Netbird
+        env:
+          LLM_BASE_URL: ${{ secrets.LLM_BASE_URL }}
         run: |
           set -u
+          base="${LLM_BASE_URL%/v1}"
           for i in $(seq 1 30); do
-            if curl -fsS -m 3 http://100.82.34.115:11434/api/version >/dev/null 2>&1; then
-              echo "DGX reachable after ${i} attempt(s)." && exit 0
+            if curl -fsS -m 3 "$base/api/version" >/dev/null 2>&1; then
+              echo "LLM reachable after ${i} attempt(s)." && exit 0
             fi
             sleep 2
           done
-          echo "::error::DGX unreachable after 60s." && exit 1
+          echo "::error::LLM unreachable at $base after 60s." && exit 1
 
       - uses: ./
         with:
           pr: ${{ github.event.inputs.pr || github.event.pull_request.number }}
-          openai-base-url: http://100.82.34.115:11434/v1
+          openai-base-url: ${{ secrets.LLM_BASE_URL }}
           openai-api-key: ollama
-          model: qwen3-coder-next:latest
-          quail-llm: http://100.82.34.115:11434
+          model: ${{ secrets.LLM_MODEL }}
+          quail-llm: ${{ secrets.LLM_BASE_URL }}
           heal-mode: 'off'
           log-level: info
           target-urls: ${{ github.event.inputs.url || 'https://www.spritecloud.com' }}
