@@ -8,6 +8,7 @@ import (
 	"github.com/spriteCloud/quail-core/ast"
 	"github.com/spriteCloud/quail-core/composer"
 	"github.com/spriteCloud/quail-core/config"
+	"github.com/spriteCloud/quail-core/gen"
 	"github.com/spriteCloud/quail-core/llm"
 	rlog "github.com/spriteCloud/quail-core/log"
 	"github.com/spriteCloud/quail-core/plan"
@@ -67,6 +68,12 @@ func composeScenarios(ctx context.Context, cfg config.Config, items []plan.Item)
 		"primary_model", ladder.First().Model,
 		"endpoint", cfg.OpenAIBaseURL,
 		"ladder_rungs", len(ladder.Rungs))
+	// Extract registered step patterns from the embedded BDD template
+	// once per run. Threaded into every Journey below so the composer's
+	// system prompt is built from the canonical source (template),
+	// not its legacy hardcoded list.
+	patterns := composer.ExtractStepPatterns(gen.StepsBDDTemplate())
+	rlog.Info("composer: registered step patterns loaded", "count", len(patterns))
 	// v0.31 cross-journey dedup. Track every step-sequence we've
 	// accepted across the whole suite — duplicate scenarios from
 	// different journeys (e.g. "no error and no success" repeated
@@ -78,6 +85,7 @@ func composeScenarios(ctx context.Context, cfg config.Config, items []plan.Item)
 			continue
 		}
 		j := buildJourneyForComposer(items[i])
+		j.RegisteredPatterns = patterns
 		// v0.41c bumped the per-journey scenario count from 3→5;
 		// v0.46 makes it adaptive — long multi-step journeys with
 		// many destination pages produce prompts whose response
