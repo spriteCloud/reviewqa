@@ -54,12 +54,36 @@ jobs:
         with:
           fetch-depth: 0
 
-      - uses: spriteCloud/quail-review@v1
+      # Bring the runner onto spriteCloud's Netbird mesh so it can reach
+      # the DGX-hosted LLM. Same action + pinned SHA as quail-e2e-demo.
+      - name: Connect to Netbird
+        uses: Alemiz112/netbird-connect@b2bea073dea42968276f717128c57e739dd514f3
+        with:
+          setup-key: ${{ secrets.NETBIRD_EPHEMERAL_KEY }}
+          management-url: ${{ secrets.NETBIRD_MANAGEMENT_URL }}
+          hostname: gh-quail-probe-demo-${{ github.run_id }}
+
+      - name: Reach LLM through Netbird
+        env:
+          LLM_BASE_URL: ${{ secrets.LLM_BASE_URL }}
+        run: |
+          set -u
+          base="${LLM_BASE_URL%/v1}"
+          for i in $(seq 1 30); do
+            if curl -fsS -m 3 "$base/api/version" >/dev/null 2>&1; then
+              echo "LLM reachable after ${i} attempt(s)." && exit 0
+            fi
+            sleep 2
+          done
+          echo "::error::LLM unreachable at $base after 60s." && exit 1
+
+      - uses: ./
         with:
           pr: ${{ github.event.inputs.pr || github.event.pull_request.number }}
-          openai-base-url: ${{ vars.OPENAI_BASE_URL || 'https://api.openai.com/v1' }}
-          openai-api-key: ${{ secrets.OPENAI_API_KEY }}
-          model: ${{ vars.QUAIL_MODEL || 'gpt-4o-mini' }}
+          openai-base-url: ${{ secrets.LLM_BASE_URL }}
+          openai-api-key: ollama
+          model: ${{ secrets.LLM_MODEL }}
+          quail-llm: ${{ secrets.LLM_BASE_URL }}
           heal-mode: 'off'
           log-level: info
           target-urls: ${{ github.event.inputs.url || 'https://www.spritecloud.com' }}

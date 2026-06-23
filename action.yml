@@ -67,6 +67,15 @@ inputs:
     description: "true to emit the a11y trio on every crawled page (default caps at the per-page fuzz cap)."
     required: false
     default: "false"
+  quail-llm:
+    description: |
+      OpenAI-compatible endpoint used by the LLM composer (adds up to 5
+      `@llm-composed` Scenarios per journey). Distinct from
+      `openai-base-url`, which only enables humanization. Leave empty to
+      keep generation deterministic. Strictly internal / self-hosted —
+      do not point at a third-party endpoint with private repo content.
+    required: false
+    default: ""
   log-level:
     description: debug | info | warn | error
     required: false
@@ -127,6 +136,7 @@ runs:
         QUAIL_EXCLUDE_KINDS: ${{ inputs.exclude-kinds }}
         QUAIL_DOM_SNAPSHOTS: ${{ inputs.dom-snapshots == 'true' && '1' || '' }}
         QUAIL_A11Y_UNCAP: ${{ inputs.a11y-uncap == 'true' && '1' || '' }}
+        QUAIL_LLM: ${{ inputs.quail-llm }}
       run: quail generate
     - name: quail probe (standalone, no PR)
       # Fires when target-urls is set AND no PR is available (workflow_dispatch
@@ -144,6 +154,7 @@ runs:
         QUAIL_EXCLUDE_KINDS: ${{ inputs.exclude-kinds }}
         QUAIL_DOM_SNAPSHOTS: ${{ inputs.dom-snapshots == 'true' && '1' || '' }}
         QUAIL_A11Y_UNCAP: ${{ inputs.a11y-uncap == 'true' && '1' || '' }}
+        QUAIL_LLM: ${{ inputs.quail-llm }}
       run: quail probe
     - name: quail heal
       if: inputs.run-heal == 'true' && inputs.heal-mode != 'off'
