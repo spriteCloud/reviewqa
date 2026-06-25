@@ -3,7 +3,9 @@ package main
 import (
 	"context"
 	"os"
+	"strconv"
 	"strings"
+	"sync"
 
 	"github.com/spriteCloud/quail-core/ast"
 	"github.com/spriteCloud/quail-core/composer"
@@ -13,6 +15,18 @@ import (
 	rlog "github.com/spriteCloud/quail-core/log"
 	"github.com/spriteCloud/quail-core/plan"
 )
+
+// composerParallelism caps concurrent LLM compose calls. Bounded so
+// we don't open 30 connections to a single endpoint on a 30-feature
+// probe. Override with QUAIL_LLM_PARALLELISM. v0.95.5.
+func composerParallelism() int {
+	if v := os.Getenv("QUAIL_LLM_PARALLELISM"); v != "" {
+		if n, err := strconv.Atoi(v); err == nil && n > 0 {
+			return n
+		}
+	}
+	return 6
+}
 
 // buildLadder constructs the LLM model ladder. The primary rung is
 // always the configured cfg.Model (the default qwen3-coder-next when
@@ -74,34 +88,71 @@ func composeScenarios(ctx context.Context, cfg config.Config, items []plan.Item)
 	// not its legacy hardcoded list.
 	patterns := composer.ExtractStepPatterns(gen.StepsBDDTemplate())
 	rlog.Info("composer: registered step patterns loaded", "count", len(patterns))
-	// v0.31 cross-journey dedup. Track every step-sequence we've
-	// accepted across the whole suite — duplicate scenarios from
-	// different journeys (e.g. "no error and no success" repeated
-	// across three journeys in the spritecloud.com run) get dropped
-	// after the first.
-	seenKeys := map[string]bool{}
+	// v0.95.5: bounded parallel compose. Previous serial loop ran
+	// ProposeWithLadderAndCache per Feature item (~30s each on a
+	// cold LLM); 10 features → 5 minutes. Semaphore-bounded
+	// goroutines drop that to ~30-50s wall clock at the same total
+	// LLM cost. Cross-journey dedup (seenKeys) still runs after,
+	// serially, in original `items` order so first-journey-wins
+	// semantics are preserved deterministically.
+	type composeResult struct {
+		idx     int
+		extras  []composer.ExtraScenario
+		model   string
+		journey composer.Journey
+		ok      bool
+	}
+	sem := make(chan struct{}, composerParallelism())
+	resultsMu := sync.Mutex{}
+	results := make([]composeResult, 0, len(items))
+	var wg sync.WaitGroup
 	for i := range items {
 		if items[i].Template != plan.TmplPlaywrightFeature {
 			continue
 		}
-		j := buildJourneyForComposer(items[i])
-		j.RegisteredPatterns = patterns
-		// v0.41c bumped the per-journey scenario count from 3→5;
-		// v0.46 makes it adaptive — long multi-step journeys with
-		// many destination pages produce prompts whose response
-		// won't fit in a 2k output budget (observed against the DGX
-		// when probing spritecloud.com at --coverage=depth). Falls
-		// back to 3 when the journey has 4+ destination pages.
-		n := 5
-		if len(j.Pages) >= 4 {
-			n = 3
-		}
-		extras, winningModel, err := composer.ProposeWithLadderAndCache(ctx, ladder, j, n, feedback, cache)
-		if err != nil {
-			rlog.Warn("composer: skipped journey", "kind", j.Kind, "err", err)
+		i := i
+		wg.Add(1)
+		go func() {
+			defer wg.Done()
+			sem <- struct{}{}
+			defer func() { <-sem }()
+			j := buildJourneyForComposer(items[i])
+			j.RegisteredPatterns = patterns
+			// v0.41c bumped the per-journey scenario count from 3→5;
+			// v0.46 makes it adaptive — long multi-step journeys
+			// with many destination pages produce prompts whose
+			// response won't fit in a 2k output budget. Falls back
+			// to 3 when the journey has 4+ destination pages.
+			n := 5
+			if len(j.Pages) >= 4 {
+				n = 3
+			}
+			extras, winningModel, err := composer.ProposeWithLadderAndCache(ctx, ladder, j, n, feedback, cache)
+			if err != nil {
+				rlog.Warn("composer: skipped journey", "kind", j.Kind, "err", err)
+				return
+			}
+			resultsMu.Lock()
+			results = append(results, composeResult{idx: i, extras: extras, model: winningModel, journey: j, ok: true})
+			resultsMu.Unlock()
+		}()
+	}
+	wg.Wait()
+
+	// Apply cross-journey dedup in original items order so first-
+	// journey-wins is deterministic regardless of which goroutine
+	// returned first.
+	byIdx := map[int]composeResult{}
+	for _, r := range results {
+		byIdx[r.idx] = r
+	}
+	seenKeys := map[string]bool{}
+	for i := range items {
+		r, ok := byIdx[i]
+		if !ok {
 			continue
 		}
-		extras = composer.Dedup(extras)
+		extras := composer.Dedup(r.extras)
 		fresh := extras[:0]
 		for _, s := range extras {
 			k := composer.ScenarioKey(s)
@@ -115,8 +166,8 @@ func composeScenarios(ctx context.Context, cfg config.Config, items []plan.Item)
 			continue
 		}
 		items[i].ExtraScenarios = toExtraScenarios(fresh)
-		items[i].LLMModel = winningModel
-		rlog.Info("composer: added scenarios", "journey", j.Kind, "count", len(fresh), "model", winningModel)
+		items[i].LLMModel = r.model
+		rlog.Info("composer: added scenarios", "journey", r.journey.Kind, "count", len(fresh), "model", r.model)
 	}
 	return items
 }
